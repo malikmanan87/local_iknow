@@ -14,7 +14,7 @@
  | existing namespaces of App\* namespaced-classes.
  */
 defined('APP_NAMESPACE') || define('APP_NAMESPACE', 'App');
-defined('APP_NAME') || define('APP_NAME', getenv('app.appName') ?: 'Sistem Saya');
+defined('APP_NAME') || define('APP_NAME', getenv('app.appName') ?: 'My System');
 defined('APP_VERSION') || define('APP_VERSION', '1.0.0');
 
 /*
