@@ -28,50 +28,50 @@ $segment1 = $uri->getSegment(1);
                 </a>
             </li>
 
-            <li class="menu-separator"><span>Pengurusan Modul</span></li>
+            <li class="menu-separator"><span>Module Management</span></li>
 
             <li class="menu-item <?= $segment1 === 'items' ? 'active' : '' ?>">
                 <a href="<?= base_url('items') ?>" class="menu-link">
                     <span class="menu-icon"><i class="bi bi-box-seam-fill"></i></span>
-                    <span class="menu-label">Item</span>
+                    <span class="menu-label">Items</span>
                 </a>
             </li>
 
             <li class="menu-item <?= $segment1 === 'reports' ? 'active' : '' ?>">
                 <a href="<?= base_url('reports') ?>" class="menu-link">
                     <span class="menu-icon"><i class="bi bi-file-earmark-bar-graph-fill"></i></span>
-                    <span class="menu-label">Laporan</span>
+                    <span class="menu-label">Reports</span>
                 </a>
             </li>
 
             <?php if (session('role') === 'admin'): ?>
-                <li class="menu-separator"><span>Kawalan Sistem</span></li>
+                <li class="menu-separator"><span>System Administration</span></li>
 
                 <li class="menu-item <?= $segment1 === 'users' ? 'active' : '' ?>">
                     <a href="<?= base_url('users') ?>" class="menu-link">
                         <span class="menu-icon"><i class="bi bi-people-fill"></i></span>
-                        <span class="menu-label">Pengguna</span>
+                        <span class="menu-label">Users</span>
                     </a>
                 </li>
 
                 <li class="menu-item <?= $segment1 === 'roles' ? 'active' : '' ?>">
                     <a href="<?= base_url('roles') ?>" class="menu-link">
                         <span class="menu-icon"><i class="bi bi-shield-lock-fill"></i></span>
-                        <span class="menu-label">Peranan & Kebenaran</span>
+                        <span class="menu-label">Roles & Permissions</span>
                     </a>
                 </li>
 
                 <li class="menu-item <?= $segment1 === 'activity-logs' ? 'active' : '' ?>">
                     <a href="<?= base_url('activity-logs') ?>" class="menu-link">
                         <span class="menu-icon"><i class="bi bi-journal-text"></i></span>
-                        <span class="menu-label">Log Aktiviti</span>
+                        <span class="menu-label">Activity Logs</span>
                     </a>
                 </li>
 
                 <li class="menu-item <?= $segment1 === 'settings' ? 'active' : '' ?>">
                     <a href="<?= base_url('settings') ?>" class="menu-link">
                         <span class="menu-icon"><i class="bi bi-gear-fill"></i></span>
-                        <span class="menu-label">Tetapan</span>
+                        <span class="menu-label">Settings</span>
                     </a>
                 </li>
             <?php endif; ?>
@@ -82,7 +82,7 @@ $segment1 = $uri->getSegment(1);
     <div class="sidebar-footer">
         <a href="<?= base_url('logout') ?>" class="logout-btn" onclick="confirmLogout(event, this)">
             <i class="bi bi-box-arrow-left"></i>
-            <span>Log Keluar</span>
+            <span>Logout</span>
         </a>
     </div>
 

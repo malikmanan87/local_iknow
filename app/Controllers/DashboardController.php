@@ -52,44 +52,28 @@ class DashboardController extends BaseController
             $monthsDataStructure[$bulanIndex] = (int)$row['total'];
         }
 
-        // Nama-nama bulan untuk label carta
-        $monthlyLabels = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'];
+        $monthlyLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-        // Ambil hanya nilai (values) sahaja untuk dihantar ke Chart.js [0, 5, 12, ...]
         $monthlyData = array_values($monthsDataStructure);
 
-        // 🚀 AMBIL 5 REKOD ITEM TERKINI BESERTA NAMA PENCIPTA
         $recentItems = $db->table('items i')
             ->select('i.*, u.fullname as creator_name')
             ->join('users u', 'u.id = i.created_by', 'left')
-            ->orderBy('i.updated_at', 'DESC') // Urutkan mengikut kemaskini terbaru
+            ->orderBy('i.updated_at', 'DESC')
             ->limit(5)
             ->get()
             ->getResultArray();
 
-        // Masukkan 'recentItems' ke dalam tatasusunan hantaran view anda
         return view('dashboard', [
-            'pageTitle'   => 'Dashboard Utama',
-            'totalItems'  => $totalItems,
-            'activeItems' => $activeItems,
-            'totalUsers'  => $totalUsers,
-            'todayLogs'   => $todayLogs,
-            'recentLogs'  => $recentLogs,
-            'monthlyLabels' => $monthlyLabels,
-            'monthlyData' => $monthlyData,
-            'recentItems' => $recentItems // 🚀 TAMBAH BARIS INI
-        ]);
-
-        // 3. Hantar semua data ke paparan view
-        return view('dashboard', [
-            'pageTitle'     => 'Dashboard Utama',
+            'pageTitle'     => 'Main Dashboard',
             'totalItems'    => $totalItems,
             'activeItems'   => $activeItems,
             'totalUsers'    => $totalUsers,
             'todayLogs'     => $todayLogs,
             'recentLogs'    => $recentLogs,
             'monthlyLabels' => $monthlyLabels,
-            'monthlyData'   => $monthlyData
+            'monthlyData'   => $monthlyData,
+            'recentItems'   => $recentItems
         ]);
     }
 }

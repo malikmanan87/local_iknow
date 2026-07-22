@@ -22,8 +22,8 @@ class ActivityLogsController extends BaseController
         $logs = $this->logModel->orderBy('created_at', 'DESC')->findAll();
 
         return view('activity_logs/index', [
-            'pageTitle'  => 'Log Aktiviti',
-            'breadcrumb' => ['Log Aktiviti'],
+            'pageTitle'  => 'Activity Logs',
+            'breadcrumb' => ['Activity Logs'],
             'logs'       => $logs
         ]);
     }

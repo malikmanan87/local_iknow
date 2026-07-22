@@ -64,17 +64,17 @@ class AuthController extends BaseController
         $throttlerKey = md5($this->request->getIPAddress() . '_' . $identifier);
 
         if ($throttler->check($throttlerKey, $maxAttempts, 300) === false) {
-            return redirect()->back()->withInput()->with('error', 'Terlalu banyak percubaan log masuk yang gagal. Sila cuba lagi dalam 5 minit.');
+            return redirect()->back()->withInput()->with('error', 'Too many failed login attempts. Please try again in 5 minutes.');
         }
 
         $user = $this->userModel->findByEmailOrUsername($identifier);
 
         if (!$user || !password_verify($password, $user['password'])) {
-            return redirect()->back()->withInput()->with('error', 'E-mel atau kata laluan tidak sah.');
+            return redirect()->back()->withInput()->with('error', 'Invalid email or password.');
         }
 
         if (!$user['is_active']) {
-            return redirect()->back()->withInput()->with('error', 'Akaun anda telah dinyahaktifkan. Sila hubungi pentadbir.');
+            return redirect()->back()->withInput()->with('error', 'Your account has been deactivated. Please contact the administrator.');
         }
 
         // Set Session
@@ -91,25 +91,25 @@ class AuthController extends BaseController
 
         $this->userModel->update($user['id'], ['last_login' => date('Y-m-d H:i:s')]);
 
-        // Rakam Log
-        ActivityLogModel::log('Log Masuk', 'Pengguna berjaya log masuk ke dalam sistem.');
+        // Record Log
+        ActivityLogModel::log('User Login', 'User successfully logged into the system.');
 
-        return redirect()->to('dashboard')->with('success', 'Selamat datang semula, ' . $user['fullname'] . '!');
+        return redirect()->to('dashboard')->with('success', 'Welcome back, ' . $user['fullname'] . '!');
     }
 
     // ----------------------------------------------------------------
-    // FUNGSI BARU: GET /register (Paparan Halaman Daftar Tetamu)
+    // GET /register (Display Registration Form)
     // ----------------------------------------------------------------
     public function register()
     {
         if (session()->get('isLoggedIn')) {
             return redirect()->to('dashboard');
         }
-        return view('auth/register'); // Memastikan fail app/Views/auth/register.php dipanggil
+        return view('auth/register');
     }
 
     // ----------------------------------------------------------------
-    // FUNGSI BARU: POST /register/process (Proses Simpan Tetamu)
+    // POST /register/process (Process Registration)
     // ----------------------------------------------------------------
     public function registerProcess()
     {
@@ -125,10 +125,10 @@ class AuthController extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        // Cari ID peranan 'user' secara automatik dari jadual roles
+        // Find default 'user' role ID from roles table
         $db = \Config\Database::connect();
         $roleQuery = $db->table('roles')->where('name', 'user')->get()->getRow();
-        $userRoleId = $roleQuery ? $roleQuery->id : 3; // Fallback ke ID 3 jika tiada
+        $userRoleId = $roleQuery ? $roleQuery->id : 3;
 
         $data = [
             'fullname'  => $this->request->getPost('fullname'),
@@ -137,30 +137,29 @@ class AuthController extends BaseController
             'phone'     => $this->request->getPost('phone'),
             'password'  => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
             'role_id'   => $userRoleId,
-            'is_active' => 1, // Tetamu aktif terus secara automatik
+            'is_active' => 1,
         ];
 
         $db->table('users')->insert($data);
 
-        // Rakam Log Aktiviti menggunakan sesi Guest
-        ActivityLogModel::log('Pendaftaran Awam', 'Tetamu mendaftar akaun baru dengan nama pengguna: @' . $data['username']);
+        // Record Activity Log
+        ActivityLogModel::log('Public Registration', 'New guest account registered with username: @' . $data['username']);
 
-        return redirect()->to('login')->with('success', 'Akaun anda berjaya dicipta! Sila log masuk dengan e-mel dan kata laluan anda.');
+        return redirect()->to('login')->with('success', 'Your account has been successfully created! Please log in with your email and password.');
     }
 
     public function profile()
     {
-        // Ambil ID dari session, lalu hantar ke UsersController::show
         return redirect()->to('users/show/' . session('user_id'));
     }
 
     // ----------------------------------------------------------------
-    // GET /logout (Log Keluar)
+    // GET /logout (Logout)
     // ----------------------------------------------------------------
     public function logout()
     {
         if (session()->get('isLoggedIn')) {
-            ActivityLogModel::log('Log Keluar', 'Pengguna telah mendaftar keluar daripada sistem.');
+            ActivityLogModel::log('User Logout', 'User logged out of the system.');
         }
         session()->destroy();
         return redirect()->to('login');

@@ -16,30 +16,30 @@ class ItemsController extends BaseController
     }
 
     // ----------------------------------------------------------------
-    // GET /items (Paparan Senarai Item)
+    // GET /items (Display Item List)
     // ----------------------------------------------------------------
     public function index()
     {
         return view('items/index', [
-            'pageTitle'  => 'Pengurusan Item',
-            'breadcrumb' => ['Item'],
+            'pageTitle'  => 'Item Management',
+            'breadcrumb' => ['Items'],
             'items'      => $this->itemModel->getItemsWithUser(),
         ]);
     }
 
     // ----------------------------------------------------------------
-    // GET /items/create (Paparan Borang Tambah)
+    // GET /items/create (Display Add Form)
     // ----------------------------------------------------------------
     public function create()
     {
         return view('items/form', [
-            'pageTitle'  => 'Tambah Item Baru',
-            'breadcrumb' => [['label' => 'Item', 'url' => base_url('items')], 'Tambah'],
+            'pageTitle'  => 'Add New Item',
+            'breadcrumb' => [['label' => 'Items', 'url' => base_url('items')], 'Add'],
         ]);
     }
 
     // ----------------------------------------------------------------
-    // POST /items/store (Proses Simpan Item Baru + RAKAM LOG)
+    // POST /items/store (Process Store Item + LOG)
     // ----------------------------------------------------------------
     public function store()
     {
@@ -63,58 +63,57 @@ class ItemsController extends BaseController
 
         $this->itemModel->insert($data);
 
-        // 🚀 RAKAM LOG AKTIVITI: TAMBAH ITEM
         ActivityLogModel::log(
-            'Tambah Item',
-            'Menambah item baharu: "' . $data['name'] . '" di bawah kategori: ' . ($data['category'] ?: 'Tiada Kategori')
+            'Add Item',
+            'Added new item: "' . $data['name'] . '" under category: ' . ($data['category'] ?: 'No Category')
         );
 
-        return redirect()->to('items')->with('success', 'Item baharu berjaya didaftarkan.');
+        return redirect()->to('items')->with('success', 'New item successfully registered.');
     }
 
     // ----------------------------------------------------------------
-    // GET /items/show/:id (Paparan Butiran Item)
+    // GET /items/show/:id (Display Item Details)
     // ----------------------------------------------------------------
     public function show(int $id)
     {
         $item = $this->itemModel->getItemWithUser($id);
 
         if (!$item) {
-            return redirect()->to('items')->with('error', 'Item tidak ditemui.');
+            return redirect()->to('items')->with('error', 'Item not found.');
         }
 
         return view('items/show', [
-            'pageTitle'  => 'Butiran Item',
-            'breadcrumb' => [['label' => 'Dashboard', 'url' => base_url('dashboard')], 'Butiran Item'],
+            'pageTitle'  => 'Item Details',
+            'breadcrumb' => [['label' => 'Items', 'url' => base_url('items')], 'Details'],
             'item'       => $item
         ]);
     }
 
     // ----------------------------------------------------------------
-    // GET /items/edit/:id (Paparan Borang Kemaskini)
+    // GET /items/edit/:id (Display Edit Form)
     // ----------------------------------------------------------------
     public function edit(int $id)
     {
         $item = $this->itemModel->find($id);
         if (!$item) {
-            return redirect()->to('items')->with('error', 'Item tidak ditemui.');
+            return redirect()->to('items')->with('error', 'Item not found.');
         }
 
         return view('items/form', [
-            'pageTitle'  => 'Kemaskini Item',
-            'breadcrumb' => [['label' => 'Item', 'url' => base_url('items')], 'Kemaskini'],
+            'pageTitle'  => 'Edit Item',
+            'breadcrumb' => [['label' => 'Items', 'url' => base_url('items')], 'Edit'],
             'item'       => $item,
         ]);
     }
 
     // ----------------------------------------------------------------
-    // POST /items/update/:id (Proses Kemaskini Item + RAKAM LOG)
+    // POST /items/update/:id (Process Update Item + LOG)
     // ----------------------------------------------------------------
     public function update(int $id)
     {
         $item = $this->itemModel->find($id);
         if (!$item) {
-            return redirect()->to('items')->with('error', 'Item tidak ditemui.');
+            return redirect()->to('items')->with('error', 'Item not found.');
         }
 
         $rules = [
@@ -136,33 +135,31 @@ class ItemsController extends BaseController
 
         $this->itemModel->update($id, $data);
 
-        // 🚀 RAKAM LOG AKTIVITI: KEMASKINI ITEM
         ActivityLogModel::log(
-            'Kemaskini Item',
-            'Mengemas kini maklumat item (ID: ' . $id . '). Nama asal: "' . $item['name'] . '" -> Nama baharu: "' . $data['name'] . '"'
+            'Update Item',
+            'Updated item information (ID: ' . $id . '). Original name: "' . $item['name'] . '" -> New name: "' . $data['name'] . '"'
         );
 
-        return redirect()->to('items')->with('success', 'Maklumat item berjaya dikemaskini.');
+        return redirect()->to('items')->with('success', 'Item details updated successfully.');
     }
 
     // ----------------------------------------------------------------
-    // GET /items/delete/:id (Proses Padam Item + RAKAM LOG)
+    // GET /items/delete/:id (Process Delete Item + LOG)
     // ----------------------------------------------------------------
     public function delete(int $id)
     {
         $item = $this->itemModel->find($id);
         if (!$item) {
-            return redirect()->to('items')->with('error', 'Item tidak ditemui atau telah dipadam sebelum ini.');
+            return redirect()->to('items')->with('error', 'Item not found or already deleted.');
         }
 
         $this->itemModel->delete($id);
 
-        // 🚀 RAKAM LOG AKTIVITI: PADAM ITEM
         ActivityLogModel::log(
-            'Padam Item',
-            'Memadam item secara kekal dari sistem: "' . $item['name'] . '" (ID: ' . $id . ')'
+            'Delete Item',
+            'Deleted item from system: "' . $item['name'] . '" (ID: ' . $id . ')'
         );
 
-        return redirect()->to('items')->with('success', 'Item berjaya dipadam daripada sistem.');
+        return redirect()->to('items')->with('success', 'Item deleted successfully from system.');
     }
 }

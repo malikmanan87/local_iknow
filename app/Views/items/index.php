@@ -4,10 +4,10 @@
 <div class="card-panel">
     <div class="card-panel-header py-3">
         <h5 class="card-panel-title">
-            <i class="bi bi-box-seam-fill me-2 text-primary"></i>Pengurusan Item
+            <i class="bi bi-box-seam-fill me-2 text-primary"></i>Item Management
         </h5>
         <a href="<?= base_url('items/create') ?>" class="btn btn-primary btn-sm shadow-sm">
-            <i class="bi bi-plus-lg me-1"></i> Tambah Item Baru
+            <i class="bi bi-plus-lg me-1"></i> Add New Item
         </a>
     </div>
     <div class="card-panel-body">
@@ -16,12 +16,12 @@
                 <thead class="table-light text-secondary">
                     <tr>
                         <th width="50" class="text-center">#</th>
-                        <th>Nama Item</th>
-                        <th>Kategori</th>
-                        <th>Pencipta (Dicipta Oleh)</th>
+                        <th>Item Name</th>
+                        <th>Category</th>
+                        <th>Created By</th>
                         <th>Status</th>
-                        <th>Tarikh Kemaskini</th>
-                        <th width="120" class="text-center">Tindakan</th>
+                        <th>Last Updated</th>
+                        <th width="120" class="text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -39,14 +39,14 @@
                             </td>
                             <td>
                                 <span class="badge bg-light text-secondary border px-2 py-1 small">
-                                    <?= esc($item['category'] ?: 'Tiada Kategori') ?>
+                                    <?= esc($item['category'] ?: 'No Category') ?>
                                 </span>
                             </td>
                             <td>
                                 <div class="d-flex align-items-center gap-1">
                                     <i class="bi bi-person text-muted small"></i>
                                     <span class="text-secondary small fw-medium">
-                                        <?= esc($item['creator_name'] ?? 'Sistem / Tiada') ?>
+                                        <?= esc($item['creator_name'] ?? 'System / None') ?>
                                     </span>
                                 </div>
                             </td>
@@ -58,9 +58,9 @@
                                     'inactive' => 'badge-status-danger'
                                 ];
                                 $statusLabels = [
-                                    'active'   => 'Aktif',
-                                    'pending'  => 'Tertangguh',
-                                    'inactive' => 'Tidak Aktif'
+                                    'active'   => 'Active',
+                                    'pending'  => 'Pending',
+                                    'inactive' => 'Inactive'
                                 ];
                                 $statusKey = esc($item['status']);
                                 ?>
@@ -78,7 +78,7 @@
                                     </a>
                                     
                                     <button class="btn-action btn-action-delete" 
-                                            title="Padam" 
+                                            title="Delete" 
                                             onclick="confirmDelete('<?= base_url('items/delete/' . $item['id']) ?>', '<?= esc($item['name']) ?>')">
                                         <i class="bi bi-trash"></i>
                                     </button>
@@ -100,15 +100,15 @@
 $(document).ready(function() {
     $('#itemsTable').DataTable({
         language: {
-            url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/ms.json',
-            search: 'Cari:',
-            lengthMenu: 'Papar _MENU_ rekod',
-            info: 'Menunjukkan _START_ hingga _END_ daripada _TOTAL_ rekod',
-            paginate: { previous: 'Sebelum', next: 'Seterusnya' }
+            url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/en-GB.json',
+            search: 'Search:',
+            lengthMenu: 'Show _MENU_ entries',
+            info: 'Showing _START_ to _END_ of _TOTAL_ entries',
+            paginate: { previous: 'Previous', next: 'Next' }
         },
-        order: [[0, 'asc']], // Susun mengikut nombor turutan asal
+        order: [[0, 'asc']],
         pageLength: 10,
-        columnDefs: [{ orderable: false, targets: [0, 3, 6] }] // Kunci susunan lajur #, Pencipta, dan Tindakan
+        columnDefs: [{ orderable: false, targets: [0, 3, 6] }]
     });
 });
 </script>

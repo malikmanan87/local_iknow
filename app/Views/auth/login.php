@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ms">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log Masuk | <?= APP_NAME ?></title>
+    <title>Login | <?= APP_NAME ?></title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
@@ -41,8 +41,8 @@
             <div class="login-logo mb-2">
                 <i class="bi bi-shield-lock-fill"></i>
             </div>
-            <h4 class="fw-bold text-dark mb-1">Selamat Datang</h4>
-            <p class="text-muted small">Sila log masuk untuk mengakses akaun anda.</p>
+            <h4 class="fw-bold text-dark mb-1">Welcome Back</h4>
+            <p class="text-muted small">Please log in to access your account.</p>
         </div>
 
         <?php if (session()->getFlashdata('success')): ?>
@@ -73,30 +73,30 @@
             <?= csrf_field() ?>
 
             <div class="mb-3">
-                <label for="email" class="form-label small fw-semibold text-secondary">E-mel atau Nama Pengguna</label>
+                <label for="email" class="form-label small fw-semibold text-secondary">Email or Username</label>
                 <div class="input-group">
                     <span class="input-group-text bg-light text-muted"><i class="bi bi-person"></i></span>
                     <input type="text" class="form-control" id="email" name="email" 
-                           value="<?= old('email') ?>" placeholder="Masukkan e-mel atau username" required autofocus>
+                           value="<?= old('email') ?>" placeholder="Enter email or username" required autofocus>
                 </div>
             </div>
 
             <div class="mb-4">
-                <label for="password" class="form-label small fw-semibold text-secondary">Kata Laluan</label>
+                <label for="password" class="form-label small fw-semibold text-secondary">Password</label>
                 <div class="input-group">
                     <span class="input-group-text bg-light text-muted"><i class="bi bi-lock"></i></span>
                     <input type="password" class="form-control" id="password" name="password" 
-                           placeholder="Masukkan kata laluan" required>
+                           placeholder="Enter password" required>
                 </div>
             </div>
 
             <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm mb-3">
-                <i class="bi bi-box-arrow-in-right me-1"></i> Log Masuk
+                <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
             </button>
 
             <div class="text-center mt-3 border-top pt-3">
-                <span class="text-muted small">Belum mempunyai akaun?</span>
-                <a href="<?= base_url('register') ?>" class="small text-decoration-none fw-semibold ms-1">Daftar Sini</a>
+                <span class="text-muted small">Don't have an account?</span>
+                <a href="<?= base_url('register') ?>" class="small text-decoration-none fw-semibold ms-1">Register Here</a>
             </div>
         </form>
 

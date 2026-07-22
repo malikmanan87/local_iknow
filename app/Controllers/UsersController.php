@@ -19,48 +19,48 @@ class UsersController extends BaseController
     }
 
     // ----------------------------------------------------------------
-    // GET /users (Paparan Senarai Pengguna)
+    // GET /users (Display User List)
     // ----------------------------------------------------------------
     public function index()
     {
         return view('users/index', [
-            'pageTitle'  => 'Pengurusan Pengguna',
-            'breadcrumb' => ['Pengguna'],
+            'pageTitle'  => 'User Management',
+            'breadcrumb' => ['Users'],
             'users'      => $this->userModel->getUsersWithRole(),
         ]);
     }
 
     // ----------------------------------------------------------------
-    // GET /users/show/:id (Paparan Profil Pengguna)
+    // GET /users/show/:id (Display User Profile)
     // ----------------------------------------------------------------
     public function show(int $id)
     {
         $user = $this->userModel->getUserWithRole($id);
         if (!$user) {
-            return redirect()->to('users')->with('error', 'Pengguna tidak ditemui.');
+            return redirect()->to('users')->with('error', 'User not found.');
         }
 
         return view('users/show', [
-            'pageTitle'  => 'Profil Pengguna',
-            'breadcrumb' => [['label' => 'Pengguna', 'url' => base_url('users')], 'Profil'],
+            'pageTitle'  => 'User Profile',
+            'breadcrumb' => [['label' => 'Users', 'url' => base_url('users')], 'Profile'],
             'user'       => $user,
         ]);
     }
 
     // ----------------------------------------------------------------
-    // GET /users/create (Paparan Borang Tambah)
+    // GET /users/create (Display Add Form)
     // ----------------------------------------------------------------
     public function create()
     {
         return view('users/form', [
-            'pageTitle'  => 'Tambah Pengguna Baru',
-            'breadcrumb' => [['label' => 'Pengguna', 'url' => base_url('users')], 'Tambah'],
+            'pageTitle'  => 'Add New User',
+            'breadcrumb' => [['label' => 'Users', 'url' => base_url('users')], 'Add'],
             'roles'      => $this->roleModel->findAll(),
         ]);
     }
 
     // ----------------------------------------------------------------
-    // POST /users/store (Proses Simpan Pengguna Baru + RAKAM LOG)
+    // POST /users/store (Process Store New User + LOG)
     // ----------------------------------------------------------------
     public function store()
     {
@@ -77,8 +77,6 @@ class UsersController extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        // 🚀 LOGIK SUIS AKTIF/NYAHAKTIF:
-        // Jika suis ditanda, ambil nilai '1'. Jika dibiarkan kosong, set sebagai '0' (Dinyahaktifkan)
         $isActive = $this->request->getPost('is_active') ? 1 : 0;
 
         $data = [
@@ -88,10 +86,9 @@ class UsersController extends BaseController
             'phone'     => $this->request->getPost('phone'),
             'role_id'   => $this->request->getPost('role_id'),
             'password'  => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
-            'is_active' => $isActive, // Masukkan nilai ke pangkalan data
+            'is_active' => $isActive,
         ];
 
-        // Logik muat naik avatar jika ada...
         $avatarFile = $this->request->getFile('avatar');
         if ($avatarFile && $avatarFile->isValid() && !$avatarFile->hasMoved()) {
             $newName = $avatarFile->getRandomName();
@@ -101,37 +98,37 @@ class UsersController extends BaseController
 
         $this->userModel->insert($data);
 
-        \App\Models\ActivityLogModel::log('Tambah Pengguna', 'Mendaftar pengguna baru: @' . $data['username'] . ' [Status: ' . ($isActive ? 'Aktif' : 'Nyahaktif') . ']');
+        \App\Models\ActivityLogModel::log('Add User', 'Registered new user: @' . $data['username'] . ' [Status: ' . ($isActive ? 'Active' : 'Inactive') . ']');
 
-        return redirect()->to('users')->with('success', 'Pengguna baru berjaya didaftarkan.');
+        return redirect()->to('users')->with('success', 'New user successfully registered.');
     }
 
     // ----------------------------------------------------------------
-    // GET /users/edit/:id (Paparan Borang Kemaskini)
+    // GET /users/edit/:id (Display Edit Form)
     // ----------------------------------------------------------------
     public function edit(int $id)
     {
         $user = $this->userModel->find($id);
         if (!$user) {
-            return redirect()->to('users')->with('error', 'Pengguna tidak ditemui.');
+            return redirect()->to('users')->with('error', 'User not found.');
         }
 
         return view('users/form', [
-            'pageTitle'  => 'Kemaskini Pengguna',
-            'breadcrumb' => [['label' => 'Pengguna', 'url' => base_url('users')], 'Kemaskini'],
+            'pageTitle'  => 'Edit User',
+            'breadcrumb' => [['label' => 'Users', 'url' => base_url('users')], 'Edit'],
             'user'       => $user,
             'roles'      => $this->roleModel->findAll(),
         ]);
     }
 
     // ----------------------------------------------------------------
-    // POST /users/update/:id (Proses Kemaskini Pengguna + RAKAM LOG)
+    // POST /users/update/:id (Process Update User + LOG)
     // ----------------------------------------------------------------
     public function update(int $id)
     {
         $user = $this->userModel->find($id);
         if (!$user) {
-            return redirect()->to('users')->with('error', 'Pengguna tidak ditemui.');
+            return redirect()->to('users')->with('error', 'User not found.');
         }
 
         $rules = [
@@ -146,16 +143,15 @@ class UsersController extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        // 🚀 LOGIK SUIS AKTIF/NYAHAKTIF:
         $isActive = $this->request->getPost('is_active') ? 1 : 0;
 
-        // Halang pengguna daripada menyahaktifkan atau menukar peranan akaun sendiri
+        // Prevent self-lockout
         if ((int)session('user_id') === $id) {
             if ($isActive === 0) {
-                return redirect()->back()->withInput()->with('error', 'Anda tidak boleh menyahaktifkan akaun anda sendiri.');
+                return redirect()->back()->withInput()->with('error', 'You cannot deactivate your own account.');
             }
             if ((int)$this->request->getPost('role_id') !== (int)$user['role_id']) {
-                return redirect()->back()->withInput()->with('error', 'Anda tidak boleh menukar peranan akaun anda sendiri.');
+                return redirect()->back()->withInput()->with('error', 'You cannot change your own role.');
             }
         }
 
@@ -165,10 +161,9 @@ class UsersController extends BaseController
             'email'     => strtolower($this->request->getPost('email')),
             'phone'     => $this->request->getPost('phone'),
             'role_id'   => $this->request->getPost('role_id'),
-            'is_active' => $isActive, // Kemaskini nilai ke pangkalan data
+            'is_active' => $isActive,
         ];
 
-        // Logik pemprosesan kata laluan & avatar...
         $avatarFile = $this->request->getFile('avatar');
         if ($avatarFile && $avatarFile->isValid() && !$avatarFile->hasMoved()) {
             if (!empty($user['avatar']) && file_exists(FCPATH . 'uploads/avatars/' . $user['avatar'])) {
@@ -189,7 +184,6 @@ class UsersController extends BaseController
 
         $this->userModel->update($id, $data);
 
-        // Kemaskini data session kendiri jika pengguna sedang edit profil sendiri
         if ((int)session('user_id') === $id) {
             session()->set([
                 'fullname' => $data['fullname'],
@@ -197,62 +191,57 @@ class UsersController extends BaseController
             ]);
         }
 
-        \App\Models\ActivityLogModel::log('Kemaskini Pengguna', 'Mengemas kini data pengguna ID: ' . $id . ' [Status: ' . ($isActive ? 'Aktif' : 'Nyahaktif') . ']');
+        \App\Models\ActivityLogModel::log('Update User', 'Updated user data for ID: ' . $id . ' [Status: ' . ($isActive ? 'Active' : 'Inactive') . ']');
 
-        return redirect()->to('users')->with('success', 'Maklumat pengguna berjaya dikemaskini.');
+        return redirect()->to('users')->with('success', 'User details updated successfully.');
     }
 
     // ----------------------------------------------------------------
-    // GET /users/delete/:id (Proses Padam Lembut + RAKAM LOG)
+    // GET /users/delete/:id (Process Soft Delete + LOG)
     // ----------------------------------------------------------------
     public function delete(int $id)
     {
         if ($id === (int) session('user_id')) {
-            return redirect()->to('users')->with('error', 'Anda tidak boleh memadam akaun sendiri.');
+            return redirect()->to('users')->with('error', 'You cannot delete your own account.');
         }
 
         $user = $this->userModel->find($id);
         if (!$user) {
-            return redirect()->to('users')->with('error', 'Pengguna tidak ditemui atau telah dipadam.');
+            return redirect()->to('users')->with('error', 'User not found or already deleted.');
         }
 
-        // Melakukan Soft Delete melalui model
         $this->userModel->delete($id);
 
-        // 🚀 RAKAM LOG AKTIVITI: SOFT DELETE PENGGUNA
         ActivityLogModel::log(
-            'Padam Pengguna',
-            'Memadam (Soft Delete) pengguna: "' . $user['fullname'] . '" (@' . $user['username'] . ') (ID: ' . $id . ')'
+            'Delete User',
+            'Soft deleted user: "' . $user['fullname'] . '" (@' . $user['username'] . ') (ID: ' . $id . ')'
         );
 
-        return redirect()->to('users')->with('success', 'Pengguna berjaya dipadam daripada sistem.');
+        return redirect()->to('users')->with('success', 'User deleted successfully from system.');
     }
 
     // ----------------------------------------------------------------
-    // GET /users/reset-throttle/:id (Reset Sekatan Login + RAKAM LOG)
+    // GET /users/reset-throttle/:id (Reset Throttle + LOG)
     // ----------------------------------------------------------------
     public function resetThrottle(int $id)
     {
         $user = $this->userModel->find($id);
         if (!$user) {
-            return redirect()->to('users')->with('error', 'Pengguna tidak ditemui.');
+            return redirect()->to('users')->with('error', 'User not found.');
         }
 
-        // Membersihkan cache throttler global
         $cache = service('cache');
         $cache->clean();
 
-        // Memastikan status akaun diaktifkan semula jika ter-nyahaktif
         if ((int)$user['is_active'] === 0) {
             $this->userModel->update($id, ['is_active' => 1]);
         }
 
-        // 🚀 RAKAM LOG AKTIVITI: RESET THROTTLE
         ActivityLogModel::log(
-            'Reset Sekatan Login',
-            'Menetapkan semula (reset) sekatan had log masuk untuk akaun: ' . $user['fullname']
+            'Reset Login Throttle',
+            'Reset login throttle restriction for account: ' . $user['fullname']
         );
 
-        return redirect()->to('users')->with('success', 'Sekatan percubaan log masuk untuk pengguna tersebut telah dibersihkan.');
+        return redirect()->to('users')->with('success', 'Login restriction for user has been cleared.');
     }
 }

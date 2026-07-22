@@ -4,10 +4,10 @@
 <div class="card-panel">
     <div class="card-panel-header py-3">
         <h5 class="card-panel-title">
-            <i class="bi bi-people-fill me-2 text-primary"></i>Pengurusan Pengguna
+            <i class="bi bi-people-fill me-2 text-primary"></i>User Management
         </h5>
         <a href="<?= base_url('users/create') ?>" class="btn btn-primary btn-sm shadow-sm">
-            <i class="bi bi-person-plus me-1"></i> Tambah Pengguna Baru
+            <i class="bi bi-person-plus me-1"></i> Add New User
         </a>
     </div>
     <div class="card-panel-body">
@@ -16,12 +16,12 @@
                 <thead class="table-light text-secondary">
                     <tr>
                         <th width="50" class="text-center">#</th>
-                        <th>Pengguna</th>
-                        <th>E-mel & Telefon</th>
-                        <th>Peranan (Role)</th>
+                        <th>User</th>
+                        <th>Email & Phone</th>
+                        <th>Role</th>
                         <th>Status</th>
-                        <th>Log Masuk Akhir</th>
-                        <th width="150" class="text-center">Tindakan</th>
+                        <th>Last Login</th>
+                        <th width="150" class="text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -56,7 +56,7 @@
                                 <?php if (!empty($user['phone'])): ?>
                                     <div class="text-secondary small"><i class="bi bi-telephone text-muted me-1"></i><?= esc($user['phone']) ?></div>
                                 <?php else: ?>
-                                    <div class="text-muted small italic">Tiada No. Telefon</div>
+                                    <div class="text-muted small italic">No Phone Number</div>
                                 <?php endif; ?>
                             </td>
                             
@@ -73,29 +73,29 @@
                             
                             <td>
                                 <?php if ((int)$user['is_active'] === 1): ?>
-                                    <span class="badge-status badge-status-success py-1">Aktif</span>
+                                    <span class="badge-status badge-status-success py-1">Active</span>
                                 <?php else: ?>
-                                    <span class="badge-status badge-status-danger py-1">Sekat (Inactive)</span>
+                                    <span class="badge-status badge-status-danger py-1">Inactive</span>
                                 <?php endif; ?>
                             </td>
                             
                             <td class="text-secondary small">
-                                <?= !empty($user['last_login']) ? date('d/m/Y h:i A', strtotime($user['last_login'])) : '<span class="text-muted italic">Belum Pernah</span>' ?>
+                                <?= !empty($user['last_login']) ? date('d/m/Y h:i A', strtotime($user['last_login'])) : '<span class="text-muted italic">Never</span>' ?>
                             </td>
                             
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-1">
-                                    <a href="<?= base_url('users/reset-throttle/' . $user['id']) ?>" class="btn-action btn-action-view" title="Reset Sekatan Login">
+                                    <a href="<?= base_url('users/reset-throttle/' . $user['id']) ?>" class="btn-action btn-action-view" title="Reset Login Restriction">
                                         <i class="bi bi-unlock"></i>
                                     </a>
                                     
-                                    <a href="<?= base_url('users/edit/' . $user['id']) ?>" class="btn-action btn-action-edit" title="Edit Profil">
+                                    <a href="<?= base_url('users/edit/' . $user['id']) ?>" class="btn-action btn-action-edit" title="Edit Profile">
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     
                                     <?php if ((int)$user['id'] !== (int)session('user_id')): ?>
                                         <button class="btn-action btn-action-delete" 
-                                                title="Padam" 
+                                                title="Delete" 
                                                 onclick="confirmDelete('<?= base_url('users/delete/' . $user['id']) ?>', '<?= esc($user['fullname']) ?>')">
                                             <i class="bi bi-trash"></i>
                                         </button>
@@ -118,15 +118,15 @@
 $(document).ready(function() {
     $('#usersTable').DataTable({
         language: {
-            url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/ms.json',
-            search: 'Cari Pengguna:',
-            lengthMenu: 'Papar _MENU_ rekod',
-            info: 'Menunjukkan _START_ hingga _END_ daripada _TOTAL_ pengguna',
-            paginate: { previous: 'Sebelum', next: 'Seterusnya' }
+            url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/en-GB.json',
+            search: 'Search Users:',
+            lengthMenu: 'Show _MENU_ entries',
+            info: 'Showing _START_ to _END_ of _TOTAL_ users',
+            paginate: { previous: 'Previous', next: 'Next' }
         },
         order: [[0, 'asc']], 
         pageLength: 10,
-        columnDefs: [{ orderable: false, targets: [1, 2, 6] }] // Kunci sort pada lajur Avatar, Info Hubungan, & Aksi
+        columnDefs: [{ orderable: false, targets: [1, 2, 6] }]
     });
 });
 </script>

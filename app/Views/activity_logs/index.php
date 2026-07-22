@@ -3,7 +3,7 @@
 
 <div class="card-panel">
     <div class="card-panel-header">
-        <h5 class="card-panel-title">Jejak Log Aktiviti Sistem</h5>
+        <h5 class="card-panel-title">System Activity Audit Logs</h5>
     </div>
     <div class="card-panel-body">
         <div class="table-responsive">
@@ -11,11 +11,11 @@
                 <thead class="table-light text-secondary">
                     <tr>
                         <th width="50" class="text-center">#</th>
-                        <th width="160">Tarikh & Masa</th>
-                        <th width="120">Pengguna</th>
-                        <th width="150">Tindakan</th>
-                        <th>Perincian / Deskripsi</th>
-                        <th width="130">Alamat IP</th>
+                        <th width="160">Date & Time</th>
+                        <th width="120">User</th>
+                        <th width="150">Action</th>
+                        <th>Details / Description</th>
+                        <th width="130">IP Address</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -28,12 +28,11 @@
                             </td>
                             <td>
                                 <?php
-                                // Letak warna badge mengikut jenis tindakan
                                 $badgeClass = 'bg-secondary';
                                 if (str_contains($log['action'], 'Masuk') || str_contains($log['action'], 'Login')) $badgeClass = 'bg-success';
                                 if (str_contains($log['action'], 'Padam') || str_contains($log['action'], 'Delete')) $badgeClass = 'bg-danger';
                                 if (str_contains($log['action'], 'Kemaskini') || str_contains($log['action'], 'Update')) $badgeClass = 'bg-warning text-dark';
-                                if (str_contains($log['action'], 'Tambah') || str_contains($log['action'], 'Create')) $badgeClass = 'bg-info text-dark';
+                                if (str_contains($log['action'], 'Tambah') || str_contains($log['action'], 'Create') || str_contains($log['action'], 'Add')) $badgeClass = 'bg-info text-dark';
                                 ?>
                                 <span class="badge <?= $badgeClass ?> small px-2 py-1"><?= esc($log['action']) ?></span>
                             </td>
@@ -54,18 +53,18 @@
     $(document).ready(function() {
         $('#logsTable').DataTable({
             language: {
-                url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/ms.json',
-                search: 'Cari:',
-                lengthMenu: 'Papar _MENU_ rekod',
-                info: 'Menunjukkan _START_ hingga _END_ daripada _TOTAL_ rekod',
+                url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/en-GB.json',
+                search: 'Search:',
+                lengthMenu: 'Show _MENU_ entries',
+                info: 'Showing _START_ to _END_ of _TOTAL_ entries',
                 paginate: {
-                    previous: 'Sebelum',
-                    next: 'Seterusnya'
+                    previous: 'Previous',
+                    next: 'Next'
                 }
             },
             order: [
                 [1, 'desc']
-            ], // Susun ikut tarikh & masa terbaru dahulu
+            ],
             pageLength: 10,
             columnDefs: [{
                 orderable: false,

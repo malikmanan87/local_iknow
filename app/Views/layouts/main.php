@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ms">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -92,7 +92,7 @@
 
     <!-- Footer -->
     <footer class="page-footer">
-        <span>&copy; <?= date('Y') ?> <?= $dynamicAppName ?? APP_NAME ?>. Hak cipta terpelihara.</span>
+        <span>&copy; <?= date('Y') ?> <?= $dynamicAppName ?? APP_NAME ?>. All rights reserved.</span>
     </footer>
 
 </div>

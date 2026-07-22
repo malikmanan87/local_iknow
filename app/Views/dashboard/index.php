@@ -6,9 +6,9 @@
     <div class="col-sm-6 col-xl-3">
         <div class="stat-card stat-card-primary">
             <div class="stat-info">
-                <span class="stat-label">Jumlah Pengguna</span>
+                <span class="stat-label">Total Users</span>
                 <span class="stat-value"><?= $totalUsers ?? 0 ?></span>
-                <span class="stat-change positive"><i class="bi bi-arrow-up-short"></i> 12% bulan ini</span>
+                <span class="stat-change positive"><i class="bi bi-arrow-up-short"></i> 12% this month</span>
             </div>
             <div class="stat-icon">
                 <i class="bi bi-people-fill"></i>
@@ -19,9 +19,9 @@
     <div class="col-sm-6 col-xl-3">
         <div class="stat-card stat-card-success">
             <div class="stat-info">
-                <span class="stat-label">Rekod Aktif</span>
+                <span class="stat-label">Active Records</span>
                 <span class="stat-value"><?= $activeRecords ?? 0 ?></span>
-                <span class="stat-change positive"><i class="bi bi-arrow-up-short"></i> 8% bulan ini</span>
+                <span class="stat-change positive"><i class="bi bi-arrow-up-short"></i> 8% this month</span>
             </div>
             <div class="stat-icon">
                 <i class="bi bi-check-circle-fill"></i>
@@ -32,9 +32,9 @@
     <div class="col-sm-6 col-xl-3">
         <div class="stat-card stat-card-warning">
             <div class="stat-info">
-                <span class="stat-label">Rekod Tertunda</span>
+                <span class="stat-label">Pending Records</span>
                 <span class="stat-value"><?= $pendingRecords ?? 0 ?></span>
-                <span class="stat-change negative"><i class="bi bi-arrow-down-short"></i> 3% bulan ini</span>
+                <span class="stat-change negative"><i class="bi bi-arrow-down-short"></i> 3% this month</span>
             </div>
             <div class="stat-icon">
                 <i class="bi bi-clock-fill"></i>
@@ -45,9 +45,9 @@
     <div class="col-sm-6 col-xl-3">
         <div class="stat-card stat-card-danger">
             <div class="stat-info">
-                <span class="stat-label">Perlu Tindakan</span>
+                <span class="stat-label">Action Needed</span>
                 <span class="stat-value"><?= $actionNeeded ?? 0 ?></span>
-                <span class="stat-change neutral"><i class="bi bi-dash"></i> Tiada perubahan</span>
+                <span class="stat-change neutral"><i class="bi bi-dash"></i> No change</span>
             </div>
             <div class="stat-icon">
                 <i class="bi bi-exclamation-triangle-fill"></i>
@@ -63,7 +63,7 @@
         <div class="card-panel">
             <div class="card-panel-header align-items-center py-3">
                 <h5 class="card-panel-title">
-                    <i class="bi bi-bar-chart-line-fill me-2 text-primary"></i>Statistik Bulanan
+                    <i class="bi bi-bar-chart-line-fill me-2 text-primary"></i>Monthly Statistics
                 </h5>
                 <div class="card-panel-actions">
                     <select class="form-select form-select-sm border-light-subtle shadow-sm" id="chartYearSelect" style="width:auto;">
@@ -88,10 +88,10 @@
         <div class="card-panel">
             <div class="card-panel-header py-3">
                 <h5 class="card-panel-title">
-                    <i class="bi bi-list-task me-2 text-primary"></i>Aktiviti Item Terkini
+                    <i class="bi bi-list-task me-2 text-primary"></i>Recent Item Activity
                 </h5>
                 <a href="<?= base_url('items') ?>" class="btn btn-sm btn-light border shadow-sm">
-                    Lihat Semua <i class="bi bi-arrow-right ms-1"></i>
+                    View All <i class="bi bi-arrow-right ms-1"></i>
                 </a>
             </div>
             <div class="card-panel-body p-0">
@@ -100,11 +100,11 @@
                         <thead class="table-light text-secondary">
                             <tr>
                                 <th width="60" class="text-center">#</th>
-                                <th>Nama Item</th>
-                                <th>Kategori</th>
+                                <th>Item Name</th>
+                                <th>Category</th>
                                 <th width="140" class="text-center">Status</th>
-                                <th width="140">Tarikh Kemasukan</th>
-                                <th width="120" class="text-center">Tindakan</th>
+                                <th width="140">Created Date</th>
+                                <th width="120" class="text-center">Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -126,9 +126,9 @@
                                     <td class="text-center">
                                         <?php
                                         $statusMap = [
-                                            'active'   => ['class' => 'badge-status-success', 'label' => 'Aktif'],
-                                            'inactive' => ['class' => 'badge-status-danger', 'label' => 'Tidak Aktif'],
-                                            'pending'  => ['class' => 'badge-status-warning', 'label' => 'Tertunda'],
+                                            'active'   => ['class' => 'badge-status-success', 'label' => 'Active'],
+                                            'inactive' => ['class' => 'badge-status-danger', 'label' => 'Inactive'],
+                                            'pending'  => ['class' => 'badge-status-warning', 'label' => 'Pending'],
                                         ];
                                         $status = $statusMap[$item['status'] ?? 'pending'] ?? $statusMap['pending'];
                                         ?>
@@ -142,7 +142,7 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center gap-1">
-                                            <a href="<?= base_url('items/show/' . $item['id']) ?>" class="btn-action btn-action-view" title="Lihat">
+                                            <a href="<?= base_url('items/show/' . $item['id']) ?>" class="btn-action btn-action-view" title="View">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             <a href="<?= base_url('items/edit/' . $item['id']) ?>" class="btn-action btn-action-edit" title="Edit">
@@ -157,7 +157,7 @@
                                     <td colspan="6" class="text-center py-5 text-muted">
                                         <div class="py-3">
                                             <i class="bi bi-inbox fs-1 d-block mb-3 text-muted" style="opacity: 0.5;"></i>
-                                            <span class="fw-medium">Tiada rekod item ditemui pada masa ini</span>
+                                            <span class="fw-medium">No item records found at this time</span>
                                         </div>
                                     </td>
                                 </tr>
@@ -176,21 +176,20 @@
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     
-    // Konfigurasi Carta Bulanan (Bar Chart)
     const ctx = document.getElementById('monthlyChart').getContext('2d');
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogs', 'Sep', 'Okt', 'Nov', 'Dis'],
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
             datasets: [{
-                label: 'Rekod Aktif',
+                label: 'Active Records',
                 data: [12, 19, 15, 25, 22, 30, 28, 35, 40, 38, 42, 50],
                 backgroundColor: 'rgba(99, 102, 241, 0.85)',
                 hoverBackgroundColor: 'rgba(99, 102, 241, 1)',
                 borderRadius: 4,
                 barPercentage: 0.5
             }, {
-                label: 'Rekod Selesai',
+                label: 'Completed Records',
                 data: [8, 15, 10, 20, 18, 25, 22, 30, 35, 32, 38, 45],
                 backgroundColor: 'rgba(16, 185, 129, 0.85)',
                 hoverBackgroundColor: 'rgba(16, 185, 129, 1)',

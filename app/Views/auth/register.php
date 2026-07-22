@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ms">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daftar Akaun Baru | <?= APP_NAME ?></title>
+    <title>Register New Account | <?= APP_NAME ?></title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
@@ -41,8 +41,8 @@
             <div class="register-logo mb-2">
                 <i class="bi bi-person-plus-fill"></i>
             </div>
-            <h4 class="fw-bold text-dark mb-1">Cipta Akaun Baru</h4>
-            <p class="text-muted small">Sila isi butiran di bawah untuk mendaftar sebagai tetamu sistem.</p>
+            <h4 class="fw-bold text-dark mb-1">Create New Account</h4>
+            <p class="text-muted small">Please fill in your details below to register.</p>
         </div>
 
         <?php if (session()->getFlashdata('errors')): ?>
@@ -66,66 +66,66 @@
             <?= csrf_field() ?>
 
             <div class="mb-3">
-                <label class="form-label small fw-semibold text-secondary">Nama Penuh</label>
+                <label class="form-label small fw-semibold text-secondary">Full Name</label>
                 <div class="input-group">
                     <span class="input-group-text bg-light text-muted"><i class="bi bi-person"></i></span>
                     <input type="text" class="form-control" name="fullname" 
-                           value="<?= old('fullname') ?>" placeholder="Masukkan nama penuh anda" required>
+                           value="<?= old('fullname') ?>" placeholder="Enter your full name" required>
                 </div>
             </div>
 
             <div class="mb-3">
-                <label class="form-label small fw-semibold text-secondary">Nama Pengguna (Username)</label>
+                <label class="form-label small fw-semibold text-secondary">Username</label>
                 <div class="input-group">
                     <span class="input-group-text bg-light text-muted">@</span>
                     <input type="text" class="form-control" name="username" 
-                           value="<?= old('username') ?>" placeholder="contoh: amir99" required>
+                           value="<?= old('username') ?>" placeholder="e.g. john99" required>
                 </div>
             </div>
 
             <div class="mb-3">
-                <label class="form-label small fw-semibold text-secondary">Alamat E-mel</label>
+                <label class="form-label small fw-semibold text-secondary">Email Address</label>
                 <div class="input-group">
                     <span class="input-group-text bg-light text-muted"><i class="bi bi-envelope"></i></span>
                     <input type="email" class="form-control" name="email" 
-                           value="<?= old('email') ?>" placeholder="nama@domain.com" required>
+                           value="<?= old('email') ?>" placeholder="name@domain.com" required>
                 </div>
             </div>
 
             <div class="mb-3">
-                <label class="form-label small fw-semibold text-secondary">No. Telefon <span class="text-muted text-xs">(Opsional)</span></label>
+                <label class="form-label small fw-semibold text-secondary">Phone Number <span class="text-muted text-xs">(Optional)</span></label>
                 <div class="input-group">
                     <span class="input-group-text bg-light text-muted"><i class="bi bi-telephone"></i></span>
                     <input type="text" class="form-control" name="phone" 
-                           value="<?= old('phone') ?>" placeholder="contoh: 0123456789">
+                           value="<?= old('phone') ?>" placeholder="e.g. 0123456789">
                 </div>
             </div>
 
             <div class="mb-3">
-                <label class="form-label small fw-semibold text-secondary">Kata Laluan</label>
+                <label class="form-label small fw-semibold text-secondary">Password</label>
                 <div class="input-group">
                     <span class="input-group-text bg-light text-muted"><i class="bi bi-lock"></i></span>
                     <input type="password" class="form-control" name="password" 
-                           placeholder="Minimum 6 aksara" required>
+                           placeholder="Minimum 6 characters" required>
                 </div>
             </div>
 
             <div class="mb-4">
-                <label class="form-label small fw-semibold text-secondary">Sahkan Kata Laluan</label>
+                <label class="form-label small fw-semibold text-secondary">Confirm Password</label>
                 <div class="input-group">
                     <span class="input-group-text bg-light text-muted"><i class="bi bi-shield-lock"></i></span>
                     <input type="password" class="form-control" name="password_confirm" 
-                           placeholder="Ulang semula kata laluan" required>
+                           placeholder="Repeat your password" required>
                 </div>
             </div>
 
             <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm mb-3">
-                <i class="bi bi-clipboard-check me-1"></i> Daftar Akaun
+                <i class="bi bi-clipboard-check me-1"></i> Register Account
             </button>
 
             <div class="text-center mt-2 border-top pt-3">
-                <span class="text-muted small">Sudah mempunyai akaun?</span>
-                <a href="<?= base_url('login') ?>" class="small text-decoration-none fw-semibold ms-1">Log Masuk</a>
+                <span class="text-muted small">Already have an account?</span>
+                <a href="<?= base_url('login') ?>" class="small text-decoration-none fw-semibold ms-1">Sign In</a>
             </div>
         </form>
 

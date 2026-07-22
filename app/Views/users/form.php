@@ -7,10 +7,10 @@
             <div class="card-panel-header py-3">
                 <h5 class="card-panel-title">
                     <i class="bi bi-person-plus-fill me-2 text-primary"></i>
-                    <?= isset($user) ? 'Kemaskini Maklumat Pengguna' : 'Daftar Pengguna Baru' ?>
+                    <?= isset($user) ? 'Edit User Information' : 'Register New User' ?>
                 </h5>
                 <a href="<?= base_url('users') ?>" class="btn btn-light btn-sm border">
-                    <i class="bi bi-arrow-left me-1"></i> Kembali
+                    <i class="bi bi-arrow-left me-1"></i> Back
                 </a>
             </div>
 
@@ -32,7 +32,7 @@
                     <div class="row g-3">
 
                         <div class="col-md-12 mb-3 text-center">
-                            <label class="form-label d-block fw-semibold text-secondary">Foto Profil (Avatar)</label>
+                            <label class="form-label d-block fw-semibold text-secondary">Profile Photo (Avatar)</label>
                             <div class="mb-3">
                                 <?php if (!empty($user['avatar']) && file_exists(FCPATH . 'uploads/avatars/' . $user['avatar'])): ?>
                                     <img src="<?= base_url('uploads/avatars/' . $user['avatar']) ?>"
@@ -51,24 +51,24 @@
                                     class="form-control form-control-sm <?= isset(session()->getFlashdata('errors')['avatar']) ? 'is-invalid' : '' ?>"
                                     name="avatar"
                                     accept="image/png, image/jpeg, image/jpg">
-                                <small class="text-muted d-block mt-1 text-xs">Format: JPG, JPEG, PNG (Maksimum 2MB)</small>
+                                <small class="text-muted d-block mt-1 text-xs">Format: JPG, JPEG, PNG (Maximum 2MB)</small>
                             </div>
                         </div>
 
                         <hr class="my-2 text-muted">
 
                         <div class="col-md-12">
-                            <label for="fullname" class="form-label fw-medium text-secondary">Nama Penuh <span class="text-danger">*</span></label>
+                            <label for="fullname" class="form-label fw-medium text-secondary">Full Name <span class="text-danger">*</span></label>
                             <input type="text"
                                 class="form-control <?= isset(session()->getFlashdata('errors')['fullname']) ? 'is-invalid' : '' ?>"
                                 id="fullname"
                                 name="fullname"
                                 value="<?= old('fullname', $user['fullname'] ?? '') ?>"
-                                placeholder="Masukkan nama penuh seperti dalam KP" required>
+                                placeholder="Enter full name" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label for="username" class="form-label fw-medium text-secondary">Nama Pengguna (Username) <span class="text-danger">*</span></label>
+                            <label for="username" class="form-label fw-medium text-secondary">Username <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light text-muted">@</span>
                                 <input type="text"
@@ -76,34 +76,34 @@
                                     id="username"
                                     name="username"
                                     value="<?= old('username', $user['username'] ?? '') ?>"
-                                    placeholder="contoh: amir_99" required>
+                                    placeholder="e.g. john_99" required>
                             </div>
                         </div>
 
                         <div class="col-md-6">
-                            <label for="email" class="form-label fw-medium text-secondary">Alamat E-mel <span class="text-danger">*</span></label>
+                            <label for="email" class="form-label fw-medium text-secondary">Email Address <span class="text-danger">*</span></label>
                             <input type="email"
                                 class="form-control <?= isset(session()->getFlashdata('errors')['email']) ? 'is-invalid' : '' ?>"
                                 id="email"
                                 name="email"
                                 value="<?= old('email', $user['email'] ?? '') ?>"
-                                placeholder="nama@sistem.my" required>
+                                placeholder="name@domain.com" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label for="phone" class="form-label fw-medium text-secondary">No. Telefon</label>
+                            <label for="phone" class="form-label fw-medium text-secondary">Phone Number</label>
                             <input type="text"
                                 class="form-control <?= isset(session()->getFlashdata('errors')['phone']) ? 'is-invalid' : '' ?>"
                                 id="phone"
                                 name="phone"
                                 value="<?= old('phone', $user['phone'] ?? '') ?>"
-                                placeholder="Contoh: 0123456789">
+                                placeholder="e.g. 0123456789">
                         </div>
 
                         <div class="col-md-6">
-                            <label for="role_id" class="form-label fw-medium text-secondary">Peranan Sistem <span class="text-danger">*</span></label>
+                            <label for="role_id" class="form-label fw-medium text-secondary">System Role <span class="text-danger">*</span></label>
                             <select class="form-select <?= isset(session()->getFlashdata('errors')['role_id']) ? 'is-invalid' : '' ?>" id="role_id" name="role_id" required>
-                                <option value="" disabled selected>-- Pilih Peranan --</option>
+                                <option value="" disabled selected>-- Select Role --</option>
                                 <?php foreach ($roles as $role): ?>
                                     <option value="<?= $role['id'] ?>" <?= old('role_id', $user['role_id'] ?? '') == $role['id'] ? 'selected' : '' ?>>
                                         <?= esc($role['display_name']) ?> (<?= esc($role['name']) ?>)
@@ -114,14 +114,14 @@
 
                         <div class="col-md-12">
                             <label for="password" class="form-label fw-medium text-secondary">
-                                Kata Laluan
-                                <?= isset($user) ? '<span class="text-muted small">(Biarkan kosong jika tidak mahu tukar)</span>' : '<span class="text-danger">*</span>' ?>
+                                Password
+                                <?= isset($user) ? '<span class="text-muted small">(Leave blank to keep unchanged)</span>' : '<span class="text-danger">*</span>' ?>
                             </label>
                             <input type="password"
                                 class="form-control <?= isset(session()->getFlashdata('errors')['password']) ? 'is-invalid' : '' ?>"
                                 id="password"
                                 name="password"
-                                placeholder="<?= isset($user) ? 'Masukkan kata laluan baharu' : 'Minimum 6 aksara' ?>"
+                                placeholder="<?= isset($user) ? 'Enter new password' : 'Minimum 6 characters' ?>"
                                 <?= isset($user) ? '' : 'required' ?>>
                         </div>
 
@@ -134,18 +134,18 @@
                                     value="1"
                                     <?= old('is_active', $user['is_active'] ?? 1) == 1 ? 'checked' : '' ?>>
                                 <div>
-                                    <label class="form-check-label fw-semibold text-dark mb-0 d-block" for="is_active">Aktifkan Akaun Pengguna</label>
-                                    <small class="text-muted">Jika dinyahaktifkan, pengguna ini tidak akan dibenarkan log masuk ke dalam sistem.</small>
+                                    <label class="form-check-label fw-semibold text-dark mb-0 d-block" for="is_active">Activate User Account</label>
+                                    <small class="text-muted">If deactivated, this user will not be allowed to log into the system.</small>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="mt-4 pt-3 border-top d-flex justify-content-end gap-2">
-                        <a href="<?= base_url('users') ?>" class="btn btn-light border px-4">Batal</a>
+                        <a href="<?= base_url('users') ?>" class="btn btn-light border px-4">Cancel</a>
                         <button type="submit" class="btn btn-primary px-4">
                             <i class="bi bi-check-circle me-1"></i>
-                            <?= isset($user) ? 'Simpan Perubahan' : 'Daftar Pengguna' ?>
+                            <?= isset($user) ? 'Save Changes' : 'Register User' ?>
                         </button>
                     </div>
                 </form>

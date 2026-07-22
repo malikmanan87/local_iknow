@@ -22,7 +22,7 @@
                 if ($isMaintenance === 1 && session()->get('role') === 'admin'): 
             ?>
                 <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 small">
-                    <i class="bi bi-wrench-adjustable me-1"></i> Mod Penyelenggaraan Aktif
+                    <i class="bi bi-wrench-adjustable me-1"></i> Maintenance Mode Active
                 </span>
             <?php endif; ?>
 
@@ -49,7 +49,7 @@
                     <?php endif; ?>
 
                     <span class="fw-medium text-dark d-none d-md-inline-block small me-1">
-                        <?= esc(explode(' ', session()->get('fullname') ?? 'Pengguna')[0]) ?>
+                        <?= esc(explode(' ', session()->get('fullname') ?? 'User')[0]) ?>
                     </span>
                 </button>
                 
@@ -69,7 +69,7 @@
                                 </div>
                             <?php endif; ?>
                         </div>
-                        <div class="fw-bold text-dark text-truncate small"><?= esc(session()->get('fullname') ?? 'Nama Pengguna') ?></div>
+                        <div class="fw-bold text-dark text-truncate small"><?= esc(session()->get('fullname') ?? 'User Name') ?></div>
                         <div class="text-muted text-xs text-truncate">@<?= esc(session()->get('username') ?? 'username') ?></div>
                         <span class="badge bg-dark text-white text-xs mt-1 px-2 py-0.5" style="font-size: 0.7rem;">
                             <?= strtoupper(esc(session()->get('role') ?? 'User')) ?>
@@ -79,7 +79,7 @@
                     <li>
                         <a class="dropdown-item py-2 rounded-2 d-flex align-items-center text-secondary-hover" href="<?= base_url('profile') ?>">
                             <i class="bi bi-person me-2 text-primary fs-5"></i> 
-                            <span>Profil Saya</span>
+                            <span>My Profile</span>
                         </a>
                     </li>
                     
@@ -87,7 +87,7 @@
                         <li>
                             <a class="dropdown-item py-2 rounded-2 d-flex align-items-center" href="<?= base_url('settings') ?>">
                                 <i class="bi bi-gear me-2 text-secondary fs-5"></i> 
-                                <span>Tetapan Sistem</span>
+                                <span>System Settings</span>
                             </a>
                         </li>
                     <?php endif; ?>
@@ -97,7 +97,7 @@
                     <li>
                         <a class="dropdown-item py-2 rounded-2 text-danger d-flex align-items-center bg-danger-hover" href="<?= base_url('logout') ?>">
                             <i class="bi bi-box-arrow-right me-2 fs-5"></i> 
-                            <span class="fw-semibold">Log Keluar</span>
+                            <span class="fw-semibold">Logout</span>
                         </a>
                     </li>
                 </ul>

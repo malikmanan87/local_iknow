@@ -18,10 +18,10 @@ class ReportsController extends BaseController
     public function index()
     {
         return view('reports/index', [
-            'pageTitle'  => 'Laporan Sistem',
-            'breadcrumb' => ['Laporan'],
+            'pageTitle'  => 'System Reports',
+            'breadcrumb' => ['Reports'],
             'categories' => $this->itemModel->getUniqueCategories(),
-            'reportData' => null, // Belum dijana
+            'reportData' => null,
             'filters'    => []
         ]);
     }
@@ -34,10 +34,8 @@ class ReportsController extends BaseController
         $category  = $this->request->getPost('category');
         $status    = $this->request->getPost('status');
 
-        // Jana data laporan berdasarkan penapis input
         $reportData = $this->itemModel->generateReport($startDate, $endDate, $category, $status);
 
-        // Kira ringkasan statistik ringkas hasil tapis
         $summary = [
             'total'    => count($reportData),
             'active'   => count(array_filter($reportData, fn($i) => $i['status'] === 'active')),
@@ -46,8 +44,8 @@ class ReportsController extends BaseController
         ];
 
         return view('reports/index', [
-            'pageTitle'  => 'Laporan Sistem',
-            'breadcrumb' => ['Laporan'],
+            'pageTitle'  => 'System Reports',
+            'breadcrumb' => ['Reports'],
             'categories' => $this->itemModel->getUniqueCategories(),
             'reportData' => $reportData,
             'summary'    => $summary,
