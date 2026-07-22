@@ -27,6 +27,7 @@ class CreateStarterTables extends Migration
             'username'     => ['type' => 'VARCHAR', 'constraint' => 50, 'unique' => true],
             'email'        => ['type' => 'VARCHAR', 'constraint' => 150, 'unique' => true],
             'phone'        => ['type' => 'VARCHAR', 'constraint' => 20, 'null' => true],
+            'avatar'       => ['type' => 'VARCHAR', 'constraint' => 255, 'null' => true],
             'password'     => ['type' => 'VARCHAR', 'constraint' => 255],
             'role_id'      => ['type' => 'INT'],
             'is_active'    => ['type' => 'TINYINT', 'constraint' => 1, 'default' => 1],
