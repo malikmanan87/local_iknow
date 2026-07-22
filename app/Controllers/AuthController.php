@@ -86,7 +86,7 @@ class AuthController extends BaseController
             'username'   => $user['username'],
             'role'       => $user['role_name'] ?? 'user',
             'role_id'    => $user['role_id'],
-            'avatar'     => $user['avatar']
+            'avatar'     => $user['avatar'] ?? null
         ]);
 
         $this->userModel->update($user['id'], ['last_login' => date('Y-m-d H:i:s')]);
