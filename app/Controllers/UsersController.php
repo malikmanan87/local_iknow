@@ -4,10 +4,12 @@ namespace App\Controllers;
 
 use App\Models\UserModel;
 use App\Models\RoleModel;
-use App\Models\ActivityLogModel; // Memuatkan Model Log Aktiviti
+use App\Traits\LoggableTrait;
 
 class UsersController extends BaseController
 {
+    use LoggableTrait;
+
     protected UserModel $userModel;
     protected RoleModel $roleModel;
 
@@ -98,7 +100,7 @@ class UsersController extends BaseController
 
         $this->userModel->insert($data);
 
-        \App\Models\ActivityLogModel::log('Add User', 'Registered new user: @' . $data['username'] . ' [Status: ' . ($isActive ? 'Active' : 'Inactive') . ']');
+        $this->logActivity('Add User', 'Registered new user: @' . $data['username'] . ' [Status: ' . ($isActive ? 'Active' : 'Inactive') . ']');
 
         return redirect()->to('users')->with('success', 'New user successfully registered.');
     }
@@ -191,7 +193,7 @@ class UsersController extends BaseController
             ]);
         }
 
-        \App\Models\ActivityLogModel::log('Update User', 'Updated user data for ID: ' . $id . ' [Status: ' . ($isActive ? 'Active' : 'Inactive') . ']');
+        $this->logActivity('Update User', 'Updated user data for ID: ' . $id . ' [Status: ' . ($isActive ? 'Active' : 'Inactive') . ']');
 
         return redirect()->to('users')->with('success', 'User details updated successfully.');
     }
@@ -212,7 +214,7 @@ class UsersController extends BaseController
 
         $this->userModel->delete($id);
 
-        ActivityLogModel::log(
+        $this->logActivity(
             'Delete User',
             'Soft deleted user: "' . $user['fullname'] . '" (@' . $user['username'] . ') (ID: ' . $id . ')'
         );
@@ -237,7 +239,7 @@ class UsersController extends BaseController
             $this->userModel->update($id, ['is_active' => 1]);
         }
 
-        ActivityLogModel::log(
+        $this->logActivity(
             'Reset Login Throttle',
             'Reset login throttle restriction for account: ' . $user['fullname']
         );

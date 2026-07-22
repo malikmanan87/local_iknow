@@ -2,24 +2,26 @@
 
 namespace App\Controllers;
 
+use App\Traits\LoggableTrait;
+
 class SettingsController extends BaseController
 {
+    use LoggableTrait;
+
     public function __construct()
     {
         helper(['form', 'url']);
     }
 
     // ----------------------------------------------------------------
-    // GET /settings (Paparan Borang Tetapan)
+    // GET /settings (Display Settings Form)
     // ----------------------------------------------------------------
     public function index()
     {
         $db = \Config\Database::connect();
         
-        // Mengambil semua data tetapan daripada pangkalan data
         $settingsData = $db->table('settings')->get()->getResultArray();
         
-        // Menukarkan struktur tatasusunan (array) kepada format key => value mudahan
         $settings = [];
         foreach ($settingsData as $row) {
             $settings[$row['key']] = $row['value'];
@@ -33,7 +35,7 @@ class SettingsController extends BaseController
     }
 
     // ----------------------------------------------------------------
-    // POST /settings/update (Process Save Settings)
+    // POST /settings/update (Process Save Settings with DB Transaction)
     // ----------------------------------------------------------------
     public function update()
     {
@@ -44,6 +46,8 @@ class SettingsController extends BaseController
             'system_email', 'email_protocol', 'smtp_host', 'smtp_port',
             'login_attempts', 'session_timeout'
         ];
+
+        $db->transStart();
 
         foreach ($allowedKeys as $key) {
             $value = $this->request->getPost($key);
@@ -57,6 +61,14 @@ class SettingsController extends BaseController
         $db->table('settings')
            ->where('key', 'maintenance_mode')
            ->update(['value' => $maintenanceMode, 'updated_at' => date('Y-m-d H:i:s')]);
+
+        $db->transComplete();
+
+        if ($db->transStatus() === false) {
+            return redirect()->to('settings')->with('error', 'Failed to update system settings due to a database error.');
+        }
+
+        $this->logActivity('Update Settings', 'System configurations updated by administrator.');
 
         return redirect()->to('settings')->with('success', 'System settings saved successfully.');
     }

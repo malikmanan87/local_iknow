@@ -3,10 +3,12 @@
 namespace App\Controllers;
 
 use App\Models\ItemModel;
-use App\Models\ActivityLogModel; // Memuatkan Model Log Aktiviti
+use App\Traits\LoggableTrait;
 
 class ItemsController extends BaseController
 {
+    use LoggableTrait;
+
     protected ItemModel $itemModel;
 
     public function __construct()
@@ -63,7 +65,7 @@ class ItemsController extends BaseController
 
         $this->itemModel->insert($data);
 
-        ActivityLogModel::log(
+        $this->logActivity(
             'Add Item',
             'Added new item: "' . $data['name'] . '" under category: ' . ($data['category'] ?: 'No Category')
         );
@@ -135,7 +137,7 @@ class ItemsController extends BaseController
 
         $this->itemModel->update($id, $data);
 
-        ActivityLogModel::log(
+        $this->logActivity(
             'Update Item',
             'Updated item information (ID: ' . $id . '). Original name: "' . $item['name'] . '" -> New name: "' . $data['name'] . '"'
         );
@@ -155,7 +157,7 @@ class ItemsController extends BaseController
 
         $this->itemModel->delete($id);
 
-        ActivityLogModel::log(
+        $this->logActivity(
             'Delete Item',
             'Deleted item from system: "' . $item['name'] . '" (ID: ' . $id . ')'
         );

@@ -3,10 +3,12 @@
 namespace App\Controllers;
 
 use App\Models\RoleModel;
-use App\Models\ActivityLogModel; // Memuatkan Model Log Aktiviti
+use App\Traits\LoggableTrait;
 
 class RolesController extends BaseController
 {
+    use LoggableTrait;
+
     protected RoleModel $roleModel;
 
     public function __construct()
@@ -62,7 +64,7 @@ class RolesController extends BaseController
 
         $this->roleModel->insert($data);
 
-        ActivityLogModel::log(
+        $this->logActivity(
             'Add Role',
             'Created new role: "' . $data['display_name'] . '" with code: ' . $data['name']
         );
@@ -120,7 +122,7 @@ class RolesController extends BaseController
 
         $this->roleModel->update($id, $data);
 
-        ActivityLogModel::log(
+        $this->logActivity(
             'Update Role',
             'Updated role configuration (ID: ' . $id . '). Display name changed to: "' . $data['display_name'] . '"'
         );
@@ -144,7 +146,7 @@ class RolesController extends BaseController
 
         $this->roleModel->delete($id);
 
-        ActivityLogModel::log(
+        $this->logActivity(
             'Delete Role',
             'Permanently deleted system role: "' . $role['display_name'] . '" (Code: ' . $role['name'] . ') (ID: ' . $id . ')'
         );

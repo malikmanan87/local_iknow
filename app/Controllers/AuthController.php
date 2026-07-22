@@ -3,10 +3,12 @@
 namespace App\Controllers;
 
 use App\Models\UserModel;
-use App\Models\ActivityLogModel; // Memuatkan Model Log Aktiviti
+use App\Traits\LoggableTrait;
 
 class AuthController extends BaseController
 {
+    use LoggableTrait;
+
     protected UserModel $userModel;
 
     public function __construct()
@@ -92,7 +94,7 @@ class AuthController extends BaseController
         $this->userModel->update($user['id'], ['last_login' => date('Y-m-d H:i:s')]);
 
         // Record Log
-        ActivityLogModel::log('User Login', 'User successfully logged into the system.');
+        $this->logActivity('User Login', 'User successfully logged into the system.');
 
         return redirect()->to('dashboard')->with('success', 'Welcome back, ' . $user['fullname'] . '!');
     }
@@ -143,7 +145,7 @@ class AuthController extends BaseController
         $db->table('users')->insert($data);
 
         // Record Activity Log
-        ActivityLogModel::log('Public Registration', 'New guest account registered with username: @' . $data['username']);
+        $this->logActivity('Public Registration', 'New guest account registered with username: @' . $data['username']);
 
         return redirect()->to('login')->with('success', 'Your account has been successfully created! Please log in with your email and password.');
     }
@@ -159,7 +161,7 @@ class AuthController extends BaseController
     public function logout()
     {
         if (session()->get('isLoggedIn')) {
-            ActivityLogModel::log('User Logout', 'User logged out of the system.');
+            $this->logActivity('User Logout', 'User logged out of the system.');
         }
         session()->destroy();
         return redirect()->to('login');

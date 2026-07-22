@@ -10,16 +10,14 @@ class AuthFilter implements FilterInterface
 {
     public function before(RequestInterface $request, $arguments = null)
     {
-        // Mendapatkan laluan URI semasa (cth: 'login', 'register', 'dashboard')
+        // Get current URI path
         $currentURI = $request->getUri()->getPath();
-
-        // Bersihkan tanda herotan '/' di awal dan akhir string untuk ketepatan semakan
         $currentURI = trim($currentURI, '/');
 
-        // Senarai laluan terbukan yang DIKECUALIKAN daripada sebarang sekatan (Login, Register & Public Home)
+        // List of public open URIs exempt from authentication check
         $excludedURIs = ['login', 'logout', 'register', 'register/process', ''];
 
-        // 1. SEMAK MOD PENYELENGGARAAN (MAINTENANCE MODE)
+        // 1. CHECK MAINTENANCE MODE
         try {
             $db = \Config\Database::connect();
             $maintenanceQuery = $db->table('settings')->where('key', 'maintenance_mode')->get()->getRow();
@@ -29,41 +27,39 @@ class AuthFilter implements FilterInterface
                 $userRole   = session()->get('role');
                 $isLoggedIn = session()->get('isLoggedIn');
 
-                // Jika mod penyelenggaraan aktif dan pengguna BUKAN admin, sekat semua kecuali halaman terbuka
+                // If maintenance mode is enabled and user is NOT admin, restrict access
                 if ($userRole !== 'admin') {
                     if (!in_array($currentURI, $excludedURIs)) {
 
-                        // Jika mereka sedia login sebagai user biasa, tarik balik sesi log masuk mereka
                         if ($isLoggedIn) {
                             session()->remove(['isLoggedIn', 'user_id', 'fullname', 'email', 'username', 'role', 'role_id']);
                         }
 
                         return redirect()->to(base_url('login'))
-                            ->with('error', 'Sistem sedang diselenggara buat sementara waktu. Sila cuba lagi lewat.');
+                            ->with('error', 'The system is currently undergoing maintenance. Please try again later.');
                     }
                 }
             }
         } catch (\Exception $e) {
-            // Abaikan jika pangkalan data belum sedia sewaktu migrasi awal dijalankan
+            // Gracefully ignore if database connection is not ready during initial setup
         }
 
-        // 2. LOGIK AUTHENTICATION & SEKATAN LOGIN BIASA
-        // Jika pengguna cuba mengakses halaman dalaman (protected), mereka wajib login dahulu.
+        // 2. AUTHENTICATION & ACCESS CONTROL
         if (!in_array($currentURI, $excludedURIs)) {
 
             if (!session()->get('isLoggedIn')) {
                 return redirect()->to(base_url('login'))
-                    ->with('error', 'Sila log masuk untuk mengakses halaman ini.');
+                    ->with('error', 'Please log in to access this page.');
             }
 
-            // Role-based access control (Sekatan berdasarkan Arguments di Routes)
+            // Role-Based Access Control (RBAC route argument check)
             if (!empty($arguments)) {
                 $requiredRoles = $arguments;
                 $userRole      = session()->get('role');
 
                 if (!in_array($userRole, $requiredRoles)) {
                     return redirect()->to(base_url('dashboard'))
-                        ->with('error', 'Anda tidak mempunyai kebenaran untuk mengakses halaman ini.');
+                        ->with('error', 'You do not have permission to access this page.');
                 }
             }
         }
@@ -71,6 +67,6 @@ class AuthFilter implements FilterInterface
 
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
     {
-        // Tidak diperlukan buat masa ini
+        // Not required
     }
 }
