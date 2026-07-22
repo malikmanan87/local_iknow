@@ -149,6 +149,16 @@ class UsersController extends BaseController
         // 🚀 LOGIK SUIS AKTIF/NYAHAKTIF:
         $isActive = $this->request->getPost('is_active') ? 1 : 0;
 
+        // Halang pengguna daripada menyahaktifkan atau menukar peranan akaun sendiri
+        if ((int)session('user_id') === $id) {
+            if ($isActive === 0) {
+                return redirect()->back()->withInput()->with('error', 'Anda tidak boleh menyahaktifkan akaun anda sendiri.');
+            }
+            if ((int)$this->request->getPost('role_id') !== (int)$user['role_id']) {
+                return redirect()->back()->withInput()->with('error', 'Anda tidak boleh menukar peranan akaun anda sendiri.');
+            }
+        }
+
         $data = [
             'fullname'  => $this->request->getPost('fullname'),
             'username'  => strtolower($this->request->getPost('username')),

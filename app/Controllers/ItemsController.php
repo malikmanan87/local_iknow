@@ -77,18 +77,10 @@ class ItemsController extends BaseController
     // ----------------------------------------------------------------
     public function show(int $id)
     {
-        // Ambil data item berserta maklumat pencipta jika ada
-        $item = $this->itemModel->getItemsWithUser() ?
-            array_filter($this->itemModel->getItemsWithUser(), fn($i) => (int)$i['id'] === $id) :
-            $this->itemModel->find($id);
-
-        // Jika array_filter digunakan, reset key array
-        if (is_array($item) && !isset($item['id'])) {
-            $item = current($item);
-        }
+        $item = $this->itemModel->getItemWithUser($id);
 
         if (!$item) {
-            return redirect()->to('dashboard')->with('error', 'Item tidak ditemui.');
+            return redirect()->to('items')->with('error', 'Item tidak ditemui.');
         }
 
         return view('items/show', [

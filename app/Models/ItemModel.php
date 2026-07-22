@@ -41,6 +41,19 @@ class ItemModel extends Model
     }
 
     // ----------------------------------------------------------------
+    // Mendapatkan 1 item spesifik berserta nama penuh pencipta
+    // ----------------------------------------------------------------
+    public function getItemWithUser(int $id): ?array
+    {
+        return $this->db->table('items i')
+            ->select('i.*, u.fullname AS creator_name')
+            ->join('users u', 'u.id = i.created_by', 'left')
+            ->where('i.id', $id)
+            ->get()
+            ->getRowArray();
+    }
+
+    // ----------------------------------------------------------------
     // KEMASKINI: Memulangkan list 1D kategori unik untuk dropdown Laporan
     // ----------------------------------------------------------------
     public function getUniqueCategories(): array
