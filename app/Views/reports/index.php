@@ -8,13 +8,6 @@
         </h4>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb small mb-0">
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="fw-bold text-dark mb-1">
-            <i class="bi bi-file-earmark-bar-graph-fill text-primary me-2"></i><?= esc($pageTitle) ?>
-        </h4>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb small mb-0">
                 <li class="breadcrumb-item"><a href="<?= base_url('dashboard') ?>" class="text-decoration-none">Home</a></li>
                 <li class="breadcrumb-item active" aria-current="page">System Reports</li>
             </ol>
