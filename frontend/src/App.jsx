@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import ModuleDetail from './pages/ModuleDetail';
 import AddModuleModal from './components/AddModuleModal';
+import GhopAiWidget from './components/GhopAiWidget';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -36,7 +37,7 @@ export default function App() {
         setActiveTab={handleBackToDashboard}
       />
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem', paddingBottom: '5rem' }}>
         {activeTab === 'dashboard' ? (
           <Dashboard 
             key={refreshTrigger}
@@ -62,6 +63,9 @@ export default function App() {
           }}
         />
       )}
+
+      {/* Floating Bottom-Right GHOP AI Assistant Avatar */}
+      <GhopAiWidget />
     </div>
   );
 }

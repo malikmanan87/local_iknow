@@ -69,3 +69,16 @@ export const updateIssue = (id, data) => api.put('/issues/' + id, data);
 export const updateContact = (id, data) => api.put('/contacts/' + id, data);
 export const searchSystem = (q) => api.get('/search', { params: { q } });
 
+export const getGhopStatus = () => api.get('/ghop/status');
+export const chatGhop = (question) => api.post('/ghop/chat', { question });
+export const uploadGhopPdf = (data) => {
+  if (data instanceof FormData) {
+    return axios.post(API_BASE_URL + '/ghop/upload-pdf', data, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  }
+  return api.post('/ghop/upload-pdf', data);
+};
+export const deleteGhopPolicy = (id) => api.delete('/ghop/policies/' + id);
+
+
