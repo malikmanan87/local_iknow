@@ -72,10 +72,4 @@ $routes->group('api', function($routes) {
 
     // Global Search
     $routes->get('search', 'Api\SearchController::index');
-
-    // GHOP AI Assistant & PDF Management
-    $routes->get('ghop/status', 'Api\GhopController::index');
-    $routes->post('ghop/chat', 'Api\GhopController::chat');
-    $routes->post('ghop/upload-pdf', 'Api\GhopController::uploadPdf');
-    $routes->delete('ghop/policies/(:num)', 'Api\GhopController::deletePolicy/$1');
 });
