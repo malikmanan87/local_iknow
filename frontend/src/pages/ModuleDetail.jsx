@@ -507,7 +507,7 @@ export default function ModuleDetail({ moduleId, onBack }) {
           moduleId={moduleId} 
           submodules={submodules}
           defaultSubmoduleId={activeItemModal.submoduleId}
-          nextStepNumber={flows.length + 1}
+          nextStepNumber={(flows.filter(f => activeItemModal && (activeItemModal.submoduleId === null ? !f.submodule_id : f.submodule_id == activeItemModal.submoduleId)).length) + 1}
           onClose={() => setActiveItemModal(null)} 
           onSuccess={fetchDetail} 
         />
