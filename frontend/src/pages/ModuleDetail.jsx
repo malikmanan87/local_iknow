@@ -12,9 +12,8 @@ export default function ModuleDetail({ moduleId, onBack }) {
   const [loading, setLoading] = useState(true);
 
   // Modal controls
-  const [activeSubModal, setActiveSubModal] = useState(null); // { parentId, parentTitle, initialData }
-  const [editItemModal, setEditItemModal] = useState(null); // { type: 'flow'|'issue'|'contact', data: {} } // { parentId: null|id, parentTitle: '' }
-  const [activeItemModal, setActiveItemModal] = useState(null); // { type: 'flow'|'issue'|'contact', submoduleId: null }
+  const [activeSubModal, setActiveSubModal] = useState(null); // { parentId: null|id, parentTitle: '', initialData: null }
+  const [activeItemModal, setActiveItemModal] = useState(null); // { type: 'flow'|'issue'|'contact', submoduleId: null, initialData: null }
   const [lightboxImage, setLightboxImage] = useState(null);
 
   // Tab selection state: { [submoduleId_or_'main']: 'flows'|'issues'|'contacts' }
@@ -168,10 +167,14 @@ export default function ModuleDetail({ moduleId, onBack }) {
                         <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#fff', marginBottom: '0.3rem' }}>
                           {f.step_title}
                         </h4>
-                        <button className="btn btn-secondary" onClick={() => setEditItemModal({ type: 'flow', data: f })} style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem', marginRight: '0.3rem' }} title="Kemaskini Flow"><Pencil size={13} /></button>
-                        <button className="btn btn-danger" onClick={() => handleDeleteFlow(f.id)} style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem' }}>
-                          <Trash2 size={13} />
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.3rem' }}>
+                          <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'flow', submoduleId: f.submodule_id, initialData: f })} style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem' }} title="Kemaskini Flow">
+                            <Pencil size={13} />
+                          </button>
+                          <button className="btn btn-danger" onClick={() => handleDeleteFlow(f.id)} style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem' }}>
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       </div>
 
                       <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '0.6rem' }}>
@@ -218,10 +221,14 @@ export default function ModuleDetail({ moduleId, onBack }) {
                         </h4>
                       </div>
 
-                      <button className="btn btn-secondary" onClick={() => setEditItemModal({ type: 'issue', data: issue })} style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem', marginRight: '0.3rem' }} title="Kemaskini Isu"><Pencil size={13} /></button>
-                    <button className="btn btn-danger" onClick={() => handleDeleteIssue(issue.id)} style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem' }}>
-                        <Trash2 size={13} />
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.3rem' }}>
+                        <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'issue', submoduleId: issue.submodule_id, initialData: issue })} style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem' }} title="Kemaskini Isu">
+                          <Pencil size={13} />
+                        </button>
+                        <button className="btn btn-danger" onClick={() => handleDeleteIssue(issue.id)} style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem' }}>
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </div>
 
                     {issue.symptoms && (
@@ -286,10 +293,14 @@ export default function ModuleDetail({ moduleId, onBack }) {
                     <div key={c.id} className="glass-card" style={{ padding: '1.25rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
                         <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#fff' }}>{c.name}</h4>
-                        <button className="btn btn-secondary" onClick={() => setEditItemModal({ type: 'contact', data: c })} style={{ padding: '0.15rem 0.35rem', fontSize: '0.75rem', marginRight: '0.3rem' }} title="Kemaskini PIC"><Pencil size={12} /></button>
-                        <button className="btn btn-danger" onClick={() => handleDeleteContact(c.id)} style={{ padding: '0.15rem 0.35rem', fontSize: '0.75rem' }}>
-                          <Trash2 size={12} />
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.3rem' }}>
+                          <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'contact', submoduleId: c.submodule_id, initialData: c })} style={{ padding: '0.15rem 0.35rem', fontSize: '0.75rem' }} title="Kemaskini PIC">
+                            <Pencil size={12} />
+                          </button>
+                          <button className="btn btn-danger" onClick={() => handleDeleteContact(c.id)} style={{ padding: '0.15rem 0.35rem', fontSize: '0.75rem' }}>
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
                       </div>
 
                       <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--accent-emerald)', marginBottom: '0.15rem' }}>
@@ -377,23 +388,31 @@ export default function ModuleDetail({ moduleId, onBack }) {
                 <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
                   <button 
                     className="btn btn-secondary" 
-                    onClick={() => setActiveSubModal({ parentId: sub.id, parentTitle: sub.title })} 
+                    onClick={() => setActiveSubModal({ parentId: sub.id, parentTitle: sub.title, initialData: null })} 
                     style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem', borderColor: 'var(--accent-cyan)' }}
                     title="Tambah Sub-Submodul di bawah ini"
                   >
                     <Plus size={13} /> Submodul
                   </button>
 
-                  <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'flow', submoduleId: sub.id })} style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={() => setActiveSubModal({ parentId: sub.parent_id, parentTitle: '', initialData: sub })} 
+                    style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}
+                    title="Kemaskini Submodul"
+                  >
+                    <Pencil size={13} /> Edit
+                  </button>
+
+                  <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'flow', submoduleId: sub.id, initialData: null })} style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}>
                     <Plus size={13} /> Flow
                   </button>
-                  <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'issue', submoduleId: sub.id })} style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}>
+                  <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'issue', submoduleId: sub.id, initialData: null })} style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}>
                     <Plus size={13} /> Isu & Solution
                   </button>
-                  <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'contact', submoduleId: sub.id })} style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}>
+                  <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'contact', submoduleId: sub.id, initialData: null })} style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}>
                     <Plus size={13} /> PIC
                   </button>
-                  <button className="btn btn-secondary" onClick={() => setActiveSubModal({ parentId: sub.parent_id, parentTitle: '', initialData: sub })} style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem' }} title="Kemaskini Submodul"><Pencil size={13} /></button>
                   <button className="btn btn-danger" onClick={() => handleDeleteSubmodule(sub.id, sub.title)} style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem' }} title="Padam Submodul">
                     <Trash2 size={13} />
                   </button>
@@ -446,7 +465,7 @@ export default function ModuleDetail({ moduleId, onBack }) {
             </p>
           </div>
 
-          <button className="btn btn-primary" onClick={() => setActiveSubModal({ parentId: null, parentTitle: '' })}>
+          <button className="btn btn-primary" onClick={() => setActiveSubModal({ parentId: null, parentTitle: '', initialData: null })}>
             <Layers size={18} /> + Tambah Submodul
           </button>
         </div>
@@ -476,13 +495,13 @@ export default function ModuleDetail({ moduleId, onBack }) {
           </div>
 
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-            <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'flow', submoduleId: null })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
+            <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'flow', submoduleId: null, initialData: null })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
               <Plus size={14} /> Flow Utama
             </button>
-            <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'issue', submoduleId: null })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
+            <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'issue', submoduleId: null, initialData: null })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
               <Plus size={14} /> Isu Utama
             </button>
-            <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'contact', submoduleId: null })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
+            <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'contact', submoduleId: null, initialData: null })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
               <Plus size={14} /> PIC Utama
             </button>
           </div>
@@ -497,6 +516,7 @@ export default function ModuleDetail({ moduleId, onBack }) {
           moduleId={moduleId} 
           parentId={activeSubModal.parentId}
           parentTitle={activeSubModal.parentTitle}
+          initialData={activeSubModal.initialData}
           onClose={() => setActiveSubModal(null)} 
           onSuccess={fetchDetail} 
         />
@@ -507,12 +527,8 @@ export default function ModuleDetail({ moduleId, onBack }) {
           moduleId={moduleId} 
           submodules={submodules}
           allFlows={flows}
-          defaultSubmoduleId={activeItemModal.submoduleId}
-          nextStepNumber={(flows.filter(f => {
-            if (!activeItemModal) return true;
-            if (!activeItemModal.submoduleId) return !f.submodule_id;
-            return String(f.submodule_id) === String(activeItemModal.submoduleId);
-          }).length) + 1}
+          defaultSubmoduleId={activeItemModal.initialData ? activeItemModal.initialData.submodule_id : activeItemModal.submoduleId}
+          initialData={activeItemModal.initialData}
           onClose={() => setActiveItemModal(null)} 
           onSuccess={fetchDetail} 
         />
@@ -522,7 +538,8 @@ export default function ModuleDetail({ moduleId, onBack }) {
         <AddIssueModal 
           moduleId={moduleId} 
           submodules={submodules}
-          defaultSubmoduleId={activeItemModal.submoduleId}
+          defaultSubmoduleId={activeItemModal.initialData ? activeItemModal.initialData.submodule_id : activeItemModal.submoduleId}
+          initialData={activeItemModal.initialData}
           onClose={() => setActiveItemModal(null)} 
           onSuccess={fetchDetail} 
         />
@@ -532,7 +549,8 @@ export default function ModuleDetail({ moduleId, onBack }) {
         <AddContactModal 
           moduleId={moduleId} 
           submodules={submodules}
-          defaultSubmoduleId={activeItemModal.submoduleId}
+          defaultSubmoduleId={activeItemModal.initialData ? activeItemModal.initialData.submodule_id : activeItemModal.submoduleId}
+          initialData={activeItemModal.initialData}
           onClose={() => setActiveItemModal(null)} 
           onSuccess={fetchDetail} 
         />
