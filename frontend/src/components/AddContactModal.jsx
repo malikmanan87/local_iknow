@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { X, Save } from 'lucide-react';
 import { createContact } from '../services/api';
 
-export default function AddContactModal({ moduleId, onClose, onSuccess, submodules = [] }) {
+export default function AddContactModal({ moduleId, onClose, onSuccess, submodules = [], defaultSubmoduleId = null }) {
   const [formData, setFormData] = useState({
     module_id: moduleId,
-    submodule_id: "",
+    submodule_id: defaultSubmoduleId || "",
     name: '',
     role: 'Lead Developer',
     email: '',

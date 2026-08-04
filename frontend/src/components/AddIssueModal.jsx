@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { X, Plus, Trash2, Save } from 'lucide-react';
 import { createIssue, uploadImage } from '../services/api';
 
-export default function AddIssueModal({ moduleId, onClose, onSuccess, submodules = [] }) {
+export default function AddIssueModal({ moduleId, onClose, onSuccess, submodules = [], defaultSubmoduleId = null }) {
   const [issueData, setIssueData] = useState({
     module_id: moduleId,
-    submodule_id: "",
+    submodule_id: defaultSubmoduleId || "",
     issue_code: '',
     title: '',
     symptoms: ''

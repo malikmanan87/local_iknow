@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { X, Save } from 'lucide-react';
 import { createFlow, uploadImage } from '../services/api';
 
-export default function AddFlowModal({ moduleId, nextStepNumber, onClose, onSuccess, submodules = [] }) {
+export default function AddFlowModal({ moduleId, nextStepNumber, onClose, onSuccess, submodules = [], defaultSubmoduleId = null }) {
   const [formData, setFormData] = useState({
     module_id: moduleId,
-    submodule_id: "",
+    submodule_id: defaultSubmoduleId || "",
     step_number: nextStepNumber || 1,
     step_title: '',
     description: '',

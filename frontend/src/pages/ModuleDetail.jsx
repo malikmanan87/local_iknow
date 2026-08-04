@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, GitCommit, AlertTriangle, Phone, Plus, Trash2, Image as ImageIcon, MessageCircle, Mail, Layers } from 'lucide-react';
+import { ArrowLeft, GitCommit, AlertTriangle, Phone, Plus, Trash2, Image as ImageIcon, MessageCircle, Mail, Layers, ChevronDown, ChevronRight } from 'lucide-react';
 import { getModuleDetail, deleteFlow, deleteIssue, deleteContact, deleteSubmodule } from '../services/api';
 import AddFlowModal from '../components/AddFlowModal';
 import AddIssueModal from '../components/AddIssueModal';
@@ -10,15 +10,14 @@ import ImageLightbox from '../components/ImageLightbox';
 export default function ModuleDetail({ moduleId, onBack }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('flows');
-  const [selectedSubmoduleId, setSelectedSubmoduleId] = useState('all'); // 'all' or submodule id
 
+  // Modal control
   const [showAddSubmodule, setShowAddSubmodule] = useState(false);
-  const [showAddFlow, setShowAddFlow] = useState(false);
-  const [showAddIssue, setShowAddIssue] = useState(false);
-  const [showAddContact, setShowAddContact] = useState(false);
-
+  const [activeModal, setActiveModal] = useState(null); // { type: 'flow'|'issue'|'contact', submoduleId: null }
   const [lightboxImage, setLightboxImage] = useState(null);
+
+  // Tab selection per section: { [submoduleId_or_'main']: 'flows'|'issues'|'contacts' }
+  const [tabState, setTabState] = useState({});
 
   const fetchDetail = async () => {
     setLoading(true);
@@ -36,10 +35,15 @@ export default function ModuleDetail({ moduleId, onBack }) {
     if (moduleId) fetchDetail();
   }, [moduleId]);
 
+  const setSubTab = (key, tabName) => {
+    setTabState(prev => ({ ...prev, [key]: tabName }));
+  };
+
+  const getSubTab = (key) => tabState[key] || 'flows';
+
   const handleDeleteSubmodule = async (id, title) => {
-    if (window.confirm('Padam submodul "' + title + '"? Flow/Isu di dalamnya akan dipindahkan ke modul utama.')) {
+    if (window.confirm('Adakah anda pasti mahu memadam submodul "' + title + '"? Semua flow, isu & PIC di dalamnya akan dipadam.')) {
       await deleteSubmodule(id);
-      if (selectedSubmoduleId == id) setSelectedSubmoduleId('all');
       fetchDetail();
     }
   };
@@ -77,18 +81,248 @@ export default function ModuleDetail({ moduleId, onBack }) {
 
   const { module, submodules = [], flows = [], issues = [], contacts = [] } = data;
 
-  // Filter items by selectedSubmoduleId
-  const filteredFlows = selectedSubmoduleId === 'all' 
-    ? flows 
-    : flows.filter(f => f.submodule_id == selectedSubmoduleId);
+  // Render dedicated section for a module/submodule context
+  const renderSectionContent = (contextKey, targetSubmoduleId, sectionFlows, sectionIssues, sectionContacts) => {
+    const activeSubTab = getSubTab(contextKey);
 
-  const filteredIssues = selectedSubmoduleId === 'all' 
-    ? issues 
-    : issues.filter(i => i.submodule_id == selectedSubmoduleId);
+    return (
+      <div>
+        {/* Inner Tab Buttons */}
+        <div style={{ display: 'flex', gap: '0.75rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1.25rem' }}>
+          <button 
+            onClick={() => setSubTab(contextKey, 'flows')}
+            style={{
+              padding: '0.6rem 1rem',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeSubTab === 'flows' ? '3px solid var(--primary)' : '3px solid transparent',
+              color: activeSubTab === 'flows' ? '#fff' : 'var(--text-muted)',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem'
+            }}
+          >
+            <GitCommit size={16} color="var(--primary)" /> Flow ({sectionFlows.length})
+          </button>
 
-  const filteredContacts = selectedSubmoduleId === 'all' 
-    ? contacts 
-    : contacts.filter(c => c.submodule_id == selectedSubmoduleId);
+          <button 
+            onClick={() => setSubTab(contextKey, 'issues')}
+            style={{
+              padding: '0.6rem 1rem',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeSubTab === 'issues' ? '3px solid var(--accent-cyan)' : '3px solid transparent',
+              color: activeSubTab === 'issues' ? '#fff' : 'var(--text-muted)',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem'
+            }}
+          >
+            <AlertTriangle size={16} color="var(--accent-amber)" /> Common Issues & Solution ({sectionIssues.length})
+          </button>
+
+          <button 
+            onClick={() => setSubTab(contextKey, 'contacts')}
+            style={{
+              padding: '0.6rem 1rem',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeSubTab === 'contacts' ? '3px solid var(--accent-emerald)' : '3px solid transparent',
+              color: activeSubTab === 'contacts' ? '#fff' : 'var(--text-muted)',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem'
+            }}
+          >
+            <Phone size={16} color="var(--accent-emerald)" /> Pegawai Bertugas (PIC) ({sectionContacts.length})
+          </button>
+        </div>
+
+        {/* Tab 1: FLOWS */}
+        {activeSubTab === 'flows' && (
+          <div>
+            {sectionFlows.length === 0 ? (
+              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '10px' }}>
+                Tiada langkah flow direkodkan. Tekan "+ Tambah Flow" di atas.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {sectionFlows.map((f) => (
+                  <div key={f.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.25rem', display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
+                    <div style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent-cyan))', color: '#fff', borderRadius: '10px', width: '40px', height: '40px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: 800, fontSize: '1.1rem', flexShrink: 0 }}>
+                      {f.step_number}
+                    </div>
+
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#fff', marginBottom: '0.3rem' }}>
+                          {f.step_title}
+                        </h4>
+                        <button className="btn btn-danger" onClick={() => handleDeleteFlow(f.id)} style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem' }}>
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '0.6rem' }}>
+                        {f.description}
+                      </p>
+
+                      {f.image_path && (
+                        <div 
+                          onClick={() => setLightboxImage({ url: f.image_path, title: 'Flow Langkah #' + f.step_number + ': ' + f.step_title })}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', padding: '0.35rem 0.7rem', borderRadius: '8px', cursor: 'pointer', color: 'var(--primary)' }}
+                        >
+                          <ImageIcon size={15} />
+                          <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Lihat Diagram / Gambar Flow</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 2: ISSUES & SOLUTIONS */}
+        {activeSubTab === 'issues' && (
+          <div>
+            {sectionIssues.length === 0 ? (
+              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '10px' }}>
+                Tiada isu biasa direkodkan. Tekan "+ Tambah Isu & Solution".
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {sectionIssues.map((issue) => (
+                  <div key={issue.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderLeft: '4px solid var(--accent-amber)', borderRadius: '12px', padding: '1.25rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.6rem' }}>
+                      <div>
+                        {issue.issue_code && (
+                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--accent-amber)', background: 'rgba(245,158,11,0.15)', padding: '0.15rem 0.5rem', borderRadius: '5px', marginRight: '0.5rem' }}>
+                            {issue.issue_code}
+                          </span>
+                        )}
+                        <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff', display: 'inline' }}>
+                          {issue.title}
+                        </h4>
+                      </div>
+
+                      <button className="btn btn-danger" onClick={() => handleDeleteIssue(issue.id)} style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem' }}>
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+
+                    {issue.symptoms && (
+                      <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.6rem 0.85rem', borderRadius: '8px', marginBottom: '0.85rem', borderLeft: '2px solid var(--text-muted)' }}>
+                        <strong style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.15rem' }}>Simptom / Tanda Isu:</strong>
+                        <p style={{ fontSize: '0.85rem', color: '#e2e8f0', lineHeight: '1.4' }}>{issue.symptoms}</p>
+                      </div>
+                    )}
+
+                    <h5 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-cyan)', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Langkah Penyelesaian / Workaround:
+                    </h5>
+
+                    {issue.solutions && issue.solutions.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                        {issue.solutions.map((sol) => (
+                          <div key={sol.id} style={{ background: 'rgba(255,255,255,0.02)', padding: '0.75rem 0.9rem', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
+                            <span style={{ background: 'rgba(6,182,212,0.15)', color: 'var(--accent-cyan)', fontWeight: 800, fontSize: '0.8rem', padding: '0.15rem 0.45rem', borderRadius: '5px', flexShrink: 0 }}>
+                              #{sol.step_number}
+                            </span>
+                            <div style={{ flex: 1 }}>
+                              <p style={{ fontSize: '0.9rem', color: '#f1f5f9', lineHeight: '1.4' }}>
+                                {sol.instruction}
+                              </p>
+
+                              {sol.image_path && (
+                                <div 
+                                  onClick={() => setLightboxImage({ url: sol.image_path, title: 'Solution Langkah #' + sol.step_number + ' - ' + issue.title })}
+                                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.4rem', color: 'var(--accent-cyan)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
+                                >
+                                  <ImageIcon size={14} /> Lihat Gambar Solution
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Tiada arahan solution spesifik.</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 3: CONTACTS */}
+        {activeSubTab === 'contacts' && (
+          <div>
+            {sectionContacts.length === 0 ? (
+              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '10px' }}>
+                Tiada pegawai bertugas (PIC) direkodkan. Tekan "+ Tambah PIC".
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                {sectionContacts.map((c) => {
+                  const cleanPhone = c.phone_no ? c.phone_no.replace(/[^0-9]/g, '') : '';
+                  const waUrl = cleanPhone ? ('https://wa.me/' + cleanPhone) : null;
+
+                  return (
+                    <div key={c.id} className="glass-card" style={{ padding: '1.25rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
+                        <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#fff' }}>{c.name}</h4>
+                        <button className="btn btn-danger" onClick={() => handleDeleteContact(c.id)} style={{ padding: '0.15rem 0.35rem', fontSize: '0.75rem' }}>
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+
+                      <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--accent-emerald)', marginBottom: '0.15rem' }}>
+                        {c.role || 'Pegawai Bertanggungjawab'}
+                      </p>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.85rem' }}>
+                        Jabatan: {c.department || 'IT'}
+                      </p>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.85rem' }}>
+                        {c.email && (
+                          <a href={'mailto:' + c.email} className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '0.35rem 0.7rem' }}>
+                            <Mail size={13} /> {c.email}
+                          </a>
+                        )}
+
+                        {waUrl && (
+                          <a href={waUrl} target="_blank" rel="noreferrer" className="btn btn-whatsapp" style={{ fontSize: '0.75rem', padding: '0.35rem 0.7rem' }}>
+                            <MessageCircle size={13} /> WhatsApp ({c.phone_no})
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // General main module flows/issues/contacts (where submodule_id is null)
+  const mainFlows = flows.filter(f => !f.submodule_id);
+  const mainIssues = issues.filter(i => !i.submodule_id);
+  const mainContacts = contacts.filter(c => !c.submodule_id);
 
   return (
     <div style={{ padding: '2rem 0' }}>
@@ -110,299 +344,94 @@ export default function ModuleDetail({ moduleId, onBack }) {
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <button className="btn btn-secondary" onClick={() => setShowAddSubmodule(true)}>
-              <Layers size={16} /> + Submodul
-            </button>
-            <button className="btn btn-primary" onClick={() => setShowAddFlow(true)}>
-              <Plus size={16} /> Tambah Flow
-            </button>
-            <button className="btn btn-primary" onClick={() => setShowAddIssue(true)} style={{ background: 'linear-gradient(135deg, var(--accent-cyan), #0284c7)' }}>
-              <Plus size={16} /> Tambah Isu & Solution
-            </button>
-            <button className="btn btn-secondary" onClick={() => setShowAddContact(true)}>
-              <Plus size={16} /> Tambah PIC
-            </button>
-          </div>
-        </div>
-
-        {/* Submodules Bar */}
-        <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-color)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              <Layers size={15} /> Submodul:
-            </span>
-
-            <button 
-              onClick={() => setSelectedSubmoduleId('all')}
-              className="btn btn-secondary"
-              style={{ 
-                padding: '0.35rem 0.85rem', 
-                fontSize: '0.8rem', 
-                borderRadius: '20px',
-                borderColor: selectedSubmoduleId === 'all' ? 'var(--primary)' : undefined,
-                background: selectedSubmoduleId === 'all' ? 'rgba(99,102,241,0.2)' : undefined,
-                color: selectedSubmoduleId === 'all' ? '#fff' : undefined
-              }}
-            >
-              Semua ({submodules.length})
-            </button>
-
-            {submodules.map((sub) => (
-              <div key={sub.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                <button 
-                  onClick={() => setSelectedSubmoduleId(sub.id)}
-                  className="btn btn-secondary"
-                  style={{ 
-                    padding: '0.35rem 0.85rem', 
-                    fontSize: '0.8rem', 
-                    borderRadius: '20px',
-                    borderColor: selectedSubmoduleId == sub.id ? 'var(--accent-cyan)' : undefined,
-                    background: selectedSubmoduleId == sub.id ? 'rgba(6,182,212,0.2)' : undefined,
-                    color: selectedSubmoduleId == sub.id ? '#fff' : undefined
-                  }}
-                >
-                  {sub.title}
-                </button>
-                <button 
-                  onClick={() => handleDeleteSubmodule(sub.id, sub.title)}
-                  style={{ background: 'none', border: 'none', color: 'var(--accent-rose)', cursor: 'pointer', opacity: 0.6 }}
-                  title="Padam Submodul"
-                >
-                  <Trash2 size={12} />
-                </button>
-              </div>
-            ))}
-          </div>
+          <button className="btn btn-primary" onClick={() => setShowAddSubmodule(true)}>
+            <Layers size={18} /> + Tambah Submodul
+          </button>
         </div>
       </div>
 
-      {/* Tabs Header */}
-      <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
-        <button 
-          onClick={() => setActiveTab('flows')}
-          style={{
-            padding: '0.75rem 1.25rem',
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'flows' ? '3px solid var(--primary)' : '3px solid transparent',
-            color: activeTab === 'flows' ? '#fff' : 'var(--text-muted)',
-            fontWeight: 700,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
-        >
-          <GitCommit size={18} color="var(--primary)" /> Aliran Kerja / Flow ({filteredFlows.length})
-        </button>
+      {/* SECTION 1: SUBMODULES LIST (Dedicated Flow, Issues & PIC per Submodule) */}
+      {submodules.length > 0 && (
+        <div style={{ marginBottom: '2.5rem' }}>
+          <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#fff', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Layers size={22} color="var(--accent-cyan)" /> Senarai Submodul ({submodules.length})
+          </h2>
 
-        <button 
-          onClick={() => setActiveTab('issues')}
-          style={{
-            padding: '0.75rem 1.25rem',
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'issues' ? '3px solid var(--accent-cyan)' : '3px solid transparent',
-            color: activeTab === 'issues' ? '#fff' : 'var(--text-muted)',
-            fontWeight: 700,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
-        >
-          <AlertTriangle size={18} color="var(--accent-amber)" /> Common Issues & Solution ({filteredIssues.length})
-        </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {submodules.map((sub) => {
+              const subFlows = flows.filter(f => f.submodule_id == sub.id);
+              const subIssues = issues.filter(i => i.submodule_id == sub.id);
+              const subContacts = contacts.filter(c => c.submodule_id == sub.id);
+              const contextKey = 'sub_' + sub.id;
 
-        <button 
-          onClick={() => setActiveTab('contacts')}
-          style={{
-            padding: '0.75rem 1.25rem',
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'contacts' ? '3px solid var(--accent-emerald)' : '3px solid transparent',
-            color: activeTab === 'contacts' ? '#fff' : 'var(--text-muted)',
-            fontWeight: 700,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
-        >
-          <Phone size={18} color="var(--accent-emerald)" /> Pegawai Bertugas / PIC ({filteredContacts.length})
-        </button>
-      </div>
-
-      {/* Tab 1: FLOWS */}
-      {activeTab === 'flows' && (
-        <div>
-          {filteredFlows.length === 0 ? (
-            <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-              Belum ada aliran kerja (flow) direkodkan. Tekan "Tambah Flow" di atas.
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {filteredFlows.map((f) => (
-                <div key={f.id} className="glass-panel" style={{ padding: '1.5rem', display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
-                  <div style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent-cyan))', color: '#fff', borderRadius: '12px', width: '45px', height: '45px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: 800, fontSize: '1.2rem', flexShrink: 0 }}>
-                    {f.step_number}
-                  </div>
-
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#fff', marginBottom: '0.4rem' }}>
-                        {f.step_title}
-                      </h3>
-                      <button className="btn btn-danger" onClick={() => handleDeleteFlow(f.id)} style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '0.75rem' }}>
-                      {f.description}
-                    </p>
-
-                    {f.image_path && (
-                      <div 
-                        onClick={() => setLightboxImage({ url: f.image_path, title: 'Flow Langkah #' + f.step_number + ': ' + f.step_title })}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer', color: 'var(--primary)' }}
-                      >
-                        <ImageIcon size={16} />
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Lihat Diagram / Gambar Flow</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Tab 2: ISSUES & SOLUTIONS */}
-      {activeTab === 'issues' && (
-        <div>
-          {filteredIssues.length === 0 ? (
-            <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-              Belum ada isu biasa atau langkah troubleshooting direkodkan. Tekan "Tambah Isu & Solution".
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              {filteredIssues.map((issue) => (
-                <div key={issue.id} className="glass-panel" style={{ padding: '1.75rem', borderLeft: '4px solid var(--accent-amber)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+              return (
+                <div key={sub.id} className="glass-panel" style={{ padding: '1.75rem', border: '1px solid rgba(6,182,212,0.3)' }}>
+                  {/* Submodule Header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
                     <div>
-                      {issue.issue_code && (
-                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--accent-amber)', background: 'rgba(245,158,11,0.15)', padding: '0.2rem 0.6rem', borderRadius: '6px', marginRight: '0.5rem' }}>
-                          {issue.issue_code}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--accent-cyan)', background: 'rgba(6,182,212,0.15)', padding: '0.15rem 0.55rem', borderRadius: '6px' }}>
+                          SUBMODUL
                         </span>
+                        <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#fff' }}>{sub.title}</h3>
+                      </div>
+                      {sub.description && (
+                        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>{sub.description}</p>
                       )}
-                      <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff', display: 'inline' }}>
-                        {issue.title}
-                      </h3>
                     </div>
 
-                    <button className="btn btn-danger" onClick={() => handleDeleteIssue(issue.id)} style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>
-                      <Trash2 size={13} /> Padam Isu
-                    </button>
-                  </div>
-
-                  {issue.symptoms && (
-                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem', borderLeft: '2px solid var(--text-muted)' }}>
-                      <strong style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>Simptom / Tanda Isu:</strong>
-                      <p style={{ fontSize: '0.9rem', color: '#e2e8f0', lineHeight: '1.5' }}>{issue.symptoms}</p>
-                    </div>
-                  )}
-
-                  {/* Solutions list */}
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--accent-cyan)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Langkah Penyelesaian / Workaround:
-                  </h4>
-
-                  {issue.solutions && issue.solutions.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {issue.solutions.map((sol) => (
-                        <div key={sol.id} style={{ background: 'rgba(255,255,255,0.03)', padding: '0.9rem 1.1rem', borderRadius: '10px', border: '1px solid var(--border-color)', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                          <span style={{ background: 'rgba(6,182,212,0.15)', color: 'var(--accent-cyan)', fontWeight: 800, fontSize: '0.85rem', padding: '0.2rem 0.5rem', borderRadius: '6px', flexShrink: 0 }}>
-                            #{sol.step_number}
-                          </span>
-                          <div style={{ flex: 1 }}>
-                            <p style={{ fontSize: '0.95rem', color: '#f1f5f9', lineHeight: '1.5' }}>
-                              {sol.instruction}
-                            </p>
-
-                            {sol.image_path && (
-                              <div 
-                                onClick={() => setLightboxImage({ url: sol.image_path, title: 'Solution Langkah #' + sol.step_number + ' - ' + issue.title })}
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.5rem', color: 'var(--accent-cyan)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
-                              >
-                                <ImageIcon size={15} /> Lihat Gambar Rujukan Solution
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Tiada arahan solution spesifik ditambah.</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Tab 3: CONTACTS */}
-      {activeTab === 'contacts' && (
-        <div>
-          {filteredContacts.length === 0 ? (
-            <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-              Belum ada pegawai bertugas (PIC) direkodkan. Tekan "Tambah PIC".
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}>
-              {filteredContacts.map((c) => {
-                const cleanPhone = c.phone_no ? c.phone_no.replace(/[^0-9]/g, '') : '';
-                const waUrl = cleanPhone ? ('https://wa.me/' + cleanPhone) : null;
-
-                return (
-                  <div key={c.id} className="glass-card" style={{ padding: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                      <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>{c.name}</h3>
-                      <button className="btn btn-danger" onClick={() => handleDeleteContact(c.id)} style={{ padding: '0.2rem 0.4rem', fontSize: '0.75rem' }}>
-                        <Trash2 size={13} />
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <button className="btn btn-secondary" onClick={() => setActiveModal({ type: 'flow', submoduleId: sub.id })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
+                        <Plus size={14} /> Flow
+                      </button>
+                      <button className="btn btn-secondary" onClick={() => setActiveModal({ type: 'issue', submoduleId: sub.id })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
+                        <Plus size={14} /> Isu & Solution
+                      </button>
+                      <button className="btn btn-secondary" onClick={() => setActiveModal({ type: 'contact', submoduleId: sub.id })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
+                        <Plus size={14} /> PIC
+                      </button>
+                      <button className="btn btn-danger" onClick={() => handleDeleteSubmodule(sub.id, sub.title)} style={{ padding: '0.35rem 0.6rem', fontSize: '0.8rem' }} title="Padam Submodul">
+                        <Trash2 size={14} />
                       </button>
                     </div>
-
-                    <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-emerald)', marginBottom: '0.2rem' }}>
-                      {c.role || 'Pegawai Bertanggungjawab'}
-                    </p>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                      Jabatan: {c.department || 'IT'}
-                    </p>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                      {c.email && (
-                        <a href={'mailto:' + c.email} className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>
-                          <Mail size={14} /> {c.email}
-                        </a>
-                      )}
-
-                      {waUrl && (
-                        <a href={waUrl} target="_blank" rel="noreferrer" className="btn btn-whatsapp" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>
-                          <MessageCircle size={14} /> Hubungi via WhatsApp ({c.phone_no})
-                        </a>
-                      )}
-                    </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
+
+                  {/* Submodule Inner Tabs & Content */}
+                  {renderSectionContent(contextKey, sub.id, subFlows, subIssues, subContacts)}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
+
+      {/* SECTION 2: MAIN MODULE GENERAL ITEMS (Items directly under main module) */}
+      <div className="glass-panel" style={{ padding: '1.75rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fff' }}>
+              Dokumentasi Umum Modul Utama
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Flow, Isu & PIC umum yang terpakai untuk modul keseluruhan.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+            <button className="btn btn-secondary" onClick={() => setActiveModal({ type: 'flow', submoduleId: null })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
+              <Plus size={14} /> Flow Utama
+            </button>
+            <button className="btn btn-secondary" onClick={() => setActiveModal({ type: 'issue', submoduleId: null })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
+              <Plus size={14} /> Isu Utama
+            </button>
+            <button className="btn btn-secondary" onClick={() => setActiveModal({ type: 'contact', submoduleId: null })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
+              <Plus size={14} /> PIC Utama
+            </button>
+          </div>
+        </div>
+
+        {renderSectionContent('main', null, mainFlows, mainIssues, mainContacts)}
+      </div>
 
       {/* Modals */}
       {showAddSubmodule && (
@@ -413,30 +442,33 @@ export default function ModuleDetail({ moduleId, onBack }) {
         />
       )}
 
-      {showAddFlow && (
+      {activeModal && activeModal.type === 'flow' && (
         <AddFlowModal 
           moduleId={moduleId} 
           submodules={submodules}
+          defaultSubmoduleId={activeModal.submoduleId}
           nextStepNumber={flows.length + 1}
-          onClose={() => setShowAddFlow(false)} 
+          onClose={() => setActiveModal(null)} 
           onSuccess={fetchDetail} 
         />
       )}
 
-      {showAddIssue && (
+      {activeModal && activeModal.type === 'issue' && (
         <AddIssueModal 
           moduleId={moduleId} 
           submodules={submodules}
-          onClose={() => setShowAddIssue(false)} 
+          defaultSubmoduleId={activeModal.submoduleId}
+          onClose={() => setActiveModal(null)} 
           onSuccess={fetchDetail} 
         />
       )}
 
-      {showAddContact && (
+      {activeModal && activeModal.type === 'contact' && (
         <AddContactModal 
           moduleId={moduleId} 
           submodules={submodules}
-          onClose={() => setShowAddContact(false)} 
+          defaultSubmoduleId={activeModal.submoduleId}
+          onClose={() => setActiveModal(null)} 
           onSuccess={fetchDetail} 
         />
       )}
