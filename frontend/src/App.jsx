@@ -7,12 +7,14 @@ import AddModuleModal from './components/AddModuleModal';
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedModuleId, setSelectedModuleId] = useState(null);
+  const [initialModuleTab, setInitialModuleTab] = useState('flows');
   const [editModuleData, setEditModuleData] = useState(null);
   const [showAddModule, setShowAddModule] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const handleSelectModule = (id) => {
+  const handleSelectModule = (id, tab = 'flows') => {
     setSelectedModuleId(id);
+    setInitialModuleTab(tab || 'flows');
     setActiveTab('detail');
   };
 
@@ -44,6 +46,7 @@ export default function App() {
         ) : (
           <ModuleDetail 
             moduleId={selectedModuleId} 
+            initialTab={initialModuleTab}
             onBack={handleBackToDashboard} 
           />
         )}

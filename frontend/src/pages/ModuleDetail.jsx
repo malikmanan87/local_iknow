@@ -7,7 +7,7 @@ import AddContactModal from '../components/AddContactModal';
 import AddSubmoduleModal from '../components/AddSubmoduleModal';
 import ImageLightbox from '../components/ImageLightbox';
 
-export default function ModuleDetail({ moduleId, onBack }) {
+export default function ModuleDetail({ moduleId, initialTab = 'flows', onBack }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -39,7 +39,7 @@ export default function ModuleDetail({ moduleId, onBack }) {
     setTabState(prev => ({ ...prev, [key]: tabName }));
   };
 
-  const getSubTab = (key) => tabState[key] || 'flows';
+  const getSubTab = (key) => tabState[key] || initialTab || 'flows';
 
   const handleDeleteSubmodule = async (id, title) => {
     if (window.confirm('Adakah anda pasti mahu memadam submodul "' + title + '"? Semua sub-modul, flow, isu & PIC di dalamnya akan dipadam.')) {

@@ -69,4 +69,7 @@ $routes->group('api', function($routes) {
 
     // Image Upload
     $routes->post('upload', 'Api\UploadController::create');
+
+    // Global Search
+    $routes->get('search', 'Api\SearchController::index');
 });
