@@ -215,24 +215,14 @@ export default function GhopAiWidget() {
                     whiteSpace: 'pre-line'
                   }}
                 >
+                  {/* Direct Answer Text */}
                   {m.text}
 
-                  {/* PDF Reference Citation Cards */}
+                  {/* Subtle PDF Page Tag */}
                   {m.references && m.references.length > 0 && (
-                    <div style={{ marginTop: '0.6rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
-                        📖 Rujukan Fail PDF GHOP:
-                      </span>
-                      {m.references.map((r, rIdx) => (
-                        <div key={rIdx} style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '6px', padding: '0.4rem 0.6rem', marginBottom: '0.3rem', fontSize: '0.75rem' }}>
-                          <div style={{ fontWeight: 700, color: 'var(--accent-amber)' }}>
-                            Muka Surat {r.page_number} - {r.chapter_title}
-                          </div>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                            {r.title} ({r.section_code || 'GHOP'})
-                          </div>
-                        </div>
-                      ))}
+                    <div style={{ marginTop: '0.4rem', fontSize: '0.7rem', color: 'var(--accent-cyan)', display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                      <span>📄 M/S {m.references[0].page_number}</span>
+                      {m.references[0].chapter_title && <span>• {m.references[0].chapter_title}</span>}
                     </div>
                   )}
                 </div>

@@ -130,9 +130,8 @@ class GhopController extends ResourceController {
             }
         }
 
-        $answerText = "Berdasarkan dokumen rasmi **" . ($bestMatch['pdf_filename'] ?? 'GHOP Policy') . "** (Muka Surat " . $bestMatch['page_number'] . " - " . $bestMatch['chapter_title'] . "):\n\n" .
-                     "📌 **" . $bestMatch['title'] . "**\n" .
-                     $bestParagraph;
+        $titleStr = (!empty($bestMatch['title']) && !str_starts_with($bestMatch['title'], 'Muka Surat')) ? "📌 **" . $bestMatch['title'] . "**\n\n" : "";
+        $answerText = $titleStr . $bestParagraph;
 
         $references = array_map(function($r) {
             return [
