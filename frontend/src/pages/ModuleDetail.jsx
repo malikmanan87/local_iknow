@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, GitCommit, AlertTriangle, Phone, Plus, Trash2, Image as ImageIcon, MessageCircle, Mail, Layers, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowLeft, GitCommit, AlertTriangle, Phone, Plus, Trash2, Image as ImageIcon, MessageCircle, Mail, Layers, CornerDownRight } from 'lucide-react';
 import { getModuleDetail, deleteFlow, deleteIssue, deleteContact, deleteSubmodule } from '../services/api';
 import AddFlowModal from '../components/AddFlowModal';
 import AddIssueModal from '../components/AddIssueModal';
@@ -11,12 +11,12 @@ export default function ModuleDetail({ moduleId, onBack }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Modal control
-  const [showAddSubmodule, setShowAddSubmodule] = useState(false);
-  const [activeModal, setActiveModal] = useState(null); // { type: 'flow'|'issue'|'contact', submoduleId: null }
+  // Modal controls
+  const [activeSubModal, setActiveSubModal] = useState(null); // { parentId: null|id, parentTitle: '' }
+  const [activeItemModal, setActiveItemModal] = useState(null); // { type: 'flow'|'issue'|'contact', submoduleId: null }
   const [lightboxImage, setLightboxImage] = useState(null);
 
-  // Tab selection per section: { [submoduleId_or_'main']: 'flows'|'issues'|'contacts' }
+  // Tab selection state: { [submoduleId_or_'main']: 'flows'|'issues'|'contacts' }
   const [tabState, setTabState] = useState({});
 
   const fetchDetail = async () => {
@@ -42,7 +42,7 @@ export default function ModuleDetail({ moduleId, onBack }) {
   const getSubTab = (key) => tabState[key] || 'flows';
 
   const handleDeleteSubmodule = async (id, title) => {
-    if (window.confirm('Adakah anda pasti mahu memadam submodul "' + title + '"? Semua flow, isu & PIC di dalamnya akan dipadam.')) {
+    if (window.confirm('Adakah anda pasti mahu memadam submodul "' + title + '"? Semua sub-modul, flow, isu & PIC di dalamnya akan dipadam.')) {
       await deleteSubmodule(id);
       fetchDetail();
     }
@@ -82,7 +82,7 @@ export default function ModuleDetail({ moduleId, onBack }) {
   const { module, submodules = [], flows = [], issues = [], contacts = [] } = data;
 
   // Render dedicated section for a module/submodule context
-  const renderSectionContent = (contextKey, targetSubmoduleId, sectionFlows, sectionIssues, sectionContacts) => {
+  const renderSectionContent = (contextKey, sectionFlows, sectionIssues, sectionContacts) => {
     const activeSubTab = getSubTab(contextKey);
 
     return (
@@ -98,14 +98,14 @@ export default function ModuleDetail({ moduleId, onBack }) {
               borderBottom: activeSubTab === 'flows' ? '3px solid var(--primary)' : '3px solid transparent',
               color: activeSubTab === 'flows' ? '#fff' : 'var(--text-muted)',
               fontWeight: 700,
-              fontSize: '0.9rem',
+              fontSize: '0.85rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '0.4rem'
             }}
           >
-            <GitCommit size={16} color="var(--primary)" /> Flow ({sectionFlows.length})
+            <GitCommit size={15} color="var(--primary)" /> Flow ({sectionFlows.length})
           </button>
 
           <button 
@@ -117,14 +117,14 @@ export default function ModuleDetail({ moduleId, onBack }) {
               borderBottom: activeSubTab === 'issues' ? '3px solid var(--accent-cyan)' : '3px solid transparent',
               color: activeSubTab === 'issues' ? '#fff' : 'var(--text-muted)',
               fontWeight: 700,
-              fontSize: '0.9rem',
+              fontSize: '0.85rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '0.4rem'
             }}
           >
-            <AlertTriangle size={16} color="var(--accent-amber)" /> Common Issues & Solution ({sectionIssues.length})
+            <AlertTriangle size={15} color="var(--accent-amber)" /> Common Issues & Solution ({sectionIssues.length})
           </button>
 
           <button 
@@ -136,14 +136,14 @@ export default function ModuleDetail({ moduleId, onBack }) {
               borderBottom: activeSubTab === 'contacts' ? '3px solid var(--accent-emerald)' : '3px solid transparent',
               color: activeSubTab === 'contacts' ? '#fff' : 'var(--text-muted)',
               fontWeight: 700,
-              fontSize: '0.9rem',
+              fontSize: '0.85rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '0.4rem'
             }}
           >
-            <Phone size={16} color="var(--accent-emerald)" /> Pegawai Bertugas (PIC) ({sectionContacts.length})
+            <Phone size={15} color="var(--accent-emerald)" /> Pegawai Bertugas (PIC) ({sectionContacts.length})
           </button>
         </div>
 
@@ -151,14 +151,14 @@ export default function ModuleDetail({ moduleId, onBack }) {
         {activeSubTab === 'flows' && (
           <div>
             {sectionFlows.length === 0 ? (
-              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '10px' }}>
-                Tiada langkah flow direkodkan. Tekan "+ Tambah Flow" di atas.
+              <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', fontSize: '0.85rem' }}>
+                Tiada langkah flow direkodkan. Tekan "+ Flow" di atas.
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {sectionFlows.map((f) => (
                   <div key={f.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.25rem', display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
-                    <div style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent-cyan))', color: '#fff', borderRadius: '10px', width: '40px', height: '40px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: 800, fontSize: '1.1rem', flexShrink: 0 }}>
+                    <div style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent-cyan))', color: '#fff', borderRadius: '10px', width: '38px', height: '38px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: 800, fontSize: '1rem', flexShrink: 0 }}>
                       {f.step_number}
                     </div>
 
@@ -197,8 +197,8 @@ export default function ModuleDetail({ moduleId, onBack }) {
         {activeSubTab === 'issues' && (
           <div>
             {sectionIssues.length === 0 ? (
-              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '10px' }}>
-                Tiada isu biasa direkodkan. Tekan "+ Tambah Isu & Solution".
+              <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', fontSize: '0.85rem' }}>
+                Tiada isu biasa direkodkan. Tekan "+ Isu & Solution" di atas.
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -270,8 +270,8 @@ export default function ModuleDetail({ moduleId, onBack }) {
         {activeSubTab === 'contacts' && (
           <div>
             {sectionContacts.length === 0 ? (
-              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '10px' }}>
-                Tiada pegawai bertugas (PIC) direkodkan. Tekan "+ Tambah PIC".
+              <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', fontSize: '0.85rem' }}>
+                Tiada pegawai bertugas (PIC) direkodkan. Tekan "+ PIC" di atas.
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
@@ -319,10 +319,107 @@ export default function ModuleDetail({ moduleId, onBack }) {
     );
   };
 
-  // General main module flows/issues/contacts (where submodule_id is null)
+  // Recursive Submodule Tree Component
+  const renderSubmoduleTree = (parentId = null, level = 0) => {
+    const currentSubmodules = submodules.filter(s => 
+      parentId === null ? (!s.parent_id || s.parent_id == '0') : s.parent_id == parentId
+    );
+
+    if (currentSubmodules.length === 0) return null;
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: level > 0 ? '1.25rem' : 0 }}>
+        {currentSubmodules.map((sub) => {
+          const subFlows = flows.filter(f => f.submodule_id == sub.id);
+          const subIssues = issues.filter(i => i.submodule_id == sub.id);
+          const subContacts = contacts.filter(c => c.submodule_id == sub.id);
+          const contextKey = 'sub_' + sub.id;
+
+          const childSubmodules = submodules.filter(s => s.parent_id == sub.id);
+
+          const borderColor = level === 0 ? 'rgba(6,182,212,0.35)' : 'rgba(99,102,241,0.3)';
+          const badgeLabel = level === 0 ? 'SUBMODUL' : 'SUB-SUBMODUL (' + (level + 1) + ')';
+
+          return (
+            <div 
+              key={sub.id} 
+              className="glass-panel" 
+              style={{ 
+                padding: '1.5rem', 
+                border: '1px solid ' + borderColor,
+                marginLeft: level > 0 ? '1.25rem' : 0,
+                borderLeft: level > 0 ? '4px solid var(--accent-cyan)' : undefined
+              }}
+            >
+              {/* Submodule Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {level > 0 && <CornerDownRight size={16} color="var(--accent-cyan)" />}
+                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--accent-cyan)', background: 'rgba(6,182,212,0.15)', padding: '0.15rem 0.5rem', borderRadius: '5px' }}>
+                      {badgeLabel}
+                    </span>
+                    <h3 style={{ fontSize: level === 0 ? '1.25rem' : '1.1rem', fontWeight: 800, color: '#fff' }}>
+                      {sub.title}
+                    </h3>
+                  </div>
+                  {sub.description && (
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.3rem', marginLeft: level > 0 ? '1.5rem' : 0 }}>
+                      {sub.description}
+                    </p>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={() => setActiveSubModal({ parentId: sub.id, parentTitle: sub.title })} 
+                    style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem', borderColor: 'var(--accent-cyan)' }}
+                    title="Tambah Sub-Submodul di bawah ini"
+                  >
+                    <Plus size={13} /> Submodul
+                  </button>
+
+                  <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'flow', submoduleId: sub.id })} style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}>
+                    <Plus size={13} /> Flow
+                  </button>
+                  <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'issue', submoduleId: sub.id })} style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}>
+                    <Plus size={13} /> Isu & Solution
+                  </button>
+                  <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'contact', submoduleId: sub.id })} style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}>
+                    <Plus size={13} /> PIC
+                  </button>
+                  <button className="btn btn-danger" onClick={() => handleDeleteSubmodule(sub.id, sub.title)} style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem' }} title="Padam Submodul">
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Dedicated Content Tabs for this Submodule */}
+              {renderSectionContent(contextKey, subFlows, subIssues, subContacts)}
+
+              {/* Render Nested Child Submodules if any */}
+              {childSubmodules.length > 0 && (
+                <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px dashed var(--border-color)' }}>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--accent-cyan)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Layers size={15} /> Sub-submodul di bawah {sub.title} ({childSubmodules.length})
+                  </h4>
+                  {renderSubmoduleTree(sub.id, level + 1)}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // General main module items (submodule_id is null)
   const mainFlows = flows.filter(f => !f.submodule_id);
   const mainIssues = issues.filter(i => !i.submodule_id);
   const mainContacts = contacts.filter(c => !c.submodule_id);
+
+  const topLevelSubmodules = submodules.filter(s => !s.parent_id || s.parent_id == '0');
 
   return (
     <div style={{ padding: '2rem 0' }}>
@@ -344,68 +441,24 @@ export default function ModuleDetail({ moduleId, onBack }) {
             </p>
           </div>
 
-          <button className="btn btn-primary" onClick={() => setShowAddSubmodule(true)}>
+          <button className="btn btn-primary" onClick={() => setActiveSubModal({ parentId: null, parentTitle: '' })}>
             <Layers size={18} /> + Tambah Submodul
           </button>
         </div>
       </div>
 
-      {/* SECTION 1: SUBMODULES LIST (Dedicated Flow, Issues & PIC per Submodule) */}
-      {submodules.length > 0 && (
+      {/* SECTION 1: NESTED SUBMODULES TREE */}
+      {topLevelSubmodules.length > 0 && (
         <div style={{ marginBottom: '2.5rem' }}>
           <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#fff', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Layers size={22} color="var(--accent-cyan)" /> Senarai Submodul ({submodules.length})
+            <Layers size={22} color="var(--accent-cyan)" /> Senarai Hierarki Submodul ({submodules.length})
           </h2>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {submodules.map((sub) => {
-              const subFlows = flows.filter(f => f.submodule_id == sub.id);
-              const subIssues = issues.filter(i => i.submodule_id == sub.id);
-              const subContacts = contacts.filter(c => c.submodule_id == sub.id);
-              const contextKey = 'sub_' + sub.id;
-
-              return (
-                <div key={sub.id} className="glass-panel" style={{ padding: '1.75rem', border: '1px solid rgba(6,182,212,0.3)' }}>
-                  {/* Submodule Header */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--accent-cyan)', background: 'rgba(6,182,212,0.15)', padding: '0.15rem 0.55rem', borderRadius: '6px' }}>
-                          SUBMODUL
-                        </span>
-                        <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#fff' }}>{sub.title}</h3>
-                      </div>
-                      {sub.description && (
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>{sub.description}</p>
-                      )}
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                      <button className="btn btn-secondary" onClick={() => setActiveModal({ type: 'flow', submoduleId: sub.id })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
-                        <Plus size={14} /> Flow
-                      </button>
-                      <button className="btn btn-secondary" onClick={() => setActiveModal({ type: 'issue', submoduleId: sub.id })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
-                        <Plus size={14} /> Isu & Solution
-                      </button>
-                      <button className="btn btn-secondary" onClick={() => setActiveModal({ type: 'contact', submoduleId: sub.id })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
-                        <Plus size={14} /> PIC
-                      </button>
-                      <button className="btn btn-danger" onClick={() => handleDeleteSubmodule(sub.id, sub.title)} style={{ padding: '0.35rem 0.6rem', fontSize: '0.8rem' }} title="Padam Submodul">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Submodule Inner Tabs & Content */}
-                  {renderSectionContent(contextKey, sub.id, subFlows, subIssues, subContacts)}
-                </div>
-              );
-            })}
-          </div>
+          {renderSubmoduleTree(null, 0)}
         </div>
       )}
 
-      {/* SECTION 2: MAIN MODULE GENERAL ITEMS (Items directly under main module) */}
+      {/* SECTION 2: MAIN MODULE GENERAL ITEMS */}
       <div className="glass-panel" style={{ padding: '1.75rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
@@ -418,57 +471,59 @@ export default function ModuleDetail({ moduleId, onBack }) {
           </div>
 
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-            <button className="btn btn-secondary" onClick={() => setActiveModal({ type: 'flow', submoduleId: null })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
+            <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'flow', submoduleId: null })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
               <Plus size={14} /> Flow Utama
             </button>
-            <button className="btn btn-secondary" onClick={() => setActiveModal({ type: 'issue', submoduleId: null })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
+            <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'issue', submoduleId: null })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
               <Plus size={14} /> Isu Utama
             </button>
-            <button className="btn btn-secondary" onClick={() => setActiveModal({ type: 'contact', submoduleId: null })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
+            <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'contact', submoduleId: null })} style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
               <Plus size={14} /> PIC Utama
             </button>
           </div>
         </div>
 
-        {renderSectionContent('main', null, mainFlows, mainIssues, mainContacts)}
+        {renderSectionContent('main', mainFlows, mainIssues, mainContacts)}
       </div>
 
       {/* Modals */}
-      {showAddSubmodule && (
+      {activeSubModal && (
         <AddSubmoduleModal 
           moduleId={moduleId} 
-          onClose={() => setShowAddSubmodule(false)} 
+          parentId={activeSubModal.parentId}
+          parentTitle={activeSubModal.parentTitle}
+          onClose={() => setActiveSubModal(null)} 
           onSuccess={fetchDetail} 
         />
       )}
 
-      {activeModal && activeModal.type === 'flow' && (
+      {activeItemModal && activeItemModal.type === 'flow' && (
         <AddFlowModal 
           moduleId={moduleId} 
           submodules={submodules}
-          defaultSubmoduleId={activeModal.submoduleId}
+          defaultSubmoduleId={activeItemModal.submoduleId}
           nextStepNumber={flows.length + 1}
-          onClose={() => setActiveModal(null)} 
+          onClose={() => setActiveItemModal(null)} 
           onSuccess={fetchDetail} 
         />
       )}
 
-      {activeModal && activeModal.type === 'issue' && (
+      {activeItemModal && activeItemModal.type === 'issue' && (
         <AddIssueModal 
           moduleId={moduleId} 
           submodules={submodules}
-          defaultSubmoduleId={activeModal.submoduleId}
-          onClose={() => setActiveModal(null)} 
+          defaultSubmoduleId={activeItemModal.submoduleId}
+          onClose={() => setActiveItemModal(null)} 
           onSuccess={fetchDetail} 
         />
       )}
 
-      {activeModal && activeModal.type === 'contact' && (
+      {activeItemModal && activeItemModal.type === 'contact' && (
         <AddContactModal 
           moduleId={moduleId} 
           submodules={submodules}
-          defaultSubmoduleId={activeModal.submoduleId}
-          onClose={() => setActiveModal(null)} 
+          defaultSubmoduleId={activeItemModal.submoduleId}
+          onClose={() => setActiveItemModal(null)} 
           onSuccess={fetchDetail} 
         />
       )}

@@ -17,6 +17,7 @@ class SubmoduleController extends ResourceController {
 
         $id = $model->insert([
             'module_id' => $data['module_id'],
+            'parent_id' => !empty($data['parent_id']) ? $data['parent_id'] : null,
             'title' => trim($data['title']),
             'description' => $data['description'] ?? ''
         ]);
