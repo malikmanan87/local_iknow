@@ -15,6 +15,12 @@ class FlowController extends ResourceController {
             return $this->fail('Maklumat flow tidak lengkap', 400);
         }
 
+        if (isset($data['submodule_id']) && ($data['submodule_id'] === '' || $data['submodule_id'] === '0' || $data['submodule_id'] === 0)) {
+            $data['submodule_id'] = null;
+        } else if (isset($data['submodule_id'])) {
+            $data['submodule_id'] = (int)$data['submodule_id'];
+        }
+
         $id = $model->insert($data);
         return $this->respondCreated(['id' => $id, 'message' => 'Flow modul berjaya ditambah']);
     }
@@ -23,6 +29,13 @@ class FlowController extends ResourceController {
         $model = new FlowModel();
         $data = $this->request->getJSON(true);
         if (!$model->find($id)) return $this->failNotFound('Flow tidak dijumpai');
+
+        if (isset($data['submodule_id']) && ($data['submodule_id'] === '' || $data['submodule_id'] === '0' || $data['submodule_id'] === 0)) {
+            $data['submodule_id'] = null;
+        } else if (isset($data['submodule_id'])) {
+            $data['submodule_id'] = (int)$data['submodule_id'];
+        }
+
         $model->update($id, $data);
         return $this->respond(['message' => 'Flow berjaya dikemaskini']);
     }

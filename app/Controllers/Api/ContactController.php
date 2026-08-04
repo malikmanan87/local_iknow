@@ -15,6 +15,12 @@ class ContactController extends ResourceController {
             return $this->fail('Maklumat PIC tidak lengkap', 400);
         }
 
+        if (isset($data['submodule_id']) && ($data['submodule_id'] === '' || $data['submodule_id'] === '0' || $data['submodule_id'] === 0)) {
+            $data['submodule_id'] = null;
+        } else if (isset($data['submodule_id'])) {
+            $data['submodule_id'] = (int)$data['submodule_id'];
+        }
+
         $id = $model->insert($data);
         return $this->respondCreated(['id' => $id, 'message' => 'PIC berjaya ditambah']);
     }
@@ -23,6 +29,13 @@ class ContactController extends ResourceController {
         $model = new ContactModel();
         $data = $this->request->getJSON(true);
         if (!$model->find($id)) return $this->failNotFound('PIC tidak dijumpai');
+
+        if (isset($data['submodule_id']) && ($data['submodule_id'] === '' || $data['submodule_id'] === '0' || $data['submodule_id'] === 0)) {
+            $data['submodule_id'] = null;
+        } else if (isset($data['submodule_id'])) {
+            $data['submodule_id'] = (int)$data['submodule_id'];
+        }
+
         $model->update($id, $data);
         return $this->respond(['message' => 'PIC berjaya dikemaskini']);
     }

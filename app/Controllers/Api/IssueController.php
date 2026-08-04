@@ -13,25 +13,34 @@ class IssueController extends ResourceController {
         $tsModel = new TroubleshootingModel();
         $data = $this->request->getJSON(true);
 
-        if (!$data || !isset($data['module_id']) || !isset($data['title'])) {
+        if (!$data || !isset($data['module_id']) || !isset($data['title']) || trim($data['title']) === '') {
             return $this->fail('Maklumat isu tidak lengkap', 400);
         }
 
+        $submoduleId = (!empty($data['submodule_id']) && $data['submodule_id'] !== '' && $data['submodule_id'] !== '0' && $data['submodule_id'] !== 0) ? (int)$data['submodule_id'] : null;
+
         $issueId = $issueModel->insert([
-            'module_id' => $data['module_id'],
-            'issue_code' => $data['issue_code'] ?? null,
-            'title' => $data['title'],
+            'module_id' => (int)$data['module_id'],
+            'submodule_id' => $submoduleId,
+            'issue_code' => !empty($data['issue_code']) ? trim($data['issue_code']) : null,
+            'title' => trim($data['title']),
             'symptoms' => $data['symptoms'] ?? ''
         ]);
 
+        if (!$issueId) {
+            return $this->fail('Gagal menyimpan isu ke pangkalan data', 500);
+        }
+
         if (isset($data['solutions']) && is_array($data['solutions'])) {
             foreach ($data['solutions'] as $index => $sol) {
-                $tsModel->insert([
-                    'issue_id' => $issueId,
-                    'step_number' => $index + 1,
-                    'instruction' => $sol['instruction'] ?? '',
-                    'image_path' => $sol['image_path'] ?? null
-                ]);
+                if (isset($sol['instruction']) && trim($sol['instruction']) !== '') {
+                    $tsModel->insert([
+                        'issue_id' => $issueId,
+                        'step_number' => $index + 1,
+                        'instruction' => trim($sol['instruction']),
+                        'image_path' => !empty($sol['image_path']) ? $sol['image_path'] : null
+                    ]);
+                }
             }
         }
 
@@ -45,21 +54,26 @@ class IssueController extends ResourceController {
 
         if (!$issueModel->find($id)) return $this->failNotFound('Isu tidak dijumpai');
 
+        $submoduleId = (!empty($data['submodule_id']) && $data['submodule_id'] !== '' && $data['submodule_id'] !== '0' && $data['submodule_id'] !== 0) ? (int)$data['submodule_id'] : null;
+
         $issueModel->update($id, [
-            'issue_code' => $data['issue_code'] ?? null,
-            'title' => $data['title'],
+            'submodule_id' => $submoduleId,
+            'issue_code' => !empty($data['issue_code']) ? trim($data['issue_code']) : null,
+            'title' => trim($data['title']),
             'symptoms' => $data['symptoms'] ?? ''
         ]);
 
         if (isset($data['solutions']) && is_array($data['solutions'])) {
             $tsModel->where('issue_id', $id)->delete();
             foreach ($data['solutions'] as $index => $sol) {
-                $tsModel->insert([
-                    'issue_id' => $id,
-                    'step_number' => $index + 1,
-                    'instruction' => $sol['instruction'] ?? '',
-                    'image_path' => $sol['image_path'] ?? null
-                ]);
+                if (isset($sol['instruction']) && trim($sol['instruction']) !== '') {
+                    $tsModel->insert([
+                        'issue_id' => $id,
+                        'step_number' => $index + 1,
+                        'instruction' => trim($sol['instruction']),
+                        'image_path' => !empty($sol['image_path']) ? $sol['image_path'] : null
+                    ]);
+                }
             }
         }
 

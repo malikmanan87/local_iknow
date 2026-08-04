@@ -17,11 +17,15 @@ export default function AddContactModal({ moduleId, submodules = [], defaultSubm
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    const payload = {
+      ...formData,
+      submodule_id: formData.submodule_id ? parseInt(formData.submodule_id, 10) : null
+    };
     try {
       if (initialData && initialData.id) {
-        await updateContact(initialData.id, formData);
+        await updateContact(initialData.id, payload);
       } else {
-        await createContact(formData);
+        await createContact(payload);
       }
       onSuccess();
       onClose();

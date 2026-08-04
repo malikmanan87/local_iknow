@@ -66,11 +66,15 @@ export default function AddFlowModal({ moduleId, submodules = [], allFlows = [],
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    const payload = {
+      ...formData,
+      submodule_id: formData.submodule_id ? parseInt(formData.submodule_id, 10) : null
+    };
     try {
       if (initialData && initialData.id) {
-        await updateFlow(initialData.id, formData);
+        await updateFlow(initialData.id, payload);
       } else {
-        await createFlow(formData);
+        await createFlow(payload);
       }
       onSuccess();
       onClose();

@@ -57,6 +57,7 @@ export default function AddIssueModal({ moduleId, submodules = [], defaultSubmod
 
     const payload = {
       ...issueData,
+      submodule_id: issueData.submodule_id ? parseInt(issueData.submodule_id, 10) : null,
       solutions: solutions.filter(s => s.instruction.trim() !== '')
     };
 
