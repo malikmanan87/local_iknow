@@ -38,24 +38,27 @@ $routes->group('api', function($routes) {
     $routes->get('modules', 'Api\ModuleController::index');
     $routes->get('modules/(:num)', 'Api\ModuleController::show/$1');
     $routes->post('modules', 'Api\ModuleController::create');
-    $routes->put('modules/(:num)', 'Api\ModuleController::update/$1');
+    $routes->match(['put', 'post'], 'modules/(:num)', 'Api\ModuleController::update/$1');
     $routes->delete('modules/(:num)', 'Api\ModuleController::delete/$1');
 
     // Submodules
-    $routes->post('submodules', 'Api\\SubmoduleController::create');
-    $routes->put('submodules/(:num)', 'Api\\SubmoduleController::update/$1');
-    $routes->delete('submodules/(:num)', 'Api\\SubmoduleController::delete/$1');
+    $routes->post('submodules', 'Api\SubmoduleController::create');
+    $routes->match(['put', 'post'], 'submodules/(:num)', 'Api\SubmoduleController::update/$1');
+    $routes->delete('submodules/(:num)', 'Api\SubmoduleController::delete/$1');
 
     // Flows
     $routes->post('flows', 'Api\FlowController::create');
+    $routes->match(['put', 'post'], 'flows/(:num)', 'Api\FlowController::update/$1');
     $routes->delete('flows/(:num)', 'Api\FlowController::delete/$1');
 
     // Issues
     $routes->post('issues', 'Api\IssueController::create');
+    $routes->match(['put', 'post'], 'issues/(:num)', 'Api\IssueController::update/$1');
     $routes->delete('issues/(:num)', 'Api\IssueController::delete/$1');
 
     // Contacts
     $routes->post('contacts', 'Api\ContactController::create');
+    $routes->match(['put', 'post'], 'contacts/(:num)', 'Api\ContactController::update/$1');
     $routes->delete('contacts/(:num)', 'Api\ContactController::delete/$1');
 
     // Image Upload
