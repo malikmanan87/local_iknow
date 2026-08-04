@@ -8,7 +8,10 @@ use CodeIgniter\Router\RouteCollection;
 
 // Serve React SPA dist on root URL
 $routes->get('/', function() {
-    $indexPath = FCPATH . '../frontend/dist/index.html';
+    $indexPath = FCPATH . 'index.html';
+    if (!file_exists($indexPath)) {
+        $indexPath = FCPATH . '../frontend/dist/index.html';
+    }
     if (file_exists($indexPath)) {
         return response()->setBody(file_get_contents($indexPath))->setHeader('Content-Type', 'text/html');
     }
@@ -17,7 +20,10 @@ $routes->get('/', function() {
 
 // Serve compiled React static assets (JS/CSS)
 $routes->get('assets/(:any)', function($asset) {
-    $assetPath = FCPATH . '../frontend/dist/assets/' . $asset;
+    $assetPath = FCPATH . 'assets/' . $asset;
+    if (!file_exists($assetPath)) {
+        $assetPath = FCPATH . '../frontend/dist/assets/' . $asset;
+    }
     if (file_exists($assetPath)) {
         $mime = 'text/plain';
         if (str_ends_with($asset, '.css')) {
