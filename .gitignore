@@ -124,3 +124,9 @@ _modules/*
 
 /results/
 /phpunit.xml
+
+
+# Node Modules
+node_modules/
+frontend/node_modules/
+frontend/dist/
