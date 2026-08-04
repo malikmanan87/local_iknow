@@ -3,10 +3,19 @@ import { X, Save } from 'lucide-react';
 import { createFlow, updateFlow, uploadImage } from '../services/api';
 
 export default function AddFlowModal({ moduleId, submodules = [], allFlows = [], defaultSubmoduleId = null, initialData = null, nextStepNumber = 1, onClose, onSuccess }) {
+  const computeStepNumber = (targetSubId) => {
+    if (initialData) return initialData.step_number;
+    const matched = allFlows.filter(f => {
+      if (!targetSubId) return !f.submodule_id;
+      return String(f.submodule_id) === String(targetSubId);
+    });
+    return matched.length + 1;
+  };
+
   const [formData, setFormData] = useState({
     module_id: moduleId,
     submodule_id: initialData ? (initialData.submodule_id || '') : (defaultSubmoduleId || ''),
-    step_number: initialData ? initialData.step_number : (nextStepNumber || 1),
+    step_number: computeStepNumber(initialData ? initialData.submodule_id : defaultSubmoduleId),
     step_title: initialData?.step_title || '',
     description: initialData?.description || '',
     image_path: initialData?.image_path || ''
@@ -14,17 +23,24 @@ export default function AddFlowModal({ moduleId, submodules = [], allFlows = [],
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Recalculate step_number when submodule_id changes (unless in edit mode)
-  const handleSubmoduleChange = (subId) => {
-    let nextStep = 1;
+  useEffect(() => {
     if (!initialData) {
-      const existingFlows = allFlows.filter(f => subId ? f.submodule_id == subId : !f.submodule_id);
-      nextStep = existingFlows.length + 1;
+      const subId = defaultSubmoduleId || '';
+      const step = computeStepNumber(subId);
+      setFormData(prev => ({
+        ...prev,
+        submodule_id: subId,
+        step_number: step
+      }));
     }
+  }, [defaultSubmoduleId, allFlows, initialData]);
+
+  const handleSubmoduleChange = (subId) => {
+    const step = computeStepNumber(subId);
     setFormData((prev) => ({
       ...prev,
       submodule_id: subId,
-      step_number: initialData ? prev.step_number : nextStep
+      step_number: initialData ? prev.step_number : step
     }));
   };
 

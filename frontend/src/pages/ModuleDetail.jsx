@@ -508,7 +508,11 @@ export default function ModuleDetail({ moduleId, onBack }) {
           submodules={submodules}
           allFlows={flows}
           defaultSubmoduleId={activeItemModal.submoduleId}
-          nextStepNumber={(flows.filter(f => activeItemModal && (activeItemModal.submoduleId === null ? !f.submodule_id : f.submodule_id == activeItemModal.submoduleId)).length) + 1}
+          nextStepNumber={(flows.filter(f => {
+            if (!activeItemModal) return true;
+            if (!activeItemModal.submoduleId) return !f.submodule_id;
+            return String(f.submodule_id) === String(activeItemModal.submoduleId);
+          }).length) + 1}
           onClose={() => setActiveItemModal(null)} 
           onSuccess={fetchDetail} 
         />
