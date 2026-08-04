@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
-import { createModule } from '../services/api';
+import { createModule, updateModule } from '../services/api';
 
-export default function AddModuleModal({ onClose, onSuccess }) {
+export default function AddModuleModal({ initialData = null, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
-    code: '',
-    title: '',
-    category: 'Sistem Utama',
-    description: '',
-    status: 'Active'
+    code: initialData?.code || '',
+    title: initialData?.title || '',
+    category: initialData?.category || 'Sistem Utama',
+    description: initialData?.description || '',
+    status: initialData?.status || 'Active'
   });
   const [loading, setLoading] = useState(false);
 
@@ -16,11 +16,15 @@ export default function AddModuleModal({ onClose, onSuccess }) {
     e.preventDefault();
     setLoading(true);
     try {
-      await createModule(formData);
+      if (initialData && initialData.id) {
+        await updateModule(initialData.id, formData);
+      } else {
+        await createModule(formData);
+      }
       onSuccess();
       onClose();
     } catch (err) {
-      alert('Gagal mendaftar modul: ' + (err.response?.data?.message || err.message));
+      alert('Gagal menyimpan modul: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
@@ -30,7 +34,9 @@ export default function AddModuleModal({ onClose, onSuccess }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Daftar Modul Baru</h3>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>
+            {initialData ? 'Kemaskini Modul' : 'Daftar Modul Baru'}
+          </h3>
           <button className="btn btn-secondary" onClick={onClose} style={{ padding: '0.4rem' }}><X size={18} /></button>
         </div>
 
@@ -86,7 +92,7 @@ export default function AddModuleModal({ onClose, onSuccess }) {
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
             <button type="button" className="btn btn-secondary" onClick={onClose}>Batal</button>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              <Save size={16} /> {loading ? 'Menyimpan...' : 'Simpan Modul'}
+              <Save size={16} /> {loading ? 'Menyimpan...' : (initialData ? 'Kemaskini Modul' : 'Simpan Modul')}
             </button>
           </div>
         </form>

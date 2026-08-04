@@ -38,6 +38,34 @@ class IssueController extends ResourceController {
         return $this->respondCreated(['id' => $issueId, 'message' => 'Isu & solution berjaya ditambah']);
     }
 
+    public function update($id = null) {
+        $issueModel = new IssueModel();
+        $tsModel = new TroubleshootingModel();
+        $data = $this->request->getJSON(true);
+
+        if (!$issueModel->find($id)) return $this->failNotFound('Isu tidak dijumpai');
+
+        $issueModel->update($id, [
+            'issue_code' => $data['issue_code'] ?? null,
+            'title' => $data['title'],
+            'symptoms' => $data['symptoms'] ?? ''
+        ]);
+
+        if (isset($data['solutions']) && is_array($data['solutions'])) {
+            $tsModel->where('issue_id', $id)->delete();
+            foreach ($data['solutions'] as $index => $sol) {
+                $tsModel->insert([
+                    'issue_id' => $id,
+                    'step_number' => $index + 1,
+                    'instruction' => $sol['instruction'] ?? '',
+                    'image_path' => $sol['image_path'] ?? null
+                ]);
+            }
+        }
+
+        return $this->respond(['message' => 'Isu berjaya dikemaskini']);
+    }
+
     public function delete($id = null) {
         $model = new IssueModel();
         if (!$model->find($id)) {

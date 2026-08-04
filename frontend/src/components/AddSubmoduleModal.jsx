@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { X, Save, Layers } from 'lucide-react';
-import { createSubmodule } from '../services/api';
+import { X, Save } from 'lucide-react';
+import { createSubmodule, updateSubmodule } from '../services/api';
 
-export default function AddSubmoduleModal({ moduleId, parentId = null, parentTitle = '', onClose, onSuccess }) {
+export default function AddSubmoduleModal({ moduleId, parentId = null, parentTitle = '', initialData = null, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     module_id: moduleId,
-    parent_id: parentId,
-    title: '',
-    description: ''
+    parent_id: initialData ? initialData.parent_id : parentId,
+    title: initialData?.title || '',
+    description: initialData?.description || ''
   });
   const [loading, setLoading] = useState(false);
 
@@ -15,11 +15,15 @@ export default function AddSubmoduleModal({ moduleId, parentId = null, parentTit
     e.preventDefault();
     setLoading(true);
     try {
-      await createSubmodule(formData);
+      if (initialData && initialData.id) {
+        await updateSubmodule(initialData.id, formData);
+      } else {
+        await createSubmodule(formData);
+      }
       onSuccess();
       onClose();
     } catch (err) {
-      alert('Gagal menambah submodul: ' + (err.response?.data?.message || err.message));
+      alert('Gagal menyimpan submodul: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
@@ -31,7 +35,7 @@ export default function AddSubmoduleModal({ moduleId, parentId = null, parentTit
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <div>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>
-              {parentId ? 'Tambah Sub-Submodul' : 'Tambah Submodul Baru'}
+              {initialData ? 'Kemaskini Submodul' : (parentId ? 'Tambah Sub-Submodul' : 'Tambah Submodul Baru')}
             </h3>
             {parentTitle && (
               <span style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)', fontWeight: 600 }}>
@@ -68,7 +72,7 @@ export default function AddSubmoduleModal({ moduleId, parentId = null, parentTit
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
             <button type="button" className="btn btn-secondary" onClick={onClose}>Batal</button>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              <Save size={16} /> {loading ? 'Menyimpan...' : 'Simpan Submodul'}
+              <Save size={16} /> {loading ? 'Menyimpan...' : (initialData ? 'Kemaskini Submodul' : 'Simpan Submodul')}
             </button>
           </div>
         </form>

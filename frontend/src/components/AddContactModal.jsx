@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { X, Save } from 'lucide-react';
-import { createContact } from '../services/api';
+import { createContact, updateContact } from '../services/api';
 
-export default function AddContactModal({ moduleId, onClose, onSuccess, submodules = [], defaultSubmoduleId = null }) {
+export default function AddContactModal({ moduleId, submodules = [], defaultSubmoduleId = null, initialData = null, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     module_id: moduleId,
-    submodule_id: defaultSubmoduleId || "",
-    name: '',
-    role: 'Lead Developer',
-    email: '',
-    phone_no: '',
-    department: 'IT / Systems'
+    submodule_id: initialData ? (initialData.submodule_id || '') : (defaultSubmoduleId || ''),
+    name: initialData?.name || '',
+    role: initialData?.role || 'Lead Developer',
+    email: initialData?.email || '',
+    phone_no: initialData?.phone_no || '',
+    department: initialData?.department || 'IT / Systems'
   });
   const [loading, setLoading] = useState(false);
 
@@ -18,11 +18,15 @@ export default function AddContactModal({ moduleId, onClose, onSuccess, submodul
     e.preventDefault();
     setLoading(true);
     try {
-      await createContact(formData);
+      if (initialData && initialData.id) {
+        await updateContact(initialData.id, formData);
+      } else {
+        await createContact(formData);
+      }
       onSuccess();
       onClose();
     } catch (err) {
-      alert('Gagal menambah PIC: ' + (err.response?.data?.message || err.message));
+      alert('Gagal menyimpan PIC: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
@@ -32,7 +36,9 @@ export default function AddContactModal({ moduleId, onClose, onSuccess, submodul
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Tambah Pegawai Bertanggungjawab (PIC)</h3>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>
+            {initialData ? 'Kemaskini Pegawai Bertanggungjawab (PIC)' : 'Tambah Pegawai Bertanggungjawab (PIC)'}
+          </h3>
           <button className="btn btn-secondary" onClick={onClose} style={{ padding: '0.4rem' }}><X size={18} /></button>
         </div>
 
@@ -52,7 +58,7 @@ export default function AddContactModal({ moduleId, onClose, onSuccess, submodul
               </select>
             </div>
           )}
-        
+
           <div className="form-group">
             <label className="form-label">Nama Pegawai / PIC</label>
             <input 
@@ -114,7 +120,7 @@ export default function AddContactModal({ moduleId, onClose, onSuccess, submodul
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
             <button type="button" className="btn btn-secondary" onClick={onClose}>Batal</button>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              <Save size={16} /> {loading ? 'Menyimpan...' : 'Simpan PIC'}
+              <Save size={16} /> {loading ? 'Menyimpan...' : (initialData ? 'Kemaskini PIC' : 'Simpan PIC')}
             </button>
           </div>
         </form>

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Layers, AlertCircle, ArrowRight, Trash2, RefreshCw } from 'lucide-react';
+import { Search, Layers, AlertCircle, ArrowRight, Trash2, RefreshCw, Pencil } from 'lucide-react';
 import { getModules, deleteModule } from '../services/api';
 
-export default function Dashboard({ onSelectModule }) {
+export default function Dashboard({ onSelectModule, onEditModule }) {
   const [modules, setModules] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -118,8 +118,10 @@ export default function Dashboard({ onSelectModule }) {
                     Kategori: {m.category || 'General'}
                   </span>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button 
-                      className="btn btn-danger" 
+                    <button className="btn btn-secondary" onClick={(e) => { e.stopPropagation(); onEditModule(m); }} style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} title="Kemaskini Modul">
+                      <Pencil size={14} />
+                    </button>
+                    <button className="btn btn-danger" 
                       onClick={(e) => handleDeleteModule(e, m.id, m.title)}
                       style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}
                       title="Padam Modul"

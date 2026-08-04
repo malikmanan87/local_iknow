@@ -7,6 +7,7 @@ import AddModuleModal from './components/AddModuleModal';
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedModuleId, setSelectedModuleId] = useState(null);
+  const [editModuleData, setEditModuleData] = useState(null);
   const [showAddModule, setShowAddModule] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -20,10 +21,15 @@ export default function App() {
     setActiveTab('dashboard');
   };
 
+  const handleOpenEditModule = (moduleData) => {
+    setEditModuleData(moduleData);
+    setShowAddModule(true);
+  };
+
   return (
     <div>
       <Navbar 
-        onOpenAddModule={() => setShowAddModule(true)} 
+        onOpenAddModule={() => { setEditModuleData(null); setShowAddModule(true); }} 
         activeTab={activeTab}
         setActiveTab={handleBackToDashboard}
       />
@@ -33,6 +39,7 @@ export default function App() {
           <Dashboard 
             key={refreshTrigger}
             onSelectModule={handleSelectModule} 
+            onEditModule={handleOpenEditModule}
           />
         ) : (
           <ModuleDetail 
@@ -44,7 +51,8 @@ export default function App() {
 
       {showAddModule && (
         <AddModuleModal 
-          onClose={() => setShowAddModule(false)}
+          initialData={editModuleData}
+          onClose={() => { setShowAddModule(false); setEditModuleData(null); }}
           onSuccess={() => {
             setRefreshTrigger(prev => prev + 1);
             setActiveTab('dashboard');

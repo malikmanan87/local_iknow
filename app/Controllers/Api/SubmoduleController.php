@@ -25,6 +25,14 @@ class SubmoduleController extends ResourceController {
         return $this->respondCreated(['id' => $id, 'message' => 'Submodul berjaya ditambah']);
     }
 
+    public function update($id = null) {
+        $model = new SubmoduleModel();
+        $data = $this->request->getJSON(true);
+        if (!$model->find($id)) return $this->failNotFound('Submodul tidak dijumpai');
+        $model->update($id, $data);
+        return $this->respond(['message' => 'Submodul berjaya dikemaskini']);
+    }
+
     public function delete($id = null) {
         $model = new SubmoduleModel();
         if (!$model->find($id)) {

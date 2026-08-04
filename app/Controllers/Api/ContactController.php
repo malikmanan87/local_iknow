@@ -19,6 +19,14 @@ class ContactController extends ResourceController {
         return $this->respondCreated(['id' => $id, 'message' => 'PIC berjaya ditambah']);
     }
 
+    public function update($id = null) {
+        $model = new ContactModel();
+        $data = $this->request->getJSON(true);
+        if (!$model->find($id)) return $this->failNotFound('PIC tidak dijumpai');
+        $model->update($id, $data);
+        return $this->respond(['message' => 'PIC berjaya dikemaskini']);
+    }
+
     public function delete($id = null) {
         $model = new ContactModel();
         if (!$model->find($id)) {

@@ -43,6 +43,7 @@ $routes->group('api', function($routes) {
 
     // Submodules
     $routes->post('submodules', 'Api\\SubmoduleController::create');
+    $routes->put('submodules/(:num)', 'Api\\SubmoduleController::update/$1');
     $routes->delete('submodules/(:num)', 'Api\\SubmoduleController::delete/$1');
 
     // Flows

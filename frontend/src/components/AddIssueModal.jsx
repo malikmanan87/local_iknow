@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
 import { X, Plus, Trash2, Save } from 'lucide-react';
-import { createIssue, uploadImage } from '../services/api';
+import { createIssue, updateIssue, uploadImage } from '../services/api';
 
-export default function AddIssueModal({ moduleId, onClose, onSuccess, submodules = [], defaultSubmoduleId = null }) {
+export default function AddIssueModal({ moduleId, submodules = [], defaultSubmoduleId = null, initialData = null, onClose, onSuccess }) {
   const [issueData, setIssueData] = useState({
     module_id: moduleId,
-    submodule_id: defaultSubmoduleId || "",
-    issue_code: '',
-    title: '',
-    symptoms: ''
+    submodule_id: initialData ? (initialData.submodule_id || '') : (defaultSubmoduleId || ''),
+    issue_code: initialData?.issue_code || '',
+    title: initialData?.title || '',
+    symptoms: initialData?.symptoms || ''
   });
 
-  const [solutions, setSolutions] = useState([
-    { instruction: '', image_path: '' }
-  ]);
+  const [solutions, setSolutions] = useState(
+    initialData && initialData.solutions && initialData.solutions.length > 0
+      ? initialData.solutions
+      : [{ instruction: '', image_path: '' }]
+  );
 
   const [loading, setLoading] = useState(false);
   const [uploadingIndex, setUploadingIndex] = useState(null);
@@ -59,11 +61,15 @@ export default function AddIssueModal({ moduleId, onClose, onSuccess, submodules
     };
 
     try {
-      await createIssue(payload);
+      if (initialData && initialData.id) {
+        await updateIssue(initialData.id, payload);
+      } else {
+        await createIssue(payload);
+      }
       onSuccess();
       onClose();
     } catch (err) {
-      alert('Gagal menambah isu: ' + (err.response?.data?.message || err.message));
+      alert('Gagal menyimpan isu: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
@@ -73,7 +79,9 @@ export default function AddIssueModal({ moduleId, onClose, onSuccess, submodules
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Tambah Common Issue & Solution / Workaround</h3>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>
+            {initialData ? 'Kemaskini Common Issue & Solution' : 'Tambah Common Issue & Solution / Workaround'}
+          </h3>
           <button className="btn btn-secondary" onClick={onClose} style={{ padding: '0.4rem' }}><X size={18} /></button>
         </div>
 
@@ -93,7 +101,7 @@ export default function AddIssueModal({ moduleId, onClose, onSuccess, submodules
               </select>
             </div>
           )}
-    
+
           <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: '1rem' }}>
             <div className="form-group">
               <label className="form-label">Error Code (Pilihan)</label>
@@ -181,7 +189,7 @@ export default function AddIssueModal({ moduleId, onClose, onSuccess, submodules
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
             <button type="button" className="btn btn-secondary" onClick={onClose}>Batal</button>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              <Save size={16} /> {loading ? 'Menyimpan...' : 'Simpan Isu & Solution'}
+              <Save size={16} /> {loading ? 'Menyimpan...' : (initialData ? 'Kemaskini Isu' : 'Simpan Isu & Solution')}
             </button>
           </div>
         </form>

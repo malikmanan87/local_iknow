@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, GitCommit, AlertTriangle, Phone, Plus, Trash2, Image as ImageIcon, MessageCircle, Mail, Layers, CornerDownRight } from 'lucide-react';
+import { ArrowLeft, GitCommit, AlertTriangle, Phone, Plus, Trash2, Image as ImageIcon, MessageCircle, Mail, Layers, CornerDownRight, Pencil } from 'lucide-react';
 import { getModuleDetail, deleteFlow, deleteIssue, deleteContact, deleteSubmodule } from '../services/api';
 import AddFlowModal from '../components/AddFlowModal';
 import AddIssueModal from '../components/AddIssueModal';
@@ -12,7 +12,8 @@ export default function ModuleDetail({ moduleId, onBack }) {
   const [loading, setLoading] = useState(true);
 
   // Modal controls
-  const [activeSubModal, setActiveSubModal] = useState(null); // { parentId: null|id, parentTitle: '' }
+  const [activeSubModal, setActiveSubModal] = useState(null); // { parentId, parentTitle, initialData }
+  const [editItemModal, setEditItemModal] = useState(null); // { type: 'flow'|'issue'|'contact', data: {} } // { parentId: null|id, parentTitle: '' }
   const [activeItemModal, setActiveItemModal] = useState(null); // { type: 'flow'|'issue'|'contact', submoduleId: null }
   const [lightboxImage, setLightboxImage] = useState(null);
 
@@ -167,6 +168,7 @@ export default function ModuleDetail({ moduleId, onBack }) {
                         <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#fff', marginBottom: '0.3rem' }}>
                           {f.step_title}
                         </h4>
+                        <button className="btn btn-secondary" onClick={() => setEditItemModal({ type: 'flow', data: f })} style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem', marginRight: '0.3rem' }} title="Kemaskini Flow"><Pencil size={13} /></button>
                         <button className="btn btn-danger" onClick={() => handleDeleteFlow(f.id)} style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem' }}>
                           <Trash2 size={13} />
                         </button>
@@ -216,7 +218,8 @@ export default function ModuleDetail({ moduleId, onBack }) {
                         </h4>
                       </div>
 
-                      <button className="btn btn-danger" onClick={() => handleDeleteIssue(issue.id)} style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem' }}>
+                      <button className="btn btn-secondary" onClick={() => setEditItemModal({ type: 'issue', data: issue })} style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem', marginRight: '0.3rem' }} title="Kemaskini Isu"><Pencil size={13} /></button>
+                    <button className="btn btn-danger" onClick={() => handleDeleteIssue(issue.id)} style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem' }}>
                         <Trash2 size={13} />
                       </button>
                     </div>
@@ -283,6 +286,7 @@ export default function ModuleDetail({ moduleId, onBack }) {
                     <div key={c.id} className="glass-card" style={{ padding: '1.25rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
                         <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#fff' }}>{c.name}</h4>
+                        <button className="btn btn-secondary" onClick={() => setEditItemModal({ type: 'contact', data: c })} style={{ padding: '0.15rem 0.35rem', fontSize: '0.75rem', marginRight: '0.3rem' }} title="Kemaskini PIC"><Pencil size={12} /></button>
                         <button className="btn btn-danger" onClick={() => handleDeleteContact(c.id)} style={{ padding: '0.15rem 0.35rem', fontSize: '0.75rem' }}>
                           <Trash2 size={12} />
                         </button>
@@ -389,6 +393,7 @@ export default function ModuleDetail({ moduleId, onBack }) {
                   <button className="btn btn-secondary" onClick={() => setActiveItemModal({ type: 'contact', submoduleId: sub.id })} style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}>
                     <Plus size={13} /> PIC
                   </button>
+                  <button className="btn btn-secondary" onClick={() => setActiveSubModal({ parentId: sub.parent_id, parentTitle: '', initialData: sub })} style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem' }} title="Kemaskini Submodul"><Pencil size={13} /></button>
                   <button className="btn btn-danger" onClick={() => handleDeleteSubmodule(sub.id, sub.title)} style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem' }} title="Padam Submodul">
                     <Trash2 size={13} />
                   </button>

@@ -19,6 +19,14 @@ class FlowController extends ResourceController {
         return $this->respondCreated(['id' => $id, 'message' => 'Flow modul berjaya ditambah']);
     }
 
+    public function update($id = null) {
+        $model = new FlowModel();
+        $data = $this->request->getJSON(true);
+        if (!$model->find($id)) return $this->failNotFound('Flow tidak dijumpai');
+        $model->update($id, $data);
+        return $this->respond(['message' => 'Flow berjaya dikemaskini']);
+    }
+
     public function delete($id = null) {
         $model = new FlowModel();
         if (!$model->find($id)) {

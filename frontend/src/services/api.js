@@ -62,3 +62,8 @@ export const uploadImage = (formData) => {
 };
 
 export default api;
+
+export const updateSubmodule = (id, data) => api.put('/submodules/' + id, data);
+export const updateFlow = (id, data) => api.put('/flows/' + id, data);
+export const updateIssue = (id, data) => api.put('/issues/' + id, data);
+export const updateContact = (id, data) => api.put('/contacts/' + id, data);
