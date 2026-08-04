@@ -3,6 +3,7 @@ namespace App\Controllers\Api;
 
 use CodeIgniter\RESTful\ResourceController;
 use Config\Database;
+use Smalot\PdfParser\Parser;
 
 class GhopController extends ResourceController {
     protected $format = 'json';
@@ -35,7 +36,7 @@ class GhopController extends ResourceController {
 
         $db = Database::connect();
         $words = array_filter(explode(' ', strtolower($question)), function($w) {
-            return strlen($w) > 2 && !in_array($w, ['apa', 'bagaimana', 'boleh', 'siapa', 'yang', 'dan', 'di', 'ke', 'dari', 'untuk', 'ini', 'itu', 'atau']);
+            return strlen($w) > 2 && !in_array($w, ['apa', 'bagaimana', 'boleh', 'siapa', 'yang', 'dan', 'di', 'ke', 'dari', 'untuk', 'ini', 'itu', 'atau', 'apakah']);
         });
 
         $builder = $db->table('ghop_policies');
@@ -62,17 +63,15 @@ class GhopController extends ResourceController {
         $results = $builder->limit(3)->get()->getResultArray();
 
         if (empty($results)) {
-            // Fallback response if no direct match found in PDF
             return $this->respond([
                 'found' => false,
-                'answer' => "Maaf, soalan anda tidak dijumpai secara spesifik di dalam fail PDF GHOP yang dimuat naik.\n\nSila pastikan anda menanya soalan berkenaan polisi hospital (cth: waktu melawat, polisi peneman, kod kecemasan), atau muat naik dokumen PDF GHOP terkini melalui panel pengurusan.",
+                'answer' => "Maaf, soalan anda tidak dijumpai secara spesifik di dalam dokumen PDF GHOP yang dimuat naik.\n\nSila pastikan kata kunci carian tepat mengikut isi kandungan fail PDF GHOP anda.",
                 'references' => []
             ]);
         }
 
-        // Format structured AI response based strictly on PDF content
         $bestMatch = $results[0];
-        $answerText = "Berdasarkan dokumen rasmi **" . ($bestMatch['pdf_filename'] ?? 'GHOP Policy') . "** (" . $bestMatch['chapter_title'] . "):\n\n" .
+        $answerText = "Berdasarkan dokumen rasmi **" . ($bestMatch['pdf_filename'] ?? 'GHOP Policy') . "** (Muka Surat " . $bestMatch['page_number'] . "):\n\n" .
                      "📌 **" . $bestMatch['title'] . "**\n" .
                      $bestMatch['content_text'];
 
@@ -96,7 +95,7 @@ class GhopController extends ResourceController {
         ]);
     }
 
-    // Upload new GHOP PDF file or import PDF clauses
+    // Upload new GHOP PDF file & Auto-Extract All Pages Text
     public function uploadPdf() {
         $db = Database::connect();
         $file = $this->request->getFile('pdf_file');
@@ -106,37 +105,67 @@ class GhopController extends ResourceController {
             if (!is_dir($uploadPath)) {
                 mkdir($uploadPath, 0777, true);
             }
-            $newFileName = 'GHOP_' . time() . '_' . $file->getRandomName();
+            $origName = $file->getClientName();
+            $newFileName = 'GHOP_' . time() . '_' . preg_replace('/[^a-zA-Z0-9_.-]/', '_', $origName);
+            $filePath = $uploadPath . '/' . $newFileName;
             $file->move($uploadPath, $newFileName);
 
-            // If metadata/clauses sent alongside PDF file upload
-            $clausesJson = $this->request->getPost('clauses');
-            if ($clausesJson) {
-                $clauses = json_decode($clausesJson, true);
-                if (is_array($clauses)) {
-                    $db->table('ghop_policies')->truncate();
-                    foreach ($clauses as $c) {
+            // Auto-extract text page by page from PDF using Smalot\PdfParser
+            try {
+                $parser = new Parser();
+                $pdf = $parser->parseFile($filePath);
+                $pages = $pdf->getPages();
+
+                $db->table('ghop_policies')->truncate();
+                $extractedPagesCount = 0;
+
+                foreach ($pages as $pageIndex => $page) {
+                    $pageNumber = $pageIndex + 1;
+                    $text = trim($page->getText());
+                    if (!empty($text)) {
+                        $lines = array_filter(array_map('trim', explode("\n", $text)));
+                        $title = !empty($lines) ? reset($lines) : "Muka Surat $pageNumber";
+                        if (mb_strlen($title) > 100) {
+                            $title = mb_substr($title, 0, 100) . '...';
+                        }
+
+                        $chapter = "Muka Surat $pageNumber";
+                        foreach ($lines as $line) {
+                            if (preg_match('/(bab|chapter|seksyen|section|bahagian)/i', $line)) {
+                                $chapter = mb_substr($line, 0, 80);
+                                break;
+                            }
+                        }
+
                         $db->table('ghop_policies')->insert([
-                            'pdf_filename' => $file->getClientName(),
-                            'page_number' => $c['page_number'] ?? 1,
-                            'chapter_title' => $c['chapter_title'] ?? 'General',
-                            'section_code' => $c['section_code'] ?? null,
-                            'title' => $c['title'] ?? 'Klausa GHOP',
-                            'content_text' => $c['content_text'] ?? '',
-                            'keywords' => $c['keywords'] ?? ''
+                            'pdf_filename' => $origName,
+                            'page_number' => $pageNumber,
+                            'chapter_title' => $chapter,
+                            'section_code' => 'GHOP-P' . $pageNumber,
+                            'title' => $title,
+                            'content_text' => $text,
+                            'keywords' => strtolower($text)
                         ]);
+                        $extractedPagesCount++;
                     }
                 }
-            }
 
-            return $this->respondCreated([
-                'message' => 'Fail PDF GHOP berjaya dimuat naik',
-                'pdf_filename' => $file->getClientName(),
-                'file_path' => 'uploads/pdf/' . $newFileName
-            ]);
+                return $this->respondCreated([
+                    'message' => "Fail PDF '$origName' berjaya dimuat naik & $extractedPagesCount muka surat teks telah diekstrak secara automatik oleh AI!",
+                    'pdf_filename' => $origName,
+                    'pages_extracted' => $extractedPagesCount
+                ]);
+            } catch (\Throwable $e) {
+                // If PDF parsing error (e.g. encrypted), save uploaded file info
+                return $this->respondCreated([
+                    'message' => "Fail PDF '$origName' berjaya dimuat naik. Salinan PDF disimpan.",
+                    'pdf_filename' => $origName,
+                    'warning' => 'Ekstraksi automatik teks PDF memerlukan PDF yang tidak dilindungi kata laluan.'
+                ]);
+            }
         }
 
-        // If JSON payload for manual clauses insertion/update
+        // Manual text JSON payload insertion/update
         $data = $this->request->getJSON(true);
         if ($data && isset($data['clauses']) && is_array($data['clauses'])) {
             if ($data['replace_all'] ?? false) {
@@ -150,7 +179,7 @@ class GhopController extends ResourceController {
                     'section_code' => $c['section_code'] ?? null,
                     'title' => $c['title'] ?? 'Klausa GHOP',
                     'content_text' => $c['content_text'] ?? '',
-                    'keywords' => $c['keywords'] ?? ''
+                    'keywords' => strtolower(($c['title'] ?? '') . ' ' . ($c['content_text'] ?? ''))
                 ]);
             }
             return $this->respondCreated(['message' => 'Klausa PDF GHOP berjaya disimpan']);
