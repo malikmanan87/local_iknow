@@ -1,7 +1,32 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080/api';
-export const UPLOAD_BASE_URL = 'http://localhost:8080/';
+const getBaseUrls = () => {
+  if (typeof window !== 'undefined') {
+    const origin = window.location.origin;
+    const pathname = window.location.pathname;
+
+    if (window.location.port === '5173') {
+      return {
+        api: 'http://localhost/iknow/public/api',
+        upload: 'http://localhost/iknow/public/'
+      };
+    }
+
+    const cleanPath = pathname.endsWith('/') ? pathname : pathname.substring(0, pathname.lastIndexOf('/') + 1);
+    return {
+      api: origin + cleanPath + 'api',
+      upload: origin + cleanPath
+    };
+  }
+  return {
+    api: 'http://localhost/iknow/public/api',
+    upload: 'http://localhost/iknow/public/'
+  };
+};
+
+const urls = getBaseUrls();
+export const API_BASE_URL = urls.api;
+export const UPLOAD_BASE_URL = urls.upload;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -15,6 +40,9 @@ export const getModuleDetail = (id) => api.get('/modules/' + id);
 export const createModule = (data) => api.post('/modules', data);
 export const updateModule = (id, data) => api.put('/modules/' + id, data);
 export const deleteModule = (id) => api.delete('/modules/' + id);
+
+export const createSubmodule = (data) => api.post('/submodules', data);
+export const deleteSubmodule = (id) => api.delete('/submodules/' + id);
 
 export const createFlow = (data) => api.post('/flows', data);
 export const deleteFlow = (id) => api.delete('/flows/' + id);
@@ -34,6 +62,3 @@ export const uploadImage = (formData) => {
 };
 
 export default api;
-
-export const createSubmodule = (data) => api.post('/submodules', data);
-export const deleteSubmodule = (id) => api.delete('/submodules/' + id);
