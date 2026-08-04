@@ -130,8 +130,9 @@ class GhopController extends ResourceController {
             }
         }
 
-        $titleStr = (!empty($bestMatch['title']) && !str_starts_with($bestMatch['title'], 'Muka Surat')) ? "📌 **" . $bestMatch['title'] . "**\n\n" : "";
-        $answerText = $titleStr . $bestParagraph;
+        // Clean text to extract direct summary answer without titles or page headers
+        $cleanAnswer = preg_replace('/^(muka surat|page|bab|chapter|seksyen|section)\s+\d+[:\s\-]*/i', '', $bestParagraph);
+        $answerText = trim($cleanAnswer);
 
         $references = array_map(function($r) {
             return [

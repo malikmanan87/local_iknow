@@ -215,16 +215,8 @@ export default function GhopAiWidget() {
                     whiteSpace: 'pre-line'
                   }}
                 >
-                  {/* Direct Answer Text */}
+                  {/* Direct Answer Text Only */}
                   {m.text}
-
-                  {/* Subtle PDF Page Tag */}
-                  {m.references && m.references.length > 0 && (
-                    <div style={{ marginTop: '0.4rem', fontSize: '0.7rem', color: 'var(--accent-cyan)', display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                      <span>📄 M/S {m.references[0].page_number}</span>
-                      {m.references[0].chapter_title && <span>• {m.references[0].chapter_title}</span>}
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
