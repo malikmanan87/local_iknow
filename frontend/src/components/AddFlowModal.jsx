@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import { createFlow, updateFlow, uploadImage } from '../services/api';
 
-export default function AddFlowModal({ moduleId, submodules = [], defaultSubmoduleId = null, initialData = null, nextStepNumber = 1, onClose, onSuccess }) {
+export default function AddFlowModal({ moduleId, submodules = [], allFlows = [], defaultSubmoduleId = null, initialData = null, nextStepNumber = 1, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     module_id: moduleId,
     submodule_id: initialData ? (initialData.submodule_id || '') : (defaultSubmoduleId || ''),
@@ -13,6 +13,20 @@ export default function AddFlowModal({ moduleId, submodules = [], defaultSubmodu
   });
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Recalculate step_number when submodule_id changes (unless in edit mode)
+  const handleSubmoduleChange = (subId) => {
+    let nextStep = 1;
+    if (!initialData) {
+      const existingFlows = allFlows.filter(f => subId ? f.submodule_id == subId : !f.submodule_id);
+      nextStep = existingFlows.length + 1;
+    }
+    setFormData((prev) => ({
+      ...prev,
+      submodule_id: subId,
+      step_number: initialData ? prev.step_number : nextStep
+    }));
+  };
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -64,13 +78,13 @@ export default function AddFlowModal({ moduleId, submodules = [], defaultSubmodu
         <form onSubmit={handleSubmit}>
           {submodules.length > 0 && (
             <div className="form-group">
-              <label className="form-label">Pilih Submodul (Pilihan)</label>
+              <label className="form-label">Pilih Submodul / Sub-submodul (Pilihan)</label>
               <select 
                 className="form-select"
                 value={formData.submodule_id || ''}
-                onChange={(e) => setFormData({ ...formData, submodule_id: e.target.value })}
+                onChange={(e) => handleSubmoduleChange(e.target.value)}
               >
-                <option value="">-- Semua / Terus di bawah Modul --</option>
+                <option value="">-- Terus di bawah Modul Utama --</option>
                 {submodules.map(s => (
                   <option key={s.id} value={s.id}>{s.title}</option>
                 ))}
