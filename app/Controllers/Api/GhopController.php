@@ -35,45 +35,104 @@ class GhopController extends ResourceController {
         }
 
         $db = Database::connect();
-        $words = array_filter(explode(' ', strtolower($question)), function($w) {
-            return strlen($w) > 2 && !in_array($w, ['apa', 'bagaimana', 'boleh', 'siapa', 'yang', 'dan', 'di', 'ke', 'dari', 'untuk', 'ini', 'itu', 'atau', 'apakah']);
-        });
+        $allPolicies = $db->table('ghop_policies')->get()->getResultArray();
 
-        $builder = $db->table('ghop_policies');
-        
-        if (!empty($words)) {
-            $builder->groupStart();
-            foreach ($words as $index => $word) {
-                if ($index === 0) {
-                    $builder->like('content_text', $word)
-                            ->orLike('title', $word)
-                            ->orLike('keywords', $word)
-                            ->orLike('chapter_title', $word);
-                } else {
-                    $builder->orLike('content_text', $word)
-                            ->orLike('title', $word)
-                            ->orLike('keywords', $word);
-                }
-            }
-            $builder->groupEnd();
-        } else {
-            $builder->like('content_text', $question);
-        }
-
-        $results = $builder->limit(3)->get()->getResultArray();
-
-        if (empty($results)) {
+        if (empty($allPolicies)) {
             return $this->respond([
                 'found' => false,
-                'answer' => "Maaf, soalan anda tidak dijumpai secara spesifik di dalam dokumen PDF GHOP yang dimuat naik.\n\nSila pastikan kata kunci carian tepat mengikut isi kandungan fail PDF GHOP anda.",
+                'answer' => "Tiada dokumen PDF GHOP dijumpai dalam pangkalan data. Sila muat naik fail PDF GHOP terlebih dahulu.",
                 'references' => []
             ]);
         }
 
-        $bestMatch = $results[0];
-        $answerText = "Berdasarkan dokumen rasmi **" . ($bestMatch['pdf_filename'] ?? 'GHOP Policy') . "** (Muka Surat " . $bestMatch['page_number'] . "):\n\n" .
+        $cleanQuestion = strtolower($question);
+        $stopWords = ['apa', 'apakah', 'bagaimana', 'bagaimanakah', 'boleh', 'bolehkah', 'siapa', 'siapakah', 'yang', 'dan', 'di', 'ke', 'dari', 'untuk', 'ini', 'itu', 'atau', 'pada', 'dengan', 'adakah', 'bila', 'bilakah', 'mengapa', 'kenapa', 'hospital'];
+        
+        $keywords = array_filter(explode(' ', preg_replace('/[^\w\s]/u', ' ', $cleanQuestion)), function($w) use ($stopWords) {
+            $w = trim($w);
+            return strlen($w) >= 2 && !in_array($w, $stopWords);
+        });
+
+        $scoredPolicies = [];
+
+        foreach ($allPolicies as $policy) {
+            $score = 0;
+            $contentText = strtolower($policy['content_text']);
+            $titleText = strtolower($policy['title']);
+            $chapterText = strtolower($policy['chapter_title'] ?? '');
+            $codeText = strtolower($policy['section_code'] ?? '');
+
+            // 1. Exact phrase match
+            if (!empty($keywords) && str_contains($contentText, implode(' ', $keywords))) {
+                $score += 100;
+            }
+
+            // 2. Keyword matching with weights
+            foreach ($keywords as $word) {
+                if (empty($word)) continue;
+
+                // Match in Title (+30)
+                if (str_contains($titleText, $word)) {
+                    $score += 30;
+                }
+
+                // Match in Code (+25)
+                if (str_contains($codeText, $word)) {
+                    $score += 25;
+                }
+
+                // Match in Chapter (+20)
+                if (str_contains($chapterText, $word)) {
+                    $score += 20;
+                }
+
+                // Match in Content Text (+10 per count)
+                $count = substr_count($contentText, $word);
+                if ($count > 0) {
+                    $score += min($count * 10, 50);
+                }
+            }
+
+            if ($score > 0) {
+                $policy['score'] = $score;
+                $scoredPolicies[] = $policy;
+            }
+        }
+
+        // Sort descending by relevance score
+        usort($scoredPolicies, function($a, $b) {
+            return $b['score'] <=> $a['score'];
+        });
+
+        // Threshold check: If top score is too low or no matches found
+        if (empty($scoredPolicies) || $scoredPolicies[0]['score'] < 10) {
+            return $this->respond([
+                'found' => false,
+                'answer' => "Maaf, maklumat spesifik berkenaan **\"$question\"** tidak dijumpai di dalam fail PDF GHOP yang dimuat naik.\n\nSila pastikan soalan anda mengandungi kata kunci khusus berkenaan polisi hospital (seperti *waktu melawat*, *polisi peneman*, *prosedur kecemasan*, *kod blue*).",
+                'references' => []
+            ]);
+        }
+
+        $topResults = array_slice($scoredPolicies, 0, 3);
+        $bestMatch = $topResults[0];
+
+        // Find relevant paragraph within the best match text
+        $paragraphs = array_filter(array_map('trim', explode("\n", $bestMatch['content_text'])));
+        $bestParagraph = $bestMatch['content_text'];
+
+        foreach ($paragraphs as $para) {
+            $paraLower = strtolower($para);
+            foreach ($keywords as $word) {
+                if (str_contains($paraLower, $word)) {
+                    $bestParagraph = $para;
+                    break 2;
+                }
+            }
+        }
+
+        $answerText = "Berdasarkan dokumen rasmi **" . ($bestMatch['pdf_filename'] ?? 'GHOP Policy') . "** (Muka Surat " . $bestMatch['page_number'] . " - " . $bestMatch['chapter_title'] . "):\n\n" .
                      "📌 **" . $bestMatch['title'] . "**\n" .
-                     $bestMatch['content_text'];
+                     $bestParagraph;
 
         $references = array_map(function($r) {
             return [
@@ -83,9 +142,10 @@ class GhopController extends ResourceController {
                 'chapter_title' => $r['chapter_title'],
                 'section_code' => $r['section_code'],
                 'title' => $r['title'],
+                'score' => $r['score'],
                 'excerpt' => mb_strimwidth($r['content_text'], 0, 150, '...')
             ];
-        }, $results);
+        }, $topResults);
 
         return $this->respond([
             'found' => true,
