@@ -519,32 +519,7 @@ export default function MirthViewer() {
         </div>
       </div>
 
-      {/* Visible Channel Summary Cards */}
-      {visibleChannels.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '1.25rem' }}>
-          {visibleChannels.map(c => (
-            <div key={c.id} className="glass-panel" onClick={() => handleFilterChange(setSelectedChannel, c.id)}
-              style={{
-                padding: '0.85rem 1rem', cursor: 'pointer',
-                border: selectedChannel === c.id ? '1px solid var(--primary)' : '1px solid var(--border-color)',
-                transition: 'border 0.2s',
-                background: selectedChannel === c.id ? 'rgba(99,102,241,0.08)' : undefined
-              }}>
-              <div style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)', fontWeight: 600, marginBottom: '0.15rem' }}>
-                📁 {c.group || '[Default Group]'}
-              </div>
-              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#fff', marginBottom: '0.35rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {c.name}
-              </div>
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '0.7rem', color: '#10b981' }}>✅ {c.sent.toLocaleString()}</span>
-                <span style={{ fontSize: '0.7rem', color: '#ef4444' }}>❌ {c.error}</span>
-                <span style={{ fontSize: '0.7rem', color: '#f59e0b' }}>🕐 {c.queued}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+
 
       {/* Messages Table */}
       <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
