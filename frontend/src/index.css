@@ -267,3 +267,27 @@ body {
   min-height: 90px;
 }
 
+/* Print CSS for HL7 Human-Readable PDF Reports */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .printable-report, .printable-report * {
+    visibility: visible;
+  }
+  .printable-report {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: 100% !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
+

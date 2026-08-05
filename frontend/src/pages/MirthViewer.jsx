@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Activity, RefreshCw, Search, Wifi, WifiOff,
   AlertCircle, CheckCircle, Clock, Minus, Eye, X,
-  Loader, Settings, Folder
+  Loader, Settings, Folder, FileText, Printer
 } from 'lucide-react';
 import api from '../services/api';
 
@@ -24,17 +24,231 @@ const msgTypeBadge = {
   P03: { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b' },
 };
 
+// ─── HL7 Parser Helper ──────────────────────────────────────────────────────
+function parseHl7(raw) {
+  if (!raw) return null;
+  const lines = raw.split('\r').filter(Boolean);
+  const data = {
+    msh: {}, pid: {}, pv1: {}, orc: {}, obr: {}, obxList: [], pdfBase64: null,
+  };
+  lines.forEach(line => {
+    const f = line.split('|');
+    const seg = f[0];
+    if (seg === 'MSH') {
+      data.msh = { sendingApp: f[2], facility: f[3], dateTime: f[6], msgType: f[8] };
+    } else if (seg === 'PID') {
+      data.pid = {
+        mrn: f[3] || f[2],
+        ic: f[4],
+        name: (f[5] || '').replace(/\^/g, ' ').trim(),
+        dob: f[7],
+        gender: f[8] === 'F' ? 'Perempuan (Female)' : f[8] === 'M' ? 'Lelaki (Male)' : f[8],
+      };
+    } else if (seg === 'PV1') {
+      data.pv1 = { visitNo: f[19] };
+    } else if (seg === 'ORC') {
+      data.orc = { orderNo: f[2], doctor: (f[12] || '').replace(/\^/g, ' ').trim() };
+    } else if (seg === 'OBR') {
+      data.obr = {
+        orderId: f[2],
+        testName: (f[4] || '').split('^')[1] || (f[4] || '').split('^')[0] || f[4],
+        testCode: (f[4] || '').split('^')[0],
+        date: f[7],
+        pdfFile: f[22],
+      };
+    } else if (seg === 'OBX') {
+      if (f[2] === 'ED' && (f[4] === 'Base64' || (f[5] && f[5].length > 100))) {
+        data.pdfBase64 = f[5];
+      }
+      data.obxList.push({
+        id: f[1],
+        type: f[2],
+        param: (f[3] || '').split('^')[1] || (f[3] || '').split('^')[0] || f[3],
+        paramCode: (f[3] || '').split('^')[0],
+        value: f[5],
+        unit: f[6],
+        refRange: f[7],
+        flag: f[8],
+        status: f[11],
+        obsDate: f[14],
+        doctor: (f[16] || '').replace(/\^/g, ' ').trim(),
+      });
+    }
+  });
+  return data;
+}
+
+function formatHl7Date(d) {
+  if (!d || d.length < 8) return d || '-';
+  const y = d.substring(0, 4);
+  const m = d.substring(4, 6);
+  const day = d.substring(6, 8);
+  const hh = d.length >= 10 ? d.substring(8, 10) : '';
+  const mm = d.length >= 12 ? d.substring(10, 12) : '';
+  const ss = d.length >= 14 ? d.substring(12, 14) : '';
+  return `${day}/${m}/${y} ${hh}:${mm}${ss ? ':' + ss : ''}`.trim();
+}
+
+// ─── Human Readable Medical Report Modal (PDF Print View) ───────────────────
+function Hl7ReportModal({ raw, onClose }) {
+  if (!raw) return null;
+  const hl7 = useMemo(() => parseHl7(raw), [raw]);
+  if (!hl7) return null;
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 1150 }}>
+      <div className="modal-content printable-report" onClick={e => e.stopPropagation()}
+        style={{ maxWidth: '840px', maxHeight: '90vh', overflowY: 'auto', background: '#0f172a', color: '#f8fafc' }}>
+
+        {/* Top Header Bar (Hidden during print) */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.85rem' }}>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <FileText size={18}/> Laporan Kesihatan & Keputusan Makmal (Human-Readable)
+          </h3>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button className="btn btn-primary" onClick={handlePrint} style={{ fontSize: '0.8rem' }}>
+              <Printer size={14}/> Cetak / Simpan PDF
+            </button>
+            <button className="btn btn-secondary" onClick={onClose} style={{ padding: '0.3rem' }}><X size={16}/></button>
+          </div>
+        </div>
+
+        {/* Formatted Medical Report Content Paper */}
+        <div style={{ background: '#ffffff', color: '#0f172a', borderRadius: '12px', padding: '2rem', fontFamily: 'Arial, sans-serif', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+
+          {/* Hospital / Facility Header */}
+          <div style={{ borderBottom: '2px solid #0284c7', paddingBottom: '1rem', marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0369a1', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                HOSPITAL OPERATIONAL SYSTEM — IKNOW
+              </h2>
+              <div style={{ fontSize: '0.8rem', color: '#475569', marginTop: '0.25rem', fontWeight: 600 }}>
+                INTEGRATED HEALTHCARE HL7 RESULT REPORT ({hl7.msh.sendingApp || 'HL7 Engine'})
+              </div>
+            </div>
+            <div style={{ textAlign: 'right', fontSize: '0.78rem', color: '#64748b' }}>
+              <div><strong>Tarikh Diterima:</strong> {formatHl7Date(hl7.msh.dateTime)}</div>
+              <div><strong>Jenis Mesej:</strong> {hl7.msh.msgType || 'ORU^R01'}</div>
+            </div>
+          </div>
+
+          {/* Patient Details Card */}
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.9rem 1.1rem', marginBottom: '1.1rem' }}>
+            <h4 style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0284c7', textTransform: 'uppercase', marginBottom: '0.6rem', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.25rem', letterSpacing: '0.5px' }}>
+              👤 MAKLUMAT PESAKIT (PATIENT DETAILS)
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', fontSize: '0.83rem' }}>
+              <div><span style={{ color: '#64748b', fontSize: '0.73rem' }}>Nama Pesakit:</span><br/><strong>{hl7.pid.name || '-'}</strong></div>
+              <div><span style={{ color: '#64748b', fontSize: '0.73rem' }}>No. MRN:</span><br/><strong style={{ fontFamily: 'monospace', color: '#0369a1', fontSize: '0.9rem' }}>{hl7.pid.mrn || '-'}</strong></div>
+              <div><span style={{ color: '#64748b', fontSize: '0.73rem' }}>No. Kad Pengenalan / IC:</span><br/><strong style={{ fontFamily: 'monospace' }}>{hl7.pid.ic || '-'}</strong></div>
+              <div><span style={{ color: '#64748b', fontSize: '0.73rem' }}>Jantina:</span><br/><strong>{hl7.pid.gender || '-'}</strong></div>
+              <div><span style={{ color: '#64748b', fontSize: '0.73rem' }}>Tarikh Lahir:</span><br/><strong>{formatHl7Date(hl7.pid.dob) || '-'}</strong></div>
+              <div><span style={{ color: '#64748b', fontSize: '0.73rem' }}>No. Episode / Visit:</span><br/><strong>{hl7.pv1.visitNo || '-'}</strong></div>
+            </div>
+          </div>
+
+          {/* Order Details Card */}
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.9rem 1.1rem', marginBottom: '1.1rem' }}>
+            <h4 style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0284c7', textTransform: 'uppercase', marginBottom: '0.6rem', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.25rem', letterSpacing: '0.5px' }}>
+              📋 MAKLUMAT UJIAN & PESANAN (TEST ORDER DETAILS)
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', fontSize: '0.83rem' }}>
+              <div><span style={{ color: '#64748b', fontSize: '0.73rem' }}>Nama Ujian:</span><br/><strong style={{ color: '#0f172a', fontSize: '0.92rem' }}>{hl7.obr.testName || '-'}</strong></div>
+              <div><span style={{ color: '#64748b', fontSize: '0.73rem' }}>No. Order / Accession:</span><br/><strong style={{ fontFamily: 'monospace' }}>{hl7.obr.orderId || hl7.orc.orderNo || '-'}</strong></div>
+              <div><span style={{ color: '#64748b', fontSize: '0.73rem' }}>Doktor Pemohon:</span><br/><strong>{hl7.orc.doctor || hl7.obxList[0]?.doctor || '-'}</strong></div>
+            </div>
+          </div>
+
+          {/* Embedded Base64 PDF (If Present) */}
+          {hl7.pdfBase64 && (
+            <div style={{ marginBottom: '1.25rem', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden' }}>
+              <div style={{ background: '#e2e8f0', padding: '0.5rem 1rem', fontSize: '0.78rem', fontWeight: 700, color: '#334155' }}>
+                📎 DOKUMEN PDF LAMPIRAN (EMBEDDED PDF ATTACHMENT)
+              </div>
+              <iframe
+                src={`data:application/pdf;base64,${hl7.pdfBase64}`}
+                style={{ width: '100%', height: '480px', border: 'none' }}
+                title="Embedded PDF Document"
+              />
+            </div>
+          )}
+
+          {/* Test Results Table (OBX) */}
+          {hl7.obxList.length > 0 && (
+            <div style={{ marginBottom: '1.25rem' }}>
+              <h4 style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0284c7', textTransform: 'uppercase', marginBottom: '0.6rem', letterSpacing: '0.5px' }}>
+                📊 KEPUTUSAN PARAMETER MAKMAL (LABORATORY PARAMETER RESULTS)
+              </h4>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.83rem', color: '#0f172a' }}>
+                <thead>
+                  <tr style={{ background: '#0284c7', color: '#ffffff' }}>
+                    <th style={{ padding: '0.55rem 0.75rem', textAlign: 'left', borderRadius: '4px 0 0 0' }}>Parameter Ujian</th>
+                    <th style={{ padding: '0.55rem 0.75rem', textAlign: 'center' }}>Keputusan</th>
+                    <th style={{ padding: '0.55rem 0.75rem', textAlign: 'center' }}>Unit</th>
+                    <th style={{ padding: '0.55rem 0.75rem', textAlign: 'center' }}>Julat Rujukan Normal</th>
+                    <th style={{ padding: '0.55rem 0.75rem', textAlign: 'center', borderRadius: '0 4px 0 0' }}>Status / Flag</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {hl7.obxList.map((obx, idx) => {
+                    const isHigh = obx.flag === 'H';
+                    const isLow  = obx.flag === 'L';
+                    return (
+                      <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', background: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                        <td style={{ padding: '0.55rem 0.75rem', fontWeight: 600 }}>{obx.param || '-'}</td>
+                        <td style={{ padding: '0.55rem 0.75rem', textAlign: 'center', fontWeight: (isHigh || isLow) ? 800 : 600, color: isHigh ? '#dc2626' : isLow ? '#d97706' : '#0f172a' }}>
+                          {obx.value || '-'}
+                        </td>
+                        <td style={{ padding: '0.55rem 0.75rem', textAlign: 'center', color: '#64748b' }}>{obx.unit || '-'}</td>
+                        <td style={{ padding: '0.55rem 0.75rem', textAlign: 'center', color: '#64748b' }}>{obx.refRange || '-'}</td>
+                        <td style={{ padding: '0.55rem 0.75rem', textAlign: 'center' }}>
+                          {isHigh ? (
+                            <span style={{ background: '#fee2e2', color: '#991b1b', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 800, fontSize: '0.72rem' }}>🔴 HIGH</span>
+                          ) : isLow ? (
+                            <span style={{ background: '#fef3c7', color: '#92400e', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 800, fontSize: '0.72rem' }}>🟠 LOW</span>
+                          ) : (
+                            <span style={{ background: '#d1fae5', color: '#065f46', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 600, fontSize: '0.72rem' }}>🟢 Normal</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Footer Signoff */}
+          <div style={{ marginTop: '1.75rem', paddingTop: '0.85rem', borderTop: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', fontSize: '0.73rem', color: '#64748b' }}>
+            <div>Dokumen ini dijana secara automatik daripada Mirth Connect Integration Engine.</div>
+            <div>Halaman 1 daripada 1</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── HL7 Inspector Modal ────────────────────────────────────────────────────
-function Hl7Inspector({ raw, onClose }) {
+function Hl7Inspector({ raw, onClose, onViewReport }) {
   if (!raw) return null;
   const segments = raw.split('\r').filter(Boolean);
   return (
     <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 1100 }}>
       <div className="modal-content" onClick={e => e.stopPropagation()}
-        style={{ maxWidth: '780px', maxHeight: '85vh', overflowY: 'auto' }}>
+        style={{ maxWidth: '800px', maxHeight: '85vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>🔬 HL7 Message Inspector (Raw)</h3>
-          <button className="btn btn-secondary" onClick={onClose} style={{ padding: '0.3rem' }}><X size={16}/></button>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <button className="btn btn-primary" onClick={() => { onClose(); onViewReport(raw); }} style={{ fontSize: '0.75rem', padding: '0.3rem 0.7rem' }}>
+              <FileText size={13}/> Papar Laporan PDF (Readable)
+            </button>
+            <button className="btn btn-secondary" onClick={onClose} style={{ padding: '0.3rem' }}><X size={16}/></button>
+          </div>
         </div>
         <div style={{ fontFamily: 'monospace', fontSize: '0.78rem', background: '#0a0f1a', borderRadius: '10px', padding: '1rem', border: '1px solid var(--border-color)' }}>
           {segments.map((seg, i) => {
@@ -58,6 +272,7 @@ function Hl7Inspector({ raw, onClose }) {
     </div>
   );
 }
+
 
 // ─── Channel Manager Modal ──────────────────────────────────────────────────
 function ChannelManagerModal({ allChannels, groups, visibleIds, onSave, onClose }) {
@@ -227,7 +442,9 @@ export default function MirthViewer() {
   const [statusFilter, setStatusFilter]       = useState('Semua');
   const [mrnFilter, setMrnFilter]             = useState('');
   const [inspectMsg, setInspectMsg]           = useState(null);
+  const [reportMsg, setReportMsg]             = useState(null);
   const [showManager, setShowManager]         = useState(false);
+
 
   // ── Pagination State ──────────────────────────────────────────────────────
   const [page, setPage]         = useState(1);
@@ -568,10 +785,16 @@ export default function MirthViewer() {
                       <td style={{ padding: '0.7rem 1rem', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{msg.order_id || '-'}</td>
                       <td style={{ padding: '0.7rem 1rem' }}>
                         {msg.raw_hl7 && (
-                          <button className="btn btn-secondary" onClick={() => setInspectMsg(msg.raw_hl7)}
-                            style={{ padding: '0.25rem 0.6rem', fontSize: '0.72rem' }}>
-                            <Eye size={12}/> HL7
-                          </button>
+                          <div style={{ display: 'flex', gap: '0.35rem' }}>
+                            <button className="btn btn-secondary" onClick={() => setInspectMsg(msg.raw_hl7)}
+                              style={{ padding: '0.25rem 0.6rem', fontSize: '0.72rem' }}>
+                              <Eye size={12}/> HL7 Raw
+                            </button>
+                            <button className="btn btn-primary" onClick={() => setReportMsg(msg.raw_hl7)}
+                              style={{ padding: '0.25rem 0.6rem', fontSize: '0.72rem' }}>
+                              <FileText size={12}/> Laporan PDF
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -652,8 +875,12 @@ export default function MirthViewer() {
         />
       )}
 
-      {/* HL7 Inspector Modal */}
-      {inspectMsg && <Hl7Inspector raw={inspectMsg} onClose={() => setInspectMsg(null)}/>}
+      {/* HL7 Raw Inspector Modal */}
+      {inspectMsg && <Hl7Inspector raw={inspectMsg} onClose={() => setInspectMsg(null)} onViewReport={(raw) => setReportMsg(raw)} />}
+
+      {/* Human-Readable HL7 PDF Report Modal */}
+      {reportMsg && <Hl7ReportModal raw={reportMsg} onClose={() => setReportMsg(null)} />}
     </div>
   );
 }
+
