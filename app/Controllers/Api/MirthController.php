@@ -216,13 +216,20 @@ class MirthController extends ResourceController
         }
 
         // Build query params for Mirth API
-        $params = http_build_query([
-            'limit'  => $limit,
-            'offset' => $offset,
+        $queryParams = [
+            'limit'          => $limit,
+            'offset'         => $offset,
             'includeContent' => 'true',
-        ]);
+        ];
+
+        if (!empty($mrnFilter)) {
+            $queryParams['textSearch'] = $mrnFilter;
+        }
+
+        $params = http_build_query($queryParams);
 
         $r = $this->mirthRequest("/api/channels/{$channelId}/messages?{$params}", 'GET', [], $cookieFile);
+
 
         if ($r['code'] !== 200) {
             return $this->fail("Mirth API error: HTTP {$r['code']}", 502);
