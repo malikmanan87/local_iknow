@@ -243,33 +243,48 @@ class MirthController extends ResourceController
             $orderId    = '';
             $status     = (string)($msg['processedResponse']['status'] ?? $msg['status'] ?? '');
 
-            // Extract raw HL7 content
-            $sourceContent = $msg['connectorMessages']['entry']['connectorMessage']['raw']['content'] ?? '';
-            if (!empty($sourceContent)) {
-                $rawContent = (string)$sourceContent;
+            // Robustly extract raw HL7 content from connectorMessages
+            if (!empty($msg['connectorMessages']['entry'])) {
+                $entries = $msg['connectorMessages']['entry'];
+                if (isset($entries['connectorMessage'])) {
+                    $entries = [$entries]; // Wrap single entry
+                }
+                foreach ((array)$entries as $entry) {
+                    $cMsg = $entry['connectorMessage'] ?? [];
+                    $raw  = $cMsg['raw']['content'] ?? $cMsg['transformed']['content'] ?? '';
+                    if (!empty($raw)) {
+                        $rawContent = (string)$raw;
+                        break;
+                    }
+                }
+            }
+
+            if (!empty($rawContent)) {
                 // Parse MSH-9 for message type
                 if (preg_match('/MSH\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|([^\|]+)/', $rawContent, $m)) {
                     $msgType = trim($m[1]);
                 }
-                // Parse PID-3 for MRN
+                // Parse PID-3 or PID-2 for MRN
                 if (preg_match('/PID\|[^|]*\|[^|]*\|([^|^]+)/', $rawContent, $m)) {
                     $mrn = trim($m[1]);
+                } elseif (preg_match('/PID\|[^|]*\|([^|^]+)/', $rawContent, $m)) {
+                    $mrn = trim($m[1]);
                 }
-                // Parse ORC-3 or OBR-3 for Order ID
+                // Parse ORC-2 / ORC-3 or OBR-2 / OBR-3 for Order ID
                 if (preg_match('/ORC\|[^|]*\|([^|]+)/', $rawContent, $m)) {
+                    $orderId = trim($m[1]);
+                } elseif (preg_match('/OBR\|[^|]*\|([^|]+)/', $rawContent, $m)) {
                     $orderId = trim($m[1]);
                 }
             }
 
             // Apply filters
             if (!empty($typeFilter)) {
-                $baseType = explode('^', $msgType)[0] ?? '';
-                $hl7Event = explode('^', $msgType)[1] ?? '';
                 $matchType = false;
                 if ($typeFilter === 'ORM' && str_contains($msgType, 'ORM')) $matchType = true;
                 if ($typeFilter === 'ORR' && str_contains($msgType, 'ORR')) $matchType = true;
                 if ($typeFilter === 'ORU' && str_contains($msgType, 'ORU')) $matchType = true;
-                if ($typeFilter === 'P03' && str_contains($msgType, 'P03')) $matchType = true;
+                if ($typeFilter === 'P03' && (str_contains($msgType, 'P03') || str_contains($msgType, 'DFT'))) $matchType = true;
                 if (!$matchType) continue;
             }
 
@@ -277,9 +292,11 @@ class MirthController extends ResourceController
                 continue;
             }
 
-            if (!empty($mrnFilter) && !str_contains($mrn, $mrnFilter)) {
-                continue;
+            if (!empty($mrnFilter)) {
+                $mrnMatch = (!empty($mrn) && str_contains($mrn, $mrnFilter)) || str_contains($rawContent, $mrnFilter);
+                if (!$mrnMatch) continue;
             }
+
 
             $messages[] = [
                 'message_id'  => (string)($msg['messageId'] ?? ''),
