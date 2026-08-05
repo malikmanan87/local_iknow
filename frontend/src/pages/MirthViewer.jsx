@@ -785,18 +785,13 @@ export default function MirthViewer() {
                       <td style={{ padding: '0.7rem 1rem', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{msg.order_id || '-'}</td>
                       <td style={{ padding: '0.7rem 1rem' }}>
                         {msg.raw_hl7 && (
-                          <div style={{ display: 'flex', gap: '0.35rem' }}>
-                            <button className="btn btn-secondary" onClick={() => setInspectMsg(msg.raw_hl7)}
-                              style={{ padding: '0.25rem 0.6rem', fontSize: '0.72rem' }}>
-                              <Eye size={12}/> HL7 Raw
-                            </button>
-                            <button className="btn btn-primary" onClick={() => setReportMsg(msg.raw_hl7)}
-                              style={{ padding: '0.25rem 0.6rem', fontSize: '0.72rem' }}>
-                              <FileText size={12}/> Laporan PDF
-                            </button>
-                          </div>
+                          <button className="btn btn-secondary" onClick={() => setInspectMsg(msg.raw_hl7)}
+                            style={{ padding: '0.25rem 0.6rem', fontSize: '0.72rem' }}>
+                            <Eye size={12}/> HL7
+                          </button>
                         )}
                       </td>
+
                     </tr>
                   );
                 })}
