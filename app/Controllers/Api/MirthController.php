@@ -179,16 +179,19 @@ class MirthController extends ResourceController
 
         foreach ((array)$list as $ch) {
             $channels[] = [
-                'id'             => (string)($ch['channelId'] ?? ''),
-                'name'           => (string)($ch['name'] ?? ''),
-                'state'          => (string)($ch['state'] ?? ''),
-                'received'       => (int)($ch['statistics']['received'] ?? 0),
-                'sent'           => (int)($ch['statistics']['sent'] ?? 0),
-                'error'          => (int)($ch['statistics']['error'] ?? 0),
-                'queued'         => (int)($ch['statistics']['queued'] ?? 0),
-                'filtered'       => (int)($ch['statistics']['filtered'] ?? 0),
+                'id'       => (string)($ch['channelId'] ?? ''),
+                'name'     => (string)($ch['name'] ?? ''),
+                'state'    => (string)($ch['state'] ?? ''),
+                'received' => (int)($ch['statistics']['received'] ?? 0),
+                'sent'     => (int)($ch['statistics']['sent'] ?? 0),
+                'error'    => (int)($ch['statistics']['error'] ?? 0),
+                'queued'   => (int)($ch['statistics']['queued'] ?? 0),
+                'filtered' => (int)($ch['statistics']['filtered'] ?? 0),
             ];
         }
+
+        // Sort channels alphabetically by name (A→Z)
+        usort($channels, fn($a, $b) => strcasecmp($a['name'], $b['name']));
 
         return $this->respond(['channels' => $channels, 'total' => count($channels)]);
     }
