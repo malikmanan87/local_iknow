@@ -14,21 +14,22 @@ class MirthController extends ResourceController
 
     private function mirthRequest(string $endpoint, string $method = 'GET', array $postFields = [], ?string $cookieFile = null): array
     {
-        $url = $this->mirthHost() . $endpoint;
+        $url     = $this->mirthHost() . $endpoint;
         $timeout = (int) env('MIRTH_TIMEOUT', 15);
 
-        $ch = curl_init();
+        $headers = ['X-Requested-With: XMLHttpRequest', 'Accept: application/xml'];
+        if ($method === 'POST') {
+            $headers[] = 'Content-Type: application/x-www-form-urlencoded';
+        }
+
+        $ch   = curl_init();
         $opts = [
             CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_SSL_VERIFYHOST => false,
             CURLOPT_TIMEOUT        => $timeout,
-            CURLOPT_HTTPHEADER     => [
-                'X-Requested-With: XMLHttpRequest',
-                'Accept: application/xml',
-                'Content-Type: application/x-www-form-urlencoded',
-            ],
+            CURLOPT_HTTPHEADER     => $headers,
             CURLOPT_HEADER         => true,
         ];
 
@@ -50,7 +51,7 @@ class MirthController extends ResourceController
         $curlErr    = curl_error($ch);
         curl_close($ch);
 
-        return ['code' => $httpCode, 'body' => $body, 'error' => $curlErr];
+        return ['code' => $httpCode, 'body' => trim($body), 'error' => $curlErr];
     }
 
     // Get a session cookie file path (per-request temp)
