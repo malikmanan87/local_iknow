@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import ModuleDetail from './pages/ModuleDetail';
+import MirthViewer from './pages/MirthViewer';
 import AddModuleModal from './components/AddModuleModal';
 
 export default function App() {
@@ -18,42 +19,41 @@ export default function App() {
     setActiveTab('detail');
   };
 
-  const handleBackToDashboard = () => {
-    setSelectedModuleId(null);
-    setActiveTab('dashboard');
-  };
-
-  const handleOpenEditModule = (moduleData) => {
-    setEditModuleData(moduleData);
-    setShowAddModule(true);
+  const handleSetTab = (tab) => {
+    if (tab === 'dashboard') {
+      setSelectedModuleId(null);
+    }
+    setActiveTab(tab);
   };
 
   return (
     <div>
-      <Navbar 
-        onOpenAddModule={() => { setEditModuleData(null); setShowAddModule(true); }} 
+      <Navbar
+        onOpenAddModule={() => { setEditModuleData(null); setShowAddModule(true); }}
         activeTab={activeTab}
-        setActiveTab={handleBackToDashboard}
+        setActiveTab={handleSetTab}
       />
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem', paddingBottom: '3rem' }}>
-        {activeTab === 'dashboard' ? (
-          <Dashboard 
+        {activeTab === 'mirth' ? (
+          <MirthViewer />
+        ) : activeTab === 'dashboard' ? (
+          <Dashboard
             key={refreshTrigger}
-            onSelectModule={handleSelectModule} 
-            onEditModule={handleOpenEditModule}
+            onSelectModule={handleSelectModule}
+            onEditModule={(moduleData) => { setEditModuleData(moduleData); setShowAddModule(true); }}
           />
         ) : (
-          <ModuleDetail 
-            moduleId={selectedModuleId} 
+          <ModuleDetail
+            moduleId={selectedModuleId}
             initialTab={initialModuleTab}
-            onBack={handleBackToDashboard} 
+            onBack={() => handleSetTab('dashboard')}
           />
         )}
       </div>
 
       {showAddModule && (
-        <AddModuleModal 
+        <AddModuleModal
           initialData={editModuleData}
           onClose={() => { setShowAddModule(false); setEditModuleData(null); }}
           onSuccess={() => {

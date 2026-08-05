@@ -69,4 +69,9 @@ export const updateIssue = (id, data) => api.put('/issues/' + id, data);
 export const updateContact = (id, data) => api.put('/contacts/' + id, data);
 export const searchSystem = (q) => api.get('/search', { params: { q } });
 
+export const getMirthStatus   = ()       => api.get('/mirth/status');
+export const getMirthChannels = ()       => api.get('/mirth/channels');
+export const getMirthMessages = (params) => api.get('/mirth/messages', { params });
+
+
 

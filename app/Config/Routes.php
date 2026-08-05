@@ -72,4 +72,9 @@ $routes->group('api', function($routes) {
 
     // Global Search
     $routes->get('search', 'Api\SearchController::index');
+
+    // Mirth Connect HL7 Viewer (Read-Only)
+    $routes->get('mirth/status',   'Api\MirthController::status');
+    $routes->get('mirth/channels', 'Api\MirthController::channels');
+    $routes->get('mirth/messages', 'Api\MirthController::messages');
 });
