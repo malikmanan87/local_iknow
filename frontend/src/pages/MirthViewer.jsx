@@ -181,6 +181,10 @@ export default function MirthViewer() {
   const [inspectMsg, setInspectMsg]     = useState(null);
   const [showManager, setShowManager]   = useState(false);
 
+  // ── Pagination State ──────────────────────────────────────────────────────
+  const [page, setPage]         = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
   // ── Visible channel IDs (from localStorage) ──────────────────────────────
   const [visibleIds, setVisibleIds] = useState(() => {
     try {
@@ -243,8 +247,8 @@ export default function MirthViewer() {
     try {
       const params = {
         channel_id: selectedChannel,
-        limit: 100,
-        offset: 0,
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
         ...(typeFilter !== 'Semua'   && { type: typeFilter }),
         ...(statusFilter !== 'Semua' && { status: statusFilter }),
         ...(mrnFilter                && { mrn: mrnFilter }),
@@ -256,11 +260,18 @@ export default function MirthViewer() {
     } finally {
       setLoading(false);
     }
-  }, [selectedChannel, typeFilter, statusFilter, mrnFilter]);
+  }, [selectedChannel, typeFilter, statusFilter, mrnFilter, page, pageSize]);
 
   useEffect(() => { fetchStatus(); }, []);
   useEffect(() => { if (connStatus?.authenticated) fetchChannels(); }, [connStatus]);
-  useEffect(() => { if (selectedChannel) fetchMessages(); }, [selectedChannel, typeFilter, statusFilter]);
+  useEffect(() => { if (selectedChannel) fetchMessages(); }, [selectedChannel, typeFilter, statusFilter, page, pageSize]);
+
+  // Reset page to 1 when filters change
+  const handleFilterChange = (setter, val) => {
+    setter(val);
+    setPage(1);
+  };
+
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const formatDate = (ts) => {
@@ -349,7 +360,7 @@ export default function MirthViewer() {
                 </span>
               )}
             </label>
-            <select className="form-select" value={selectedChannel} onChange={e => setSelectedChannel(e.target.value)}>
+            <select className="form-select" value={selectedChannel} onChange={e => handleFilterChange(setSelectedChannel, e.target.value)}>
               {chanLoading && <option>Memuatkan...</option>}
               {visibleChannels.map(c => (
                 <option key={c.id} value={c.id}>
@@ -364,14 +375,14 @@ export default function MirthViewer() {
 
           <div className="form-group" style={{ margin: 0 }}>
             <label className="form-label" style={{ fontSize: '0.75rem' }}>Jenis Mesej</label>
-            <select className="form-select" value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
+            <select className="form-select" value={typeFilter} onChange={e => handleFilterChange(setTypeFilter, e.target.value)}>
               {MSG_TYPES.map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
 
           <div className="form-group" style={{ margin: 0 }}>
             <label className="form-label" style={{ fontSize: '0.75rem' }}>Status</label>
-            <select className="form-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            <select className="form-select" value={statusFilter} onChange={e => handleFilterChange(setStatusFilter, e.target.value)}>
               {STATUSES.map(s => <option key={s}>{s}</option>)}
             </select>
           </div>
@@ -379,7 +390,7 @@ export default function MirthViewer() {
           <div className="form-group" style={{ margin: 0 }}>
             <label className="form-label" style={{ fontSize: '0.75rem' }}>Cari No. MRN</label>
             <input type="text" className="form-input" placeholder="Cth: MRN123456"
-              value={mrnFilter} onChange={e => setMrnFilter(e.target.value)}
+              value={mrnFilter} onChange={e => handleFilterChange(setMrnFilter, e.target.value)}
               onKeyDown={e => e.key === 'Enter' && fetchMessages()}/>
           </div>
 
@@ -394,7 +405,7 @@ export default function MirthViewer() {
       {visibleChannels.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '1.25rem' }}>
           {visibleChannels.map(c => (
-            <div key={c.id} className="glass-panel" onClick={() => setSelectedChannel(c.id)}
+            <div key={c.id} className="glass-panel" onClick={() => handleFilterChange(setSelectedChannel, c.id)}
               style={{
                 padding: '0.85rem 1rem', cursor: 'pointer',
                 border: selectedChannel === c.id ? '1px solid var(--primary)' : '1px solid var(--border-color)',
@@ -418,7 +429,7 @@ export default function MirthViewer() {
       <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>
-            Log Mesej HL7 {messages.length > 0 && <span style={{ color: 'var(--accent-cyan)', fontWeight: 400 }}>({messages.length} mesej)</span>}
+            Log Mesej HL7 {messages.length > 0 && <span style={{ color: 'var(--accent-cyan)', fontWeight: 400 }}>({messages.length} mesej dalam halaman ini)</span>}
           </h3>
           {loading && <Loader size={16} color="var(--accent-cyan)"/>}
         </div>
@@ -474,7 +485,66 @@ export default function MirthViewer() {
             </table>
           </div>
         )}
+
+        {/* Pagination Footer */}
+        <div style={{
+          padding: '0.85rem 1.25rem',
+          borderTop: '1px solid var(--border-color)',
+          background: 'rgba(255,255,255,0.02)',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          flexWrap: 'wrap', gap: '0.75rem'
+        }}>
+          {/* Info */}
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            {messages.length > 0 ? (
+              <>Menunjukkan <strong>{(page - 1) * pageSize + 1} - {(page - 1) * pageSize + messages.length}</strong> mesej</>
+            ) : (
+              'Tiada mesej'
+            )}
+          </div>
+
+          {/* Page Controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {/* Items Per Page */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              <span>Saiz:</span>
+              <select className="form-select" value={pageSize}
+                onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
+                style={{ padding: '0.25rem 1.8rem 0.25rem 0.6rem', fontSize: '0.78rem', width: 'auto' }}>
+                <option value={25}>25 / ms</option>
+                <option value={50}>50 / ms</option>
+                <option value={100}>100 / ms</option>
+              </select>
+            </div>
+
+            {/* Prev/Next Buttons */}
+            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+              <button
+                className="btn btn-secondary"
+                disabled={page <= 1 || loading}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', opacity: page <= 1 ? 0.4 : 1 }}
+              >
+                ◀ Sebelumnya
+              </button>
+
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)', padding: '0 0.4rem' }}>
+                Halaman {page}
+              </span>
+
+              <button
+                className="btn btn-secondary"
+                disabled={messages.length < pageSize || loading}
+                onClick={() => setPage(p => p + 1)}
+                style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', opacity: messages.length < pageSize ? 0.4 : 1 }}
+              >
+                Seterusnya ▶
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
+
 
       {/* Channel Manager Modal */}
       {showManager && (
