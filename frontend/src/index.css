@@ -235,12 +235,35 @@ body {
   transition: border-color 0.2s;
 }
 
+/* Fix dropdown select appearance in dark mode */
+.form-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #1e293b;
+  color: #f1f5f9;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+.form-select option {
+  background-color: #1e293b;
+  color: #f1f5f9;
+}
+
 .form-input:focus, .form-select:focus, .form-textarea:focus {
   border-color: var(--primary);
   background: rgba(255, 255, 255, 0.07);
+}
+
+.form-select:focus {
+  background-color: #1e293b;
 }
 
 .form-textarea {
   resize: vertical;
   min-height: 90px;
 }
+
