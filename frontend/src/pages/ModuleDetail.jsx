@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, GitCommit, AlertTriangle, Phone, Plus, Trash2, Image as ImageIcon, MessageCircle, Mail, Layers, CornerDownRight, Pencil } from 'lucide-react';
+import { ArrowLeft, GitCommit, AlertTriangle, Phone, Plus, Trash2, Image as ImageIcon, MessageCircle, Mail, Layers, CornerDownRight, Pencil, FileText } from 'lucide-react';
 import { getModuleDetail, deleteFlow, deleteIssue, deleteContact, deleteSubmodule } from '../services/api';
 import AddFlowModal from '../components/AddFlowModal';
 import AddIssueModal from '../components/AddIssueModal';
 import AddContactModal from '../components/AddContactModal';
 import AddSubmoduleModal from '../components/AddSubmoduleModal';
+import ModuleNotesModal from '../components/ModuleNotesModal';
 import ImageLightbox from '../components/ImageLightbox';
 
 export default function ModuleDetail({ moduleId, initialTab = 'flows', onBack }) {
@@ -12,9 +13,11 @@ export default function ModuleDetail({ moduleId, initialTab = 'flows', onBack })
   const [loading, setLoading] = useState(true);
 
   // Modal controls
+  const [showNotesModal, setShowNotesModal] = useState(false);
   const [activeSubModal, setActiveSubModal] = useState(null); // { parentId: null|id, parentTitle: '', initialData: null }
   const [activeItemModal, setActiveItemModal] = useState(null); // { type: 'flow'|'issue'|'contact', submoduleId: null, initialData: null }
   const [lightboxImage, setLightboxImage] = useState(null);
+
 
   // Tab selection state: { [submoduleId_or_'main']: 'flows'|'issues'|'contacts' }
   const [tabState, setTabState] = useState({});
@@ -463,13 +466,36 @@ export default function ModuleDetail({ moduleId, initialTab = 'flows', onBack })
             <p style={{ marginTop: '0.5rem', color: 'var(--text-muted)', lineHeight: '1.6', maxWidth: '800px' }}>
               {module.description || 'Tiada penerangan tambahan.'}
             </p>
+
+            {module.notes && (
+              <div style={{ marginTop: '1.25rem', padding: '1rem 1.25rem', background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.25)', borderRadius: '10px' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--accent-cyan)', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <FileText size={15} /> 📝 Nota / Catatan Modul:
+                </div>
+                <div style={{ fontSize: '0.88rem', color: '#e2e8f0', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+                  {module.notes}
+                </div>
+              </div>
+            )}
           </div>
 
-          <button className="btn btn-primary" onClick={() => setActiveSubModal({ parentId: null, parentTitle: '', initialData: null })}>
-            <Layers size={18} /> + Tambah Submodul
-          </button>
+          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <button className="btn btn-secondary" onClick={() => setShowNotesModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <FileText size={16} color="var(--accent-cyan)" /> 📝 Nota Modul
+              {module.notes && (
+                <span style={{ background: '#10b981', color: '#fff', borderRadius: '10px', padding: '0.05rem 0.45rem', fontSize: '0.7rem', fontWeight: 700 }}>
+                  Ada Nota
+                </span>
+              )}
+            </button>
+
+            <button className="btn btn-primary" onClick={() => setActiveSubModal({ parentId: null, parentTitle: '', initialData: null })}>
+              <Layers size={18} /> + Tambah Submodul
+            </button>
+          </div>
         </div>
       </div>
+
 
       {/* SECTION 1: NESTED SUBMODULES TREE */}
       {topLevelSubmodules.length > 0 && (
@@ -556,6 +582,14 @@ export default function ModuleDetail({ moduleId, initialTab = 'flows', onBack })
         />
       )}
 
+      {showNotesModal && (
+        <ModuleNotesModal
+          module={module}
+          onClose={() => setShowNotesModal(false)}
+          onSaved={fetchDetail}
+        />
+      )}
+
       {lightboxImage && (
         <ImageLightbox 
           imageUrl={lightboxImage.url} 
@@ -566,3 +600,4 @@ export default function ModuleDetail({ moduleId, initialTab = 'flows', onBack })
     </div>
   );
 }
+

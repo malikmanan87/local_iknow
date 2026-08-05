@@ -5,6 +5,7 @@ use CodeIgniter\Model;
 class ModuleModel extends Model {
     protected $table = 'modules';
     protected $primaryKey = 'id';
-    protected $allowedFields = ['code', 'title', 'category', 'description', 'status'];
+    protected $allowedFields = ['code', 'title', 'category', 'description', 'notes', 'status'];
     protected $useTimestamps = true;
 }
+

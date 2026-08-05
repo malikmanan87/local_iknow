@@ -64,8 +64,10 @@ class ModuleController extends ResourceController {
             'title' => trim($data['title']),
             'category' => $data['category'] ?? 'General',
             'description' => $data['description'] ?? '',
+            'notes' => $data['notes'] ?? '',
             'status' => $data['status'] ?? 'Active'
         ]);
+
 
         if ($id) {
             return $this->respondCreated(['id' => $id, 'message' => 'Modul berjaya dicipta']);
