@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Activity, RefreshCw, Search, Wifi, WifiOff,
   AlertCircle, CheckCircle, Clock, Minus, Eye, X,
-  Loader, Settings, ToggleLeft, ToggleRight
+  Loader, Settings, Folder
 } from 'lucide-react';
 import api from '../services/api';
 
@@ -60,7 +60,7 @@ function Hl7Inspector({ raw, onClose }) {
 }
 
 // ─── Channel Manager Modal ──────────────────────────────────────────────────
-function ChannelManagerModal({ allChannels, visibleIds, onSave, onClose }) {
+function ChannelManagerModal({ allChannels, groups, visibleIds, onSave, onClose }) {
   const [draft, setDraft] = useState(new Set(visibleIds));
 
   const toggle = (id) => {
@@ -71,8 +71,20 @@ function ChannelManagerModal({ allChannels, visibleIds, onSave, onClose }) {
     });
   };
 
-  const selectAll  = () => setDraft(new Set(allChannels.map(c => c.id)));
-  const clearAll   = () => setDraft(new Set());
+  const selectAll = () => setDraft(new Set(allChannels.map(c => c.id)));
+  const clearAll  = () => setDraft(new Set());
+
+  const toggleGroup = (groupName) => {
+    const groupChannelIds = allChannels.filter(c => (c.group || '[Default Group]') === groupName).map(c => c.id);
+    const allSelected = groupChannelIds.every(id => draft.has(id));
+    setDraft(prev => {
+      const next = new Set(prev);
+      groupChannelIds.forEach(id => {
+        allSelected ? next.delete(id) : next.add(id);
+      });
+      return next;
+    });
+  };
 
   const stateColor = (state) => {
     if (state === 'STARTED') return '#10b981';
@@ -80,79 +92,113 @@ function ChannelManagerModal({ allChannels, visibleIds, onSave, onClose }) {
     return '#f59e0b';
   };
 
+  // Group channels by group name
+  const groupedChannels = useMemo(() => {
+    const map = {};
+    allChannels.forEach(c => {
+      const g = c.group || '[Default Group]';
+      if (!map[g]) map[g] = [];
+      map[g].push(c);
+    });
+    return map;
+  }, [allChannels]);
+
   return (
     <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 1100 }}>
       <div className="modal-content" onClick={e => e.stopPropagation()}
-        style={{ maxWidth: '560px', maxHeight: '85vh', overflowY: 'auto' }}>
+        style={{ maxWidth: '640px', maxHeight: '85vh', overflowY: 'auto' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Settings size={18} color="var(--accent-cyan)"/> Urus Channel Mirth
+            <Settings size={18} color="var(--accent-cyan)" /> Urus Channel Mirth Mengikut Kumpulan
           </h3>
-          <button className="btn btn-secondary" onClick={onClose} style={{ padding: '0.3rem' }}><X size={16}/></button>
+          <button className="btn btn-secondary" onClick={onClose} style={{ padding: '0.3rem' }}><X size={16} /></button>
         </div>
 
         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-          Hanya channel yang <strong style={{ color: '#fff' }}>di-tick (☑)</strong> akan dipaparkan dalam Mirth Viewer. Pilihan disimpan secara automatik dalam penyemak imbas.
+          Hanya channel yang <strong style={{ color: '#fff' }}>di-tick (☑)</strong> akan dipaparkan dalam viewer. Pilihan tersimpan secara automatik.
         </p>
 
         {/* Select/Clear All */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', alignItems: 'center' }}>
           <button className="btn btn-secondary" onClick={selectAll} style={{ fontSize: '0.78rem', padding: '0.3rem 0.7rem' }}>
             ☑ Pilih Semua
           </button>
           <button className="btn btn-secondary" onClick={clearAll} style={{ fontSize: '0.78rem', padding: '0.3rem 0.7rem' }}>
             ☐ Kosongkan Semua
           </button>
-          <span style={{ marginLeft: 'auto', fontSize: '0.78rem', color: 'var(--text-muted)', alignSelf: 'center' }}>
-            {draft.size} / {allChannels.length} dipilih
+          <span style={{ marginLeft: 'auto', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            <strong>{draft.size}</strong> daripada <strong>{allChannels.length}</strong> channel dipilih
           </span>
         </div>
 
-        {/* Channel List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
-          {allChannels.map(c => (
-            <label key={c.id}
-              onClick={() => toggle(c.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '0.85rem',
-                padding: '0.75rem 1rem',
-                background: draft.has(c.id) ? 'rgba(99,102,241,0.1)' : 'rgba(255,255,255,0.03)',
-                border: `1px solid ${draft.has(c.id) ? 'rgba(99,102,241,0.35)' : 'var(--border-color)'}`,
-                borderRadius: '10px', cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
-            >
-              {/* Custom Checkbox */}
-              <div style={{
-                width: '18px', height: '18px', borderRadius: '5px', flexShrink: 0,
-                background: draft.has(c.id) ? 'var(--primary)' : 'rgba(255,255,255,0.08)',
-                border: `1px solid ${draft.has(c.id) ? 'var(--primary)' : 'var(--border-color)'}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.15s'
-              }}>
-                {draft.has(c.id) && <span style={{ color: '#fff', fontSize: '11px', fontWeight: 900 }}>✓</span>}
-              </div>
+        {/* Grouped Channel List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '1.5rem' }}>
+          {Object.entries(groupedChannels).map(([groupName, chList]) => {
+            const groupSelectedCount = chList.filter(c => draft.has(c.id)).length;
+            const isGroupAllSelected = groupSelectedCount === chList.length;
 
-              {/* Channel Info */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, color: '#fff', fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {c.name}
+            return (
+              <div key={groupName} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '0.85rem 1rem' }}>
+                {/* Group Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Folder size={15}/> {groupName}
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 400 }}>({groupSelectedCount}/{chList.length})</span>
+                  </span>
+                  <button className="btn btn-secondary" onClick={() => toggleGroup(groupName)}
+                    style={{ fontSize: '0.72rem', padding: '0.2rem 0.55rem', height: 'auto' }}>
+                    {isGroupAllSelected ? '☐ Untick Group' : '☑ Tick Group'}
+                  </button>
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.15rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                  <span>✅ {c.sent.toLocaleString()} Sent</span>
-                  <span>❌ {c.error.toLocaleString()} Error</span>
-                  <span>🕐 {c.queued.toLocaleString()} Queued</span>
+
+                {/* Group Channels */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  {chList.map(c => (
+                    <label key={c.id}
+                      onClick={() => toggle(c.id)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '0.75rem',
+                        padding: '0.6rem 0.85rem',
+                        background: draft.has(c.id) ? 'rgba(99,102,241,0.1)' : 'rgba(255,255,255,0.02)',
+                        border: `1px solid ${draft.has(c.id) ? 'rgba(99,102,241,0.35)' : 'rgba(255,255,255,0.04)'}`,
+                        borderRadius: '8px', cursor: 'pointer',
+                        transition: 'all 0.15s'
+                      }}
+                    >
+                      {/* Checkbox */}
+                      <div style={{
+                        width: '16px', height: '16px', borderRadius: '4px', flexShrink: 0,
+                        background: draft.has(c.id) ? 'var(--primary)' : 'rgba(255,255,255,0.08)',
+                        border: `1px solid ${draft.has(c.id) ? 'var(--primary)' : 'var(--border-color)'}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.15s'
+                      }}>
+                        {draft.has(c.id) && <span style={{ color: '#fff', fontSize: '10px', fontWeight: 900 }}>✓</span>}
+                      </div>
+
+                      {/* Info */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, color: '#fff', fontSize: '0.82rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {c.name}
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.1rem', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                          <span>✅ {c.sent.toLocaleString()} Sent</span>
+                          <span>❌ {c.error.toLocaleString()} Error</span>
+                        </div>
+                      </div>
+
+                      {/* State */}
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: stateColor(c.state), background: 'rgba(0,0,0,0.3)', padding: '0.1rem 0.45rem', borderRadius: '5px', flexShrink: 0 }}>
+                        ● {c.state}
+                      </span>
+                    </label>
+                  ))}
                 </div>
               </div>
-
-              {/* State Badge */}
-              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: stateColor(c.state), background: 'rgba(0,0,0,0.3)', padding: '0.15rem 0.5rem', borderRadius: '6px', flexShrink: 0 }}>
-                ● {c.state}
-              </span>
-            </label>
-          ))}
+            );
+          })}
         </div>
 
         {/* Save Button */}
@@ -169,17 +215,19 @@ function ChannelManagerModal({ allChannels, visibleIds, onSave, onClose }) {
 export default function MirthViewer() {
   const [connStatus, setConnStatus]     = useState(null);
   const [allChannels, setAllChannels]   = useState([]);
+  const [groups, setGroups]             = useState([]);
   const [messages, setMessages]         = useState([]);
   const [loading, setLoading]           = useState(false);
   const [chanLoading, setChanLoading]   = useState(false);
   const [error, setError]               = useState('');
 
+  const [selectedGroup, setSelectedGroup]     = useState('Semua');
   const [selectedChannel, setSelectedChannel] = useState('');
-  const [typeFilter, setTypeFilter]     = useState('Semua');
-  const [statusFilter, setStatusFilter] = useState('Semua');
-  const [mrnFilter, setMrnFilter]       = useState('');
-  const [inspectMsg, setInspectMsg]     = useState(null);
-  const [showManager, setShowManager]   = useState(false);
+  const [typeFilter, setTypeFilter]           = useState('Semua');
+  const [statusFilter, setStatusFilter]       = useState('Semua');
+  const [mrnFilter, setMrnFilter]             = useState('');
+  const [inspectMsg, setInspectMsg]           = useState(null);
+  const [showManager, setShowManager]         = useState(false);
 
   // ── Pagination State ──────────────────────────────────────────────────────
   const [page, setPage]         = useState(1);
@@ -189,14 +237,32 @@ export default function MirthViewer() {
   const [visibleIds, setVisibleIds] = useState(() => {
     try {
       const stored = localStorage.getItem(LS_KEY);
-      return stored ? JSON.parse(stored) : null; // null = belum ada tetapan
+      return stored ? JSON.parse(stored) : null;
     } catch { return null; }
   });
 
   // Channels that pass the visibility filter
-  const visibleChannels = visibleIds === null
-    ? allChannels                                                   // first load — show all
-    : allChannels.filter(c => visibleIds.includes(c.id));
+  const visibleChannels = useMemo(() => {
+    let list = visibleIds === null
+      ? allChannels
+      : allChannels.filter(c => visibleIds.includes(c.id));
+
+    if (selectedGroup !== 'Semua') {
+      list = list.filter(c => (c.group || '[Default Group]') === selectedGroup);
+    }
+    return list;
+  }, [allChannels, visibleIds, selectedGroup]);
+
+  // Group visible channels by group name for dropdown optgroup
+  const groupedVisibleChannels = useMemo(() => {
+    const map = {};
+    visibleChannels.forEach(c => {
+      const g = c.group || '[Default Group]';
+      if (!map[g]) map[g] = [];
+      map[g].push(c);
+    });
+    return map;
+  }, [visibleChannels]);
 
   const saveVisibleIds = (ids) => {
     setVisibleIds(ids);
@@ -219,15 +285,15 @@ export default function MirthViewer() {
     try {
       const res = await api.get('/mirth/channels');
       const chs = res.data.channels || [];
+      const grps = res.data.groups || [];
       setAllChannels(chs);
+      setGroups(grps);
 
-      // If first time (no saved preference), tick all by default
       if (visibleIds === null && chs.length > 0) {
         const ids = chs.map(c => c.id);
         saveVisibleIds(ids);
       }
 
-      // Auto-select first visible channel
       if (!selectedChannel && chs.length > 0) {
         const firstVisible = (visibleIds ?? chs.map(c => c.id))[0];
         const match = chs.find(c => c.id === firstVisible) || chs[0];
@@ -272,6 +338,16 @@ export default function MirthViewer() {
     setPage(1);
   };
 
+  const handleGroupTabClick = (groupName) => {
+    setSelectedGroup(groupName);
+    setPage(1);
+    // Auto-select first channel in this group
+    const groupChannels = (visibleIds === null ? allChannels : allChannels.filter(c => visibleIds.includes(c.id)))
+      .filter(c => groupName === 'Semua' || (c.group || '[Default Group]') === groupName);
+    if (groupChannels.length > 0) {
+      setSelectedChannel(groupChannels[0].id);
+    }
+  };
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const formatDate = (ts) => {
@@ -346,26 +422,68 @@ export default function MirthViewer() {
         </div>
       )}
 
+      {/* Group Pills Navigation */}
+      {groups.length > 0 && (
+        <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.25rem', overflowX: 'auto', paddingBottom: '0.2rem' }}>
+          <button
+            onClick={() => handleGroupTabClick('Semua')}
+            className="btn btn-secondary"
+            style={{
+              fontSize: '0.78rem', padding: '0.35rem 0.8rem', whiteSpace: 'nowrap',
+              background: selectedGroup === 'Semua' ? 'var(--primary)' : undefined,
+              borderColor: selectedGroup === 'Semua' ? 'var(--primary)' : undefined,
+              color: selectedGroup === 'Semua' ? '#fff' : undefined,
+            }}
+          >
+            📁 Semua Kumpulan ({allChannels.length})
+          </button>
+          {groups.map(g => {
+            const groupCount = allChannels.filter(c => (c.group || '[Default Group]') === g).length;
+            const isSelected = selectedGroup === g;
+            return (
+              <button
+                key={g}
+                onClick={() => handleGroupTabClick(g)}
+                className="btn btn-secondary"
+                style={{
+                  fontSize: '0.78rem', padding: '0.35rem 0.8rem', whiteSpace: 'nowrap',
+                  background: isSelected ? 'rgba(6,182,212,0.2)' : undefined,
+                  borderColor: isSelected ? 'var(--accent-cyan)' : undefined,
+                  color: isSelected ? 'var(--accent-cyan)' : undefined,
+                  fontWeight: isSelected ? 700 : 400,
+                }}
+              >
+                {g} ({groupCount})
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Filter Bar */}
       <div className="glass-panel" style={{ padding: '1rem 1.25rem', marginBottom: '1.25rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 160px', gap: '0.75rem', alignItems: 'end' }}>
 
-          {/* Channel Selector — only visible channels */}
+          {/* Channel Selector — Grouped with optgroup */}
           <div className="form-group" style={{ margin: 0 }}>
             <label className="form-label" style={{ fontSize: '0.75rem' }}>
               Channel Mirth
-              {visibleIds !== null && visibleChannels.length < allChannels.length && (
+              {selectedGroup !== 'Semua' && (
                 <span style={{ marginLeft: '0.4rem', color: 'var(--accent-cyan)', fontSize: '0.68rem' }}>
-                  ({visibleChannels.length} dari {allChannels.length})
+                  [{selectedGroup}]
                 </span>
               )}
             </label>
             <select className="form-select" value={selectedChannel} onChange={e => handleFilterChange(setSelectedChannel, e.target.value)}>
               {chanLoading && <option>Memuatkan...</option>}
-              {visibleChannels.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.name} — ✅{c.sent.toLocaleString()} ❌{c.error}
-                </option>
+              {Object.entries(groupedVisibleChannels).map(([groupName, chList]) => (
+                <optgroup key={groupName} label={`📁 ${groupName}`}>
+                  {chList.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} — ✅{c.sent.toLocaleString()} ❌{c.error}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
               {!chanLoading && visibleChannels.length === 0 && (
                 <option value="">Tiada channel dipilih — klik Urus Channel</option>
@@ -412,7 +530,10 @@ export default function MirthViewer() {
                 transition: 'border 0.2s',
                 background: selectedChannel === c.id ? 'rgba(99,102,241,0.08)' : undefined
               }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.3rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)', fontWeight: 600, marginBottom: '0.15rem' }}>
+                📁 {c.group || '[Default Group]'}
+              </div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#fff', marginBottom: '0.35rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {c.name}
               </div>
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -545,11 +666,11 @@ export default function MirthViewer() {
         </div>
       </div>
 
-
       {/* Channel Manager Modal */}
       {showManager && (
         <ChannelManagerModal
           allChannels={allChannels}
+          groups={groups}
           visibleIds={visibleIds ?? allChannels.map(c => c.id)}
           onSave={saveVisibleIds}
           onClose={() => setShowManager(false)}

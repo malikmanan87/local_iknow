@@ -162,10 +162,27 @@ class MirthController extends ResourceController
             return $this->fail('Gagal log masuk ke Mirth Connect. Semak credentials dalam .env', 401);
         }
 
+        // 1. Fetch channel statuses
         $r = $this->mirthRequest('/api/channels/statuses', 'GET', [], $cookieFile);
-
         if ($r['code'] !== 200) {
             return $this->fail("Mirth API error: HTTP {$r['code']}", 502);
+        }
+
+        // 2. Fetch channel groups
+        $channelGroupMap = [];
+        $rGroups = $this->mirthRequest('/api/channelgroups', 'GET', [], $cookieFile);
+        if ($rGroups['code'] === 200 && !empty($rGroups['body'])) {
+            $gXml = @simplexml_load_string($rGroups['body']);
+            if ($gXml && isset($gXml->channelGroup)) {
+                foreach ($gXml->channelGroup as $grp) {
+                    $gName = (string)$grp->name;
+                    if (isset($grp->channels->channel)) {
+                        foreach ($grp->channels->channel as $ch) {
+                            $channelGroupMap[(string)$ch->id] = $gName;
+                        }
+                    }
+                }
+            }
         }
 
         $data = $this->xmlToArray($r['body']);
@@ -173,14 +190,15 @@ class MirthController extends ResourceController
 
         $list = $data['dashboardStatus'] ?? [];
         if (isset($list['name'])) {
-            // Single channel — wrap
             $list = [$list];
         }
 
         foreach ((array)$list as $ch) {
+            $cid = (string)($ch['channelId'] ?? '');
             $channels[] = [
-                'id'       => (string)($ch['channelId'] ?? ''),
+                'id'       => $cid,
                 'name'     => (string)($ch['name'] ?? ''),
+                'group'    => $channelGroupMap[$cid] ?? '[Default Group]',
                 'state'    => (string)($ch['state'] ?? ''),
                 'received' => (int)($ch['statistics']['received'] ?? 0),
                 'sent'     => (int)($ch['statistics']['sent'] ?? 0),
@@ -193,8 +211,17 @@ class MirthController extends ResourceController
         // Sort channels alphabetically by name (A→Z)
         usort($channels, fn($a, $b) => strcasecmp($a['name'], $b['name']));
 
-        return $this->respond(['channels' => $channels, 'total' => count($channels)]);
+        // Get unique groups
+        $groups = array_values(array_unique(array_column($channels, 'group')));
+        sort($groups);
+
+        return $this->respond([
+            'channels' => $channels,
+            'groups'   => $groups,
+            'total'    => count($channels)
+        ]);
     }
+
 
     // GET /api/mirth/messages?channel_id=X&type=ORU&status=ERROR&mrn=&date_from=&date_to=&limit=50&offset=0
     public function messages()
