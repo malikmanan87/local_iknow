@@ -70,6 +70,10 @@ $routes->group('api', function($routes) {
     // Image Upload
     $routes->post('upload', 'Api\UploadController::create');
 
+    // Flowcharts (load & save per module + context_key)
+    $routes->get('flowcharts/(:num)/(:any)',                 'Api\\FlowchartController::load/$1/$2');
+    $routes->match(['put', 'post'], 'flowcharts/(:num)/(:any)', 'Api\\FlowchartController::save/$1/$2');
+
     // Global Search
     $routes->get('search', 'Api\SearchController::index');
 

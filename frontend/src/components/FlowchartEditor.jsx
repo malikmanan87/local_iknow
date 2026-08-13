@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GitFork, Trash2, Link2, Download, Save, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
+import { getFlowchart, saveFlowchart } from '../services/api';
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
 const CANVAS_W = 2400;
@@ -60,19 +61,21 @@ function ShapePreview({ type, color }) {
 
 /* ─── Main component ─────────────────────────────────────────────────────── */
 export default function FlowchartEditor({ moduleId, contextKey }) {
-  const storageKey = `fc_${moduleId}_${contextKey || 'main'}`;
+  const ctxKey = contextKey || 'main';
 
   /* ── State ── */
   const [shapes,      setShapes]      = useState([]);
   const [connections, setConnections] = useState([]);
-  const [selected,    setSelected]    = useState(null);   // id of shape OR connection
+  const [selected,    setSelected]    = useState(null);
   const [connectMode, setConnectMode] = useState(false);
-  const [connectFrom, setConnectFrom] = useState(null);   // shape id
-  const [editingId,   setEditingId]   = useState(null);   // shape id  |  'conn:id'
+  const [connectFrom, setConnectFrom] = useState(null);
+  const [editingId,   setEditingId]   = useState(null);
   const [editLabel,   setEditLabel]   = useState('');
-  const [dragging,    setDragging]    = useState(null);   // { id, ox, oy }
+  const [dragging,    setDragging]    = useState(null);
   const [history,     setHistory]     = useState([]);
   const [savedFlash,  setSavedFlash]  = useState(false);
+  const [saving,      setSaving]      = useState(false);
+  const [loadMsg,     setLoadMsg]     = useState('Memuatkan...');
   const [zoom,        setZoom]        = useState(1);
 
   /* ── Refs ── */
@@ -87,17 +90,22 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
   const GLOW_ID      = `glow_${iid}`;
   const GRID_ID      = `grid_${iid}`;
 
-  /* ── Load from localStorage on mount ── */
+  /* ── Load from database on mount ── */
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (raw) {
-        const { shapes: s = [], connections: c = [] } = JSON.parse(raw);
-        setShapes(s);
-        setConnections(c);
-      }
-    } catch { /* ignore */ }
-  }, [storageKey]);
+    let cancelled = false;
+    setLoadMsg('Memuatkan flow chart...');
+    getFlowchart(moduleId, ctxKey)
+      .then(res => {
+        if (cancelled) return;
+        setShapes(res.data.shapes      || []);
+        setConnections(res.data.connections || []);
+        setLoadMsg('');
+      })
+      .catch(() => {
+        if (!cancelled) setLoadMsg(''); // fail silently, canvas empty
+      });
+    return () => { cancelled = true; };
+  }, [moduleId, ctxKey]);
 
   /* ── Focus edit input when activated ── */
   useEffect(() => {
@@ -141,13 +149,16 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
     setSelected(null);
   };
 
-  const save = () => {
+  const save = async () => {
+    setSaving(true);
     try {
-      localStorage.setItem(storageKey, JSON.stringify({ shapes, connections }));
+      await saveFlowchart(moduleId, ctxKey, { shapes, connections });
       setSavedFlash(true);
-      setTimeout(() => setSavedFlash(false), 2000);
+      setTimeout(() => setSavedFlash(false), 2500);
     } catch (err) {
-      alert('Gagal menyimpan: ' + err.message);
+      alert('Gagal menyimpan ke database: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -517,13 +528,13 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
         </button>
 
         {/* Save */}
-        <button className="btn btn-secondary" onClick={save}
+        <button className="btn btn-secondary" onClick={save} disabled={saving}
           style={{
             padding: '0.3rem 0.75rem', fontSize: '0.75rem',
-            borderColor: savedFlash ? '#10b981' : '',
-            color: savedFlash ? '#10b981' : '',
+            borderColor: savedFlash ? '#10b981' : saving ? 'var(--primary)' : '',
+            color: savedFlash ? '#10b981' : saving ? 'var(--primary)' : '',
           }}>
-          <Save size={13} /> {savedFlash ? 'Tersimpan ✓' : 'Simpan'}
+          <Save size={13} /> {saving ? 'Menyimpan...' : savedFlash ? 'Tersimpan ✓' : 'Simpan'}
         </button>
 
         {/* Export PNG */}
