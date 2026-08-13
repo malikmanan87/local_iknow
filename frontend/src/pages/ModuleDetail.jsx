@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, GitCommit, AlertTriangle, Phone, Plus, Trash2, Image as ImageIcon, MessageCircle, Mail, Layers, CornerDownRight, Pencil, FileText } from 'lucide-react';
+import { ArrowLeft, GitCommit, AlertTriangle, Phone, Plus, Trash2, Image as ImageIcon, MessageCircle, Mail, Layers, CornerDownRight, Pencil, FileText, GitFork } from 'lucide-react';
 import { getModuleDetail, deleteFlow, deleteIssue, deleteContact, deleteSubmodule } from '../services/api';
 import AddFlowModal from '../components/AddFlowModal';
 import AddIssueModal from '../components/AddIssueModal';
@@ -7,6 +7,7 @@ import AddContactModal from '../components/AddContactModal';
 import AddSubmoduleModal from '../components/AddSubmoduleModal';
 import ModuleNotesModal from '../components/ModuleNotesModal';
 import ImageLightbox from '../components/ImageLightbox';
+import FlowchartEditor from '../components/FlowchartEditor';
 
 export default function ModuleDetail({ moduleId, initialTab = 'flows', onBack }) {
   const [data, setData] = useState(null);
@@ -147,6 +148,25 @@ export default function ModuleDetail({ moduleId, initialTab = 'flows', onBack })
             }}
           >
             <Phone size={15} color="var(--accent-emerald)" /> Pegawai Bertugas (PIC) ({sectionContacts.length})
+          </button>
+
+          <button 
+            onClick={() => setSubTab(contextKey, 'flowchart')}
+            style={{
+              padding: '0.6rem 1rem',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeSubTab === 'flowchart' ? '3px solid #c084fc' : '3px solid transparent',
+              color: activeSubTab === 'flowchart' ? '#fff' : 'var(--text-muted)',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem'
+            }}
+          >
+            <GitFork size={15} color="#c084fc" /> Flow Chart
           </button>
         </div>
 
@@ -331,6 +351,13 @@ export default function ModuleDetail({ moduleId, initialTab = 'flows', onBack })
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Tab 4: FLOW CHART */}
+        {activeSubTab === 'flowchart' && (
+          <div>
+            <FlowchartEditor moduleId={moduleId} contextKey={contextKey} />
           </div>
         )}
       </div>
