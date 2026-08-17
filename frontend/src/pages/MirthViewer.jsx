@@ -2,13 +2,14 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Activity, RefreshCw, Search, Wifi, WifiOff,
   AlertCircle, CheckCircle, Clock, Minus, Eye, X,
-  Loader, Settings, Folder, FileText, Printer
+  Loader, Layers, Folder, FileText, Printer, RotateCcw,
+  Hash, User, Calendar, ShieldCheck, ShieldAlert
 } from 'lucide-react';
 import api from '../services/api';
 
-const LS_KEY        = 'iknow_mirth_visible_channels';
-const MSG_TYPES     = ['Semua', 'ORM', 'ORR', 'ORU', 'P03'];
-const STATUSES      = ['Semua', 'SENT', 'ERROR', 'QUEUED', 'FILTERED'];
+const MSG_TYPES  = ['Semua', 'ORM', 'ORR', 'ORU', 'P03'];
+const STATUSES   = ['Semua', 'SENT', 'ERROR', 'QUEUED', 'FILTERED'];
+const PAGE_SIZES = [10, 20, 50];
 
 const statusStyle = {
   SENT:     { bg: 'rgba(16,185,129,0.15)', color: '#10b981', icon: <CheckCircle size={12}/> },
@@ -273,303 +274,184 @@ function Hl7Inspector({ raw, onClose, onViewReport }) {
   );
 }
 
-
-// ─── Channel Manager Modal ──────────────────────────────────────────────────
-function ChannelManagerModal({ allChannels, groups, visibleIds, onSave, onClose }) {
-  const [draft, setDraft] = useState(new Set(visibleIds));
-
-  const toggle = (id) => {
-    setDraft(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
-  const selectAll = () => setDraft(new Set(allChannels.map(c => c.id)));
-  const clearAll  = () => setDraft(new Set());
-
-  const toggleGroup = (groupName) => {
-    const groupChannelIds = allChannels.filter(c => (c.group || '[Default Group]') === groupName).map(c => c.id);
-    const allSelected = groupChannelIds.every(id => draft.has(id));
-    setDraft(prev => {
-      const next = new Set(prev);
-      groupChannelIds.forEach(id => {
-        allSelected ? next.delete(id) : next.add(id);
-      });
-      return next;
-    });
-  };
-
-  const stateColor = (state) => {
-    if (state === 'STARTED') return '#10b981';
-    if (state === 'STOPPED') return '#ef4444';
-    return '#f59e0b';
-  };
-
-  // Group channels by group name
-  const groupedChannels = useMemo(() => {
-    const map = {};
-    allChannels.forEach(c => {
-      const g = c.group || '[Default Group]';
-      if (!map[g]) map[g] = [];
-      map[g].push(c);
-    });
-    return map;
-  }, [allChannels]);
-
-  return (
-    <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 1100 }}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}
-        style={{ maxWidth: '640px', maxHeight: '85vh', overflowY: 'auto' }}>
-
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Settings size={18} color="var(--accent-cyan)" /> Urus Channel Mirth Mengikut Kumpulan
-          </h3>
-          <button className="btn btn-secondary" onClick={onClose} style={{ padding: '0.3rem' }}><X size={16} /></button>
-        </div>
-
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-          Hanya channel yang <strong style={{ color: '#fff' }}>di-tick (☑)</strong> akan dipaparkan dalam viewer. Pilihan tersimpan secara automatik.
-        </p>
-
-        {/* Select/Clear All */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', alignItems: 'center' }}>
-          <button className="btn btn-secondary" onClick={selectAll} style={{ fontSize: '0.78rem', padding: '0.3rem 0.7rem' }}>
-            ☑ Pilih Semua
-          </button>
-          <button className="btn btn-secondary" onClick={clearAll} style={{ fontSize: '0.78rem', padding: '0.3rem 0.7rem' }}>
-            ☐ Kosongkan Semua
-          </button>
-          <span style={{ marginLeft: 'auto', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-            <strong>{draft.size}</strong> daripada <strong>{allChannels.length}</strong> channel dipilih
-          </span>
-        </div>
-
-        {/* Grouped Channel List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '1.5rem' }}>
-          {Object.entries(groupedChannels).map(([groupName, chList]) => {
-            const groupSelectedCount = chList.filter(c => draft.has(c.id)).length;
-            const isGroupAllSelected = groupSelectedCount === chList.length;
-
-            return (
-              <div key={groupName} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '0.85rem 1rem' }}>
-                {/* Group Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <Folder size={15}/> {groupName}
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 400 }}>({groupSelectedCount}/{chList.length})</span>
-                  </span>
-                  <button className="btn btn-secondary" onClick={() => toggleGroup(groupName)}
-                    style={{ fontSize: '0.72rem', padding: '0.2rem 0.55rem', height: 'auto' }}>
-                    {isGroupAllSelected ? '☐ Untick Group' : '☑ Tick Group'}
-                  </button>
-                </div>
-
-                {/* Group Channels */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  {chList.map(c => (
-                    <label key={c.id}
-                      onClick={() => toggle(c.id)}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '0.75rem',
-                        padding: '0.6rem 0.85rem',
-                        background: draft.has(c.id) ? 'rgba(99,102,241,0.1)' : 'rgba(255,255,255,0.02)',
-                        border: `1px solid ${draft.has(c.id) ? 'rgba(99,102,241,0.35)' : 'rgba(255,255,255,0.04)'}`,
-                        borderRadius: '8px', cursor: 'pointer',
-                        transition: 'all 0.15s'
-                      }}
-                    >
-                      {/* Checkbox */}
-                      <div style={{
-                        width: '16px', height: '16px', borderRadius: '4px', flexShrink: 0,
-                        background: draft.has(c.id) ? 'var(--primary)' : 'rgba(255,255,255,0.08)',
-                        border: `1px solid ${draft.has(c.id) ? 'var(--primary)' : 'var(--border-color)'}`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all 0.15s'
-                      }}>
-                        {draft.has(c.id) && <span style={{ color: '#fff', fontSize: '10px', fontWeight: 900 }}>✓</span>}
-                      </div>
-
-                      {/* Info */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, color: '#fff', fontSize: '0.82rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {c.name}
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.1rem', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                          <span>✅ {c.sent.toLocaleString()} Sent</span>
-                          <span>❌ {c.error.toLocaleString()} Error</span>
-                        </div>
-                      </div>
-
-                      {/* State */}
-                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: stateColor(c.state), background: 'rgba(0,0,0,0.3)', padding: '0.1rem 0.45rem', borderRadius: '5px', flexShrink: 0 }}>
-                        ● {c.state}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Save Button */}
-        <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}
-          onClick={() => { onSave([...draft]); onClose(); }}>
-          💾 Simpan Tetapan Channel
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ─── Main Page ──────────────────────────────────────────────────────────────
 export default function MirthViewer() {
-  const [connStatus, setConnStatus]     = useState(null);
-  const [allChannels, setAllChannels]   = useState([]);
-  const [groups, setGroups]             = useState([]);
-  const [messages, setMessages]         = useState([]);
-  const [loading, setLoading]           = useState(false);
-  const [chanLoading, setChanLoading]   = useState(false);
-  const [error, setError]               = useState('');
+  const [connStatus, setConnStatus]   = useState(null);
+  const [groups, setGroups]           = useState([]);
+  const [channelsTotal, setChannelsTotal] = useState(0);
+  const [statusLoading, setStatusLoading] = useState(false);
 
-  const [selectedGroup, setSelectedGroup]     = useState('Semua');
-  const [selectedChannel, setSelectedChannel] = useState('');
-  const [typeFilter, setTypeFilter]           = useState('Semua');
-  const [statusFilter, setStatusFilter]       = useState('Semua');
-  const [mrnFilter, setMrnFilter]             = useState('');
-  const [inspectMsg, setInspectMsg]           = useState(null);
-  const [reportMsg, setReportMsg]             = useState(null);
-  const [showManager, setShowManager]         = useState(false);
+  // Search Filters
+  const [selectedGroup, setSelectedGroup] = useState('Semua');
+  const [mrnInput, setMrnInput]           = useState('');
+  const [orderIdInput, setOrderIdInput]   = useState('');
+  const [startDate, setStartDate]         = useState('');
+  const [endDate, setEndDate]             = useState('');
+  const [typeFilter, setTypeFilter]       = useState('Semua');
+  const [statusFilter, setStatusFilter]   = useState('Semua');
 
+  // Search execution state
+  const [isSearched, setIsSearched]       = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError]     = useState('');
 
-  // ── Pagination State ──────────────────────────────────────────────────────
-  const [page, setPage]         = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  // Pagination
+  const [currentPage, setCurrentPage]   = useState(1);
+  const [pageSize, setPageSize]         = useState(20);
+  const [inspectMsg, setInspectMsg]       = useState(null);
+  const [reportMsg, setReportMsg]         = useState(null);
+  const [fetchingHl7Id, setFetchingHl7Id] = useState(null);
 
-  // ── Visible channel IDs (from localStorage) ──────────────────────────────
-  const [visibleIds, setVisibleIds] = useState(() => {
+  // 1. Fetch Mirth Connection Status & Groups Metadata (Lightweight & Cached)
+  const fetchStatusAndGroups = useCallback(async (isRefresh = false) => {
+    setStatusLoading(true);
     try {
-      const stored = localStorage.getItem(LS_KEY);
-      return stored ? JSON.parse(stored) : null;
-    } catch { return null; }
-  });
+      const [statusRes, chanRes] = await Promise.allSettled([
+        api.get('/mirth/status'),
+        api.get('/mirth/channels', { params: isRefresh ? { refresh: '1' } : {} }),
+      ]);
 
-  // Channels that pass the visibility filter
-  const visibleChannels = useMemo(() => {
-    let list = visibleIds === null
-      ? allChannels
-      : allChannels.filter(c => visibleIds.includes(c.id));
+      if (statusRes.status === 'fulfilled') {
+        setConnStatus(statusRes.value.data);
+      } else {
+        setConnStatus({ connected: false, authenticated: false, error: 'Gagal hubungi backend' });
+      }
 
-    if (selectedGroup !== 'Semua') {
-      list = list.filter(c => (c.group || '[Default Group]') === selectedGroup);
-    }
-    return list;
-  }, [allChannels, visibleIds, selectedGroup]);
-
-  // Group visible channels by group name for dropdown optgroup
-  const groupedVisibleChannels = useMemo(() => {
-    const map = {};
-    visibleChannels.forEach(c => {
-      const g = c.group || '[Default Group]';
-      if (!map[g]) map[g] = [];
-      map[g].push(c);
-    });
-    return map;
-  }, [visibleChannels]);
-
-  const saveVisibleIds = (ids) => {
-    setVisibleIds(ids);
-    localStorage.setItem(LS_KEY, JSON.stringify(ids));
-  };
-
-  // ── API Calls ─────────────────────────────────────────────────────────────
-  const fetchStatus = useCallback(async () => {
-    try {
-      const res = await api.get('/mirth/status');
-      setConnStatus(res.data);
+      if (chanRes.status === 'fulfilled') {
+        setGroups(chanRes.value.data.groups || []);
+        setChannelsTotal(chanRes.value.data.total || 0);
+      }
     } catch {
-      setConnStatus({ connected: false, error: 'Tidak dapat hubungi backend' });
+      setConnStatus({ connected: false, authenticated: false, error: 'Ralat sambungan' });
+    } finally {
+      setStatusLoading(false);
     }
   }, []);
 
-  const fetchChannels = useCallback(async () => {
-    setChanLoading(true);
-    setError('');
-    try {
-      const res = await api.get('/mirth/channels');
-      const chs = res.data.channels || [];
-      const grps = res.data.groups || [];
-      setAllChannels(chs);
-      setGroups(grps);
+  // Initial load: Only status & group chips metadata — ZERO message queries!
+  useEffect(() => {
+    fetchStatusAndGroups();
+  }, [fetchStatusAndGroups]);
 
-      if (visibleIds === null && chs.length > 0) {
-        const ids = chs.map(c => c.id);
-        saveVisibleIds(ids);
-      }
+  // Date Presets
+  const setPresetToday = () => {
+    const today = new Date().toISOString().split('T')[0];
+    setStartDate(today);
+    setEndDate(today);
+  };
 
-      if (!selectedChannel && chs.length > 0) {
-        const firstVisible = (visibleIds ?? chs.map(c => c.id))[0];
-        const match = chs.find(c => c.id === firstVisible) || chs[0];
-        setSelectedChannel(match.id);
-      }
-    } catch {
-      setError('Gagal memuatkan senarai channel Mirth. Semak credentials dalam .env');
-    } finally {
-      setChanLoading(false);
+  const setPresetDaysAgo = (days) => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - days);
+    setStartDate(start.toISOString().split('T')[0]);
+    setEndDate(end.toISOString().split('T')[0]);
+  };
+
+  const clearDates = () => {
+    setStartDate('');
+    setEndDate('');
+  };
+
+  // 2. Search HL7 Messages on Demand (Triggered ONLY when user clicks "Cari" or Enter)
+  const handleSearch = async (e) => {
+    if (e) e.preventDefault();
+
+    const cleanMrn     = mrnInput.trim();
+    const cleanOrderId = orderIdInput.trim();
+    const cleanStart   = startDate.trim();
+    const cleanEnd     = endDate.trim();
+
+    if (!cleanMrn && !cleanOrderId && !cleanStart) {
+      setSearchError('Sila masukkan No. MRN, No. Order ID, atau pilih Tarikh sebelum membuat carian.');
+      return;
     }
-  }, [selectedChannel, visibleIds]);
 
-  const fetchMessages = useCallback(async () => {
-    if (!selectedChannel) return;
-    setLoading(true);
-    setError('');
+    setSearchLoading(true);
+    setSearchError('');
+    setIsSearched(true);
+    setSearchResults([]);
+    setCurrentPage(1); // Reset to page 1 on new search
+
     try {
       const params = {
-        channel_id: selectedChannel,
-        limit: pageSize,
-        offset: (page - 1) * pageSize,
+        group:        selectedGroup,
+        ...(cleanMrn     && { mrn: cleanMrn }),
+        ...(cleanOrderId && { order_id: cleanOrderId }),
+        ...(cleanStart   && { start_date: cleanStart }),
+        ...(cleanEnd     && { end_date: cleanEnd }),
         ...(typeFilter !== 'Semua'   && { type: typeFilter }),
         ...(statusFilter !== 'Semua' && { status: statusFilter }),
-        ...(mrnFilter                && { mrn: mrnFilter }),
       };
-      const res = await api.get('/mirth/messages', { params });
-      setMessages(res.data.messages || []);
-    } catch (e) {
-      setError(e.response?.data?.message || 'Gagal memuatkan mesej Mirth');
+
+      const res = await api.get('/mirth/search', { params });
+      setSearchResults(res.data.messages || []);
+      if ((res.data.messages || []).length === 0) {
+        setSearchError('Tiada mesej HL7 dijumpai bagi kriteria dan selang tarikh carian ini.');
+      }
+    } catch (err) {
+      const serverMsg = err.response?.data?.messages?.error 
+        || (typeof err.response?.data?.messages === 'string' ? err.response?.data?.messages : null)
+        || err.response?.data?.message
+        || (err.message ? `Ralat: ${err.message}` : null)
+        || 'Ralat semasa membuat carian mesej HL7.';
+      setSearchError(serverMsg);
     } finally {
-      setLoading(false);
-    }
-  }, [selectedChannel, typeFilter, statusFilter, mrnFilter, page, pageSize]);
-
-  useEffect(() => { fetchStatus(); }, []);
-  useEffect(() => { if (connStatus?.authenticated) fetchChannels(); }, [connStatus]);
-  useEffect(() => { if (selectedChannel) fetchMessages(); }, [selectedChannel, typeFilter, statusFilter, page, pageSize]);
-
-  // Reset page to 1 when filters change
-  const handleFilterChange = (setter, val) => {
-    setter(val);
-    setPage(1);
-  };
-
-  const handleGroupTabClick = (groupName) => {
-    setSelectedGroup(groupName);
-    setPage(1);
-    // Auto-select first channel in this group
-    const groupChannels = (visibleIds === null ? allChannels : allChannels.filter(c => visibleIds.includes(c.id)))
-      .filter(c => groupName === 'Semua' || (c.group || '[Default Group]') === groupName);
-    if (groupChannels.length > 0) {
-      setSelectedChannel(groupChannels[0].id);
+      setSearchLoading(false);
     }
   };
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  // Reset filter form
+  const handleReset = () => {
+    setMrnInput('');
+    setOrderIdInput('');
+    setStartDate('');
+    setEndDate('');
+    setSelectedGroup('Semua');
+    setTypeFilter('Semua');
+    setStatusFilter('Semua');
+    setIsSearched(false);
+    setSearchResults([]);
+    setSearchError('');
+    setCurrentPage(1);
+  };
+
+  // 3. On-demand HL7 Fetch for Inspector / Printable Report
+  const handleViewMessage = async (msg, targetModal = 'report') => {
+    if (!msg.message_id || !msg.channel_id) return;
+    setFetchingHl7Id(msg.message_id);
+    try {
+      const res = await api.get(`/mirth/message/${msg.message_id}`, {
+        params: { channel_id: msg.channel_id },
+      });
+      const raw = res.data?.raw_hl7;
+      if (!raw) {
+        alert('Kandungan HL7 tidak ditemui untuk mesej ini.');
+        return;
+      }
+      if (targetModal === 'report') {
+        setReportMsg(raw);
+      } else {
+        setInspectMsg(raw);
+      }
+    } catch {
+      alert('Gagal memuatkan perincian mesej HL7 daripada Mirth.');
+    } finally {
+      setFetchingHl7Id(null);
+    }
+  };
+
   const formatDate = (ts) => {
     if (!ts) return '-';
-    try { return new Date(parseInt(ts)).toLocaleString('ms-MY'); } catch { return ts; }
+    try {
+      return new Date(parseInt(ts)).toLocaleString('ms-MY', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+    } catch {
+      return ts;
+    }
   };
 
   const getMsgBaseType = (type) => {
@@ -577,305 +459,764 @@ export default function MirthViewer() {
     return base === 'DFT' ? 'P03' : base;
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ paddingTop: '1.5rem' }}>
+    <div style={{ paddingTop: '1.25rem', paddingBottom: '3rem' }}>
 
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+      {/* ── Header & Mirth Status Bar ──────────────────────────────────────── */}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: '1rem',
+        marginBottom: '1.5rem',
+        background: 'rgba(255,255,255,0.02)',
+        padding: '1.25rem 1.5rem',
+        borderRadius: '16px',
+        border: '1px solid var(--border-color)',
+        backdropFilter: 'blur(10px)'
+      }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Activity size={22} color="var(--accent-cyan)"/> Mirth Connect — HL7 Viewer
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.6rem', margin: 0 }}>
+            <Activity size={22} color="var(--accent-cyan)" /> Mirth Connect — Carian Mesej HL7
           </h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-            Pemantauan mesej HL7 (ORM / ORR / ORU / P03) — <strong>Read-Only</strong>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.35rem', marginBottom: 0 }}>
+            Carian pantas berpusat merentas kumpulan channel Mirth — <strong>Hanya Baca (Read-Only)</strong>
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button className="btn btn-secondary"
-            onClick={() => setShowManager(true)}
-            title="Urus channel yang dipaparkan"
-            style={{ borderColor: 'rgba(99,102,241,0.4)', color: '#818cf8' }}
-          >
-            <Settings size={14}/> Urus Channel
-            {visibleIds !== null && (
-              <span style={{ background: 'var(--primary)', color: '#fff', borderRadius: '10px', padding: '0.05rem 0.45rem', fontSize: '0.7rem', fontWeight: 700 }}>
-                {visibleChannels.length}/{allChannels.length}
-              </span>
-            )}
-          </button>
-          <button className="btn btn-secondary" onClick={() => { fetchStatus(); fetchChannels(); }}>
-            <RefreshCw size={14}/> Muat Semula
-          </button>
-        </div>
-      </div>
 
-      {/* Connection Status Bar */}
-      <div className="glass-panel" style={{
-        padding: '0.85rem 1.25rem', marginBottom: '1.25rem',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: connStatus?.connected ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
-        border: `1px solid ${connStatus?.connected ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`
-      }}>
+        {/* Live Status Badge */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          {connStatus?.connected ? <Wifi size={18} color="#10b981"/> : <WifiOff size={18} color="#ef4444"/>}
-          <div>
-            <span style={{ fontWeight: 700, color: connStatus?.connected ? '#10b981' : '#ef4444', fontSize: '0.9rem' }}>
-              {connStatus?.connected ? `Mirth Connect ${connStatus.version} — Berjaya Disambungkan` : 'Tidak Dapat Disambungkan'}
-            </span>
-            <span style={{ marginLeft: '0.75rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              {connStatus?.host}
-            </span>
-          </div>
+          {statusLoading ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              <Loader size={14} className="spin" /> Menyemak status...
+            </div>
+          ) : connStatus?.authenticated ? (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)',
+              color: '#10b981', padding: '0.4rem 0.85rem', borderRadius: '30px', fontSize: '0.8rem', fontWeight: 600
+            }}>
+              <ShieldCheck size={16} />
+              <span>Tersambung & Log Masuk</span>
+              <span style={{ fontSize: '0.72rem', opacity: 0.8, borderLeft: '1px solid rgba(16,185,129,0.3)', paddingLeft: '0.5rem' }}>
+                v{connStatus.version || '4.x'} ({channelsTotal} Channels)
+              </span>
+            </div>
+          ) : connStatus?.connected ? (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)',
+              color: '#f59e0b', padding: '0.4rem 0.85rem', borderRadius: '30px', fontSize: '0.8rem', fontWeight: 600
+            }}>
+              <ShieldAlert size={16} />
+              <span>Pelayan Aktif (Gagal Auth)</span>
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)',
+              color: '#ef4444', padding: '0.4rem 0.85rem', borderRadius: '30px', fontSize: '0.8rem', fontWeight: 600
+            }}>
+              <WifiOff size={16} />
+              <span>Mirth Tidak Tersambung</span>
+            </div>
+          )}
+
+          <button
+            className="btn btn-secondary"
+            onClick={() => fetchStatusAndGroups(true)}
+            title="Muat semula status sambungan"
+            style={{ padding: '0.4rem 0.6rem' }}
+          >
+            <RefreshCw size={14} className={statusLoading ? 'spin' : ''} />
+          </button>
         </div>
-        <span style={{ fontSize: '0.75rem', color: connStatus?.authenticated ? '#10b981' : '#f59e0b', fontWeight: 600 }}>
-          {connStatus?.authenticated ? '🔐 Terlog Masuk' : connStatus?.connected ? '⚠️ Belum Terlog Masuk' : ''}
-        </span>
       </div>
 
-      {error && (
-        <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '10px', padding: '0.85rem 1.25rem', marginBottom: '1.25rem', color: '#ef4444', fontSize: '0.85rem' }}>
-          <AlertCircle size={14} style={{ marginRight: '0.4rem', verticalAlign: 'middle' }}/>{error}
-        </div>
-      )}
+      {/* ── Search Control Panel ───────────────────────────────────────────── */}
+      <div style={{
+        background: 'var(--surface-color, #1e293b)',
+        borderRadius: '16px',
+        border: '1px solid var(--border-color)',
+        padding: '1.5rem',
+        marginBottom: '1.75rem',
+        boxShadow: '0 8px 30px rgba(0,0,0,0.2)'
+      }}>
+        <form onSubmit={handleSearch}>
 
-      {/* Group Pills Navigation */}
-      {groups.length > 0 && (
-        <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.25rem', overflowX: 'auto', paddingBottom: '0.2rem' }}>
-          <button
-            onClick={() => handleGroupTabClick('Semua')}
-            className="btn btn-secondary"
-            style={{
-              fontSize: '0.78rem', padding: '0.35rem 0.8rem', whiteSpace: 'nowrap',
-              background: selectedGroup === 'Semua' ? 'var(--primary)' : undefined,
-              borderColor: selectedGroup === 'Semua' ? 'var(--primary)' : undefined,
-              color: selectedGroup === 'Semua' ? '#fff' : undefined,
-            }}
-          >
-            📁 Semua Kumpulan ({allChannels.length})
-          </button>
-          {groups.map(g => {
-            const groupCount = allChannels.filter(c => (c.group || '[Default Group]') === g).length;
-            const isSelected = selectedGroup === g;
-            return (
-              <button
-                key={g}
-                onClick={() => handleGroupTabClick(g)}
-                className="btn btn-secondary"
+          {/* 1. Input Fields Row (MRN, Order ID, Date Range) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+            {/* MRN */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-cyan)', marginBottom: '0.4rem' }}>
+                <User size={13} style={{ display: 'inline', marginRight: '4px' }} /> No. MRN Pesakit
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Contoh: 123456 atau MRN..."
+                  value={mrnInput}
+                  onChange={e => setMrnInput(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.85rem',
+                    background: 'rgba(0,0,0,0.25)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '10px',
+                    color: '#fff',
+                    fontSize: '0.86rem'
+                  }}
+                />
+                {mrnInput && (
+                  <button type="button" onClick={() => setMrnInput('')} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Order ID */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-cyan)', marginBottom: '0.4rem' }}>
+                <Hash size={13} style={{ display: 'inline', marginRight: '4px' }} /> No. Order / Accession ID
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Contoh: 789012 atau ORD..."
+                  value={orderIdInput}
+                  onChange={e => setOrderIdInput(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.85rem',
+                    background: 'rgba(0,0,0,0.25)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '10px',
+                    color: '#fff',
+                    fontSize: '0.86rem'
+                  }}
+                />
+                {orderIdInput && (
+                  <button type="button" onClick={() => setOrderIdInput('')} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Start Date */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#38bdf8', marginBottom: '0.4rem' }}>
+                <Calendar size={13} style={{ display: 'inline', marginRight: '4px' }} /> Tarikh Mula
+              </label>
+              <input
+                type="date"
+                className="form-control"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
                 style={{
-                  fontSize: '0.78rem', padding: '0.35rem 0.8rem', whiteSpace: 'nowrap',
-                  background: isSelected ? 'rgba(6,182,212,0.2)' : undefined,
-                  borderColor: isSelected ? 'var(--accent-cyan)' : undefined,
-                  color: isSelected ? 'var(--accent-cyan)' : undefined,
-                  fontWeight: isSelected ? 700 : 400,
+                  width: '100%',
+                  padding: '0.55rem 0.8rem',
+                  background: 'rgba(0,0,0,0.25)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '10px',
+                  color: '#fff',
+                  fontSize: '0.84rem',
+                  colorScheme: 'dark'
+                }}
+              />
+            </div>
+
+            {/* End Date */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#38bdf8', marginBottom: '0.4rem' }}>
+                <Calendar size={13} style={{ display: 'inline', marginRight: '4px' }} /> Tarikh Akhir
+              </label>
+              <input
+                type="date"
+                className="form-control"
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.55rem 0.8rem',
+                  background: 'rgba(0,0,0,0.25)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '10px',
+                  color: '#fff',
+                  fontSize: '0.84rem',
+                  colorScheme: 'dark'
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Quick Date Presets Row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
+            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>Pilihan Selang Tarikh:</span>
+            <button
+              type="button"
+              onClick={setPresetToday}
+              style={{
+                padding: '0.2rem 0.6rem',
+                borderRadius: '6px',
+                fontSize: '0.72rem',
+                cursor: 'pointer',
+                border: '1px solid rgba(56,189,248,0.3)',
+                background: 'rgba(56,189,248,0.1)',
+                color: '#38bdf8'
+              }}
+            >
+              📅 Hari Ini
+            </button>
+            <button
+              type="button"
+              onClick={() => setPresetDaysAgo(7)}
+              style={{
+                padding: '0.2rem 0.6rem',
+                borderRadius: '6px',
+                fontSize: '0.72rem',
+                cursor: 'pointer',
+                border: '1px solid rgba(56,189,248,0.3)',
+                background: 'rgba(56,189,248,0.1)',
+                color: '#38bdf8'
+              }}
+            >
+              📅 7 Hari Lepas
+            </button>
+            <button
+              type="button"
+              onClick={() => setPresetDaysAgo(30)}
+              style={{
+                padding: '0.2rem 0.6rem',
+                borderRadius: '6px',
+                fontSize: '0.72rem',
+                cursor: 'pointer',
+                border: '1px solid rgba(56,189,248,0.3)',
+                background: 'rgba(56,189,248,0.1)',
+                color: '#38bdf8'
+              }}
+            >
+              📅 30 Hari Lepas
+            </button>
+            {(startDate || endDate) && (
+              <button
+                type="button"
+                onClick={clearDates}
+                style={{
+                  padding: '0.2rem 0.6rem',
+                  borderRadius: '6px',
+                  fontSize: '0.72rem',
+                  cursor: 'pointer',
+                  border: '1px solid rgba(239,68,68,0.3)',
+                  background: 'rgba(239,68,68,0.1)',
+                  color: '#ef4444'
                 }}
               >
-                {g} ({groupCount})
+                ✕ Kosongkan Tarikh
               </button>
-            );
-          })}
+            )}
+          </div>
+
+          {/* 2. Channel Group Selection as Buttons/Chips */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.5rem' }}>
+              <Folder size={13} style={{ display: 'inline', marginRight: '4px' }} /> Pilih Kumpulan Channel Mirth:
+            </label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => setSelectedGroup('Semua')}
+                style={{
+                  padding: '0.45rem 0.95rem',
+                  borderRadius: '20px',
+                  fontSize: '0.8rem',
+                  fontWeight: selectedGroup === 'Semua' ? 700 : 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.18s ease',
+                  border: selectedGroup === 'Semua' ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
+                  background: selectedGroup === 'Semua' ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.03)',
+                  color: selectedGroup === 'Semua' ? 'var(--accent-cyan)' : 'var(--text-muted)'
+                }}
+              >
+                🌐 Semua Kumpulan
+              </button>
+
+              {groups.map(g => {
+                const isSelected = selectedGroup === g;
+                return (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => setSelectedGroup(g)}
+                    style={{
+                      padding: '0.45rem 0.95rem',
+                      borderRadius: '20px',
+                      fontSize: '0.8rem',
+                      fontWeight: isSelected ? 700 : 500,
+                      cursor: 'pointer',
+                      transition: 'all 0.18s ease',
+                      border: isSelected ? '1px solid var(--primary, #6366f1)' : '1px solid var(--border-color)',
+                      background: isSelected ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.03)',
+                      color: isSelected ? '#a5b4fc' : 'var(--text-muted)'
+                    }}
+                  >
+                    📁 {g}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 3. Secondary Filters (Type & Status) */}
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '1.5rem',
+            alignItems: 'center',
+            paddingTop: '0.75rem',
+            borderTop: '1px solid rgba(255,255,255,0.06)',
+            marginBottom: '1.25rem'
+          }}>
+            {/* Message Type */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Jenis Mesej:</span>
+              {MSG_TYPES.map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTypeFilter(t)}
+                  style={{
+                    padding: '0.2rem 0.55rem',
+                    borderRadius: '6px',
+                    fontSize: '0.72rem',
+                    cursor: 'pointer',
+                    border: '1px solid',
+                    borderColor: typeFilter === t ? 'var(--accent-cyan)' : 'transparent',
+                    background: typeFilter === t ? 'rgba(6,182,212,0.15)' : 'rgba(255,255,255,0.04)',
+                    color: typeFilter === t ? 'var(--accent-cyan)' : 'var(--text-muted)'
+                  }}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+
+            {/* Status Filter */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Status:</span>
+              {STATUSES.map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setStatusFilter(s)}
+                  style={{
+                    padding: '0.2rem 0.55rem',
+                    borderRadius: '6px',
+                    fontSize: '0.72rem',
+                    cursor: 'pointer',
+                    border: '1px solid',
+                    borderColor: statusFilter === s ? '#10b981' : 'transparent',
+                    background: statusFilter === s ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.04)',
+                    color: statusFilter === s ? '#10b981' : 'var(--text-muted)'
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 4. Action Buttons */}
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleReset}
+              disabled={searchLoading}
+              style={{ fontSize: '0.85rem', padding: '0.55rem 1rem' }}
+            >
+              <RotateCcw size={14} /> Set Semula
+            </button>
+
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={searchLoading}
+              style={{
+                fontSize: '0.88rem',
+                padding: '0.55rem 1.4rem',
+                fontWeight: 700,
+                boxShadow: '0 4px 14px rgba(99,102,241,0.4)'
+              }}
+            >
+              {searchLoading ? (
+                <>
+                  <Loader size={16} className="spin" /> Sedang Mencari...
+                </>
+              ) : (
+                <>
+                  <Search size={16} /> Cari Mesej HL7
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* ── Search Error Banner ────────────────────────────────────────────── */}
+      {searchError && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.6rem',
+          background: 'rgba(239,68,68,0.12)',
+          border: '1px solid rgba(239,68,68,0.3)',
+          color: '#ef4444',
+          padding: '0.85rem 1.25rem',
+          borderRadius: '12px',
+          marginBottom: '1.5rem',
+          fontSize: '0.85rem'
+        }}>
+          <AlertCircle size={18} />
+          <span>{searchError}</span>
         </div>
       )}
 
-      {/* Filter Bar */}
-      <div className="glass-panel" style={{ padding: '1rem 1.25rem', marginBottom: '1.25rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 160px', gap: '0.75rem', alignItems: 'end' }}>
-
-          {/* Channel Selector — Grouped with optgroup */}
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ fontSize: '0.75rem' }}>
-              Channel Mirth
-              {selectedGroup !== 'Semua' && (
-                <span style={{ marginLeft: '0.4rem', color: 'var(--accent-cyan)', fontSize: '0.68rem' }}>
-                  [{selectedGroup}]
-                </span>
-              )}
-            </label>
-            <select className="form-select" value={selectedChannel} onChange={e => handleFilterChange(setSelectedChannel, e.target.value)}>
-              {chanLoading && <option>Memuatkan...</option>}
-              {Object.entries(groupedVisibleChannels).map(([groupName, chList]) => (
-                <optgroup key={groupName} label={`📁 ${groupName}`}>
-                  {chList.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} — ✅{c.sent.toLocaleString()} ❌{c.error}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-              {!chanLoading && visibleChannels.length === 0 && (
-                <option value="">Tiada channel dipilih — klik Urus Channel</option>
-              )}
-            </select>
-          </div>
-
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ fontSize: '0.75rem' }}>Jenis Mesej</label>
-            <select className="form-select" value={typeFilter} onChange={e => handleFilterChange(setTypeFilter, e.target.value)}>
-              {MSG_TYPES.map(t => <option key={t}>{t}</option>)}
-            </select>
-          </div>
-
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ fontSize: '0.75rem' }}>Status</label>
-            <select className="form-select" value={statusFilter} onChange={e => handleFilterChange(setStatusFilter, e.target.value)}>
-              {STATUSES.map(s => <option key={s}>{s}</option>)}
-            </select>
-          </div>
-
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ fontSize: '0.75rem' }}>Cari No. MRN</label>
-            <input type="text" className="form-input" placeholder="Cth: MRN123456"
-              value={mrnFilter} onChange={e => handleFilterChange(setMrnFilter, e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && fetchMessages()}/>
-          </div>
-
-          <button className="btn btn-primary" onClick={fetchMessages}
-            disabled={loading || !selectedChannel} style={{ height: '38px', justifyContent: 'center' }}>
-            {loading ? <Loader size={14}/> : <><Search size={14}/> Cari</>}
-          </button>
+      {/* ── Results View ───────────────────────────────────────────────────── */}
+      {!isSearched && !searchLoading && (
+        <div style={{
+          textAlign: 'center',
+          padding: '3.5rem 1.5rem',
+          background: 'rgba(255,255,255,0.01)',
+          borderRadius: '16px',
+          border: '1px dashed var(--border-color)',
+          color: 'var(--text-muted)'
+        }}>
+          <Search size={40} style={{ opacity: 0.35, marginBottom: '1rem', color: 'var(--accent-cyan)' }} />
+          <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#f8fafc', marginBottom: '0.35rem' }}>
+            Modul Sedia Untuk Carian
+          </h4>
+          <p style={{ fontSize: '0.82rem', maxWidth: '480px', margin: '0 auto' }}>
+            Sila masukkan <strong>No. MRN</strong>, <strong>No. Order ID</strong>, atau <strong>Selang Tarikh</strong>, pilih Kumpulan Channel, dan tekan butang <strong>"Cari Mesej HL7"</strong>.
+          </p>
         </div>
-      </div>
+      )}
 
-
-
-      {/* Messages Table */}
-      <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>
-            Log Mesej HL7 {messages.length > 0 && <span style={{ color: 'var(--accent-cyan)', fontWeight: 400 }}>({messages.length} mesej dalam halaman ini)</span>}
-          </h3>
-          {loading && <Loader size={16} color="var(--accent-cyan)"/>}
+      {searchLoading && (
+        <div style={{
+          textAlign: 'center',
+          padding: '4rem 1.5rem',
+          background: 'rgba(255,255,255,0.01)',
+          borderRadius: '16px',
+          border: '1px solid var(--border-color)'
+        }}>
+          <Loader size={36} className="spin" style={{ color: 'var(--accent-cyan)', marginBottom: '1rem' }} />
+          <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#f8fafc' }}>
+            Menjalankan Carian Mesej HL7...
+          </h4>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            Menyemak saluran bagi kumpulan <strong>{selectedGroup}</strong>
+            {startDate ? ` (${startDate} hingga ${endDate || startDate})` : ''}
+          </p>
         </div>
+      )}
 
-        {messages.length === 0 && !loading ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            {selectedChannel ? 'Tiada mesej dijumpai dengan tapisan semasa.' : 'Sila pilih channel Mirth untuk melihat log mesej.'}
-          </div>
-        ) : (
+      {isSearched && !searchLoading && searchResults.length > 0 && (() => {
+        const totalPages   = Math.ceil(searchResults.length / pageSize);
+        const startIdx     = (currentPage - 1) * pageSize;
+        const endIdx       = Math.min(startIdx + pageSize, searchResults.length);
+        const pagedResults = searchResults.slice(startIdx, endIdx);
+
+        return (
+          <div style={{
+            background: 'var(--surface-color, #1e293b)',
+            borderRadius: '16px',
+            border: '1px solid var(--border-color)',
+            overflow: 'hidden',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.2)'
+          }}>
+            {/* Results Header */}
+            <div style={{
+              padding: '1rem 1.25rem',
+              borderBottom: '1px solid var(--border-color)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: 'rgba(255,255,255,0.02)'
+            }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#f8fafc' }}>
+                Keputusan Carian: <span style={{ color: 'var(--accent-cyan)' }}>{searchResults.length}</span> mesej dijumpai
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                Kumpulan: <strong style={{ color: '#fff' }}>{selectedGroup}</strong>
+                {startDate && <span style={{ marginLeft: '0.5rem', color: '#38bdf8' }}>📅 {startDate} s/d {endDate || startDate}</span>}
+              </div>
+            </div>
+
+          {/* Results Table */}
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.02)' }}>
-                  {['Tarikh & Masa', 'Jenis Mesej', 'Status', 'No. MRN', 'Order ID', 'Tindakan'].map(h => (
-                    <th key={h} style={{ padding: '0.7rem 1rem', textAlign: 'left', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
-                  ))}
+                <tr style={{ background: 'rgba(0,0,0,0.2)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left' }}>Tarikh & Masa</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left' }}>Kumpulan / Channel</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left' }}>Jenis</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left' }}>Status</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left' }}>No. MRN</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left' }}>No. Order</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>Tindakan</th>
                 </tr>
               </thead>
               <tbody>
-                {messages.map((msg, i) => {
-                  const baseType  = getMsgBaseType(msg.msg_type);
-                  const typeStyle = msgTypeBadge[baseType] || { bg: 'rgba(148,163,184,0.1)', color: '#94a3b8' };
-                  const st        = statusStyle[msg.status?.toUpperCase()] || { bg: 'rgba(148,163,184,0.1)', color: '#94a3b8', icon: null };
+                {searchResults.map((msg, idx) => {
+                  const baseType = getMsgBaseType(msg.msg_type);
+                  const typeBg   = msgTypeBadge[baseType] || { bg: 'rgba(255,255,255,0.08)', color: '#94a3b8' };
+                  const stStyle  = statusStyle[msg.status] || { bg: 'rgba(255,255,255,0.08)', color: '#94a3b8' };
+                  const isFetchingThis = fetchingHl7Id === msg.message_id;
+                  const rowIdx = startIdx + idx;
+
                   return (
-                    <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', transition: 'background 0.15s' }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                      <td style={{ padding: '0.7rem 1rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatDate(msg.date_time)}</td>
-                      <td style={{ padding: '0.7rem 1rem' }}>
-                        <span style={{ background: typeStyle.bg, color: typeStyle.color, padding: '0.2rem 0.55rem', borderRadius: '6px', fontWeight: 700, fontSize: '0.75rem' }}>
-                          {msg.msg_type || '-'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '0.7rem 1rem' }}>
-                        <span style={{ background: st.bg, color: st.color, padding: '0.2rem 0.55rem', borderRadius: '6px', fontWeight: 600, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                          {st.icon}{msg.status || '-'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '0.7rem 1rem', fontFamily: 'monospace', color: '#cbd5e1' }}>{msg.mrn || '-'}</td>
-                      <td style={{ padding: '0.7rem 1rem', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{msg.order_id || '-'}</td>
-                      <td style={{ padding: '0.7rem 1rem' }}>
-                        {msg.raw_hl7 && (
-                          <button className="btn btn-secondary" onClick={() => setInspectMsg(msg.raw_hl7)}
-                            style={{ padding: '0.25rem 0.6rem', fontSize: '0.72rem' }}>
-                            <Eye size={12}/> HL7
-                          </button>
-                        )}
+                    <tr
+                      key={msg.message_id || idx}
+                      style={{
+                        borderBottom: '1px solid rgba(255,255,255,0.04)',
+                        background: rowIdx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
+                        transition: 'background 0.15s'
+                      }}
+                    >
+                      {/* Date Time */}
+                      <td style={{ padding: '0.75rem 1rem', color: '#cbd5e1', whiteSpace: 'nowrap' }}>
+                        {formatDate(msg.date_time)}
                       </td>
 
+                      {/* Group & Channel */}
+                      <td style={{ padding: '0.75rem 1rem' }}>
+                        <div style={{ fontWeight: 600, color: '#f8fafc' }}>{msg.channel_name || '-'}</div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--accent-cyan)', marginTop: '2px' }}>
+                          📁 {msg.channel_group}
+                        </div>
+                      </td>
+
+                      {/* Message Type */}
+                      <td style={{ padding: '0.75rem 1rem' }}>
+                        <span style={{
+                          background: typeBg.bg,
+                          color: typeBg.color,
+                          padding: '0.2rem 0.5rem',
+                          borderRadius: '5px',
+                          fontWeight: 700,
+                          fontSize: '0.75rem'
+                        }}>
+                          {msg.msg_type || 'HL7'}
+                        </span>
+                      </td>
+
+                      {/* Status */}
+                      <td style={{ padding: '0.75rem 1rem' }}>
+                        <span style={{
+                          background: stStyle.bg,
+                          color: stStyle.color,
+                          padding: '0.2rem 0.5rem',
+                          borderRadius: '5px',
+                          fontWeight: 700,
+                          fontSize: '0.75rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          {stStyle.icon}
+                          {msg.status || '-'}
+                        </span>
+                      </td>
+
+                      {/* MRN */}
+                      <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontWeight: 600, color: '#38bdf8' }}>
+                        {msg.mrn || '-'}
+                      </td>
+
+                      {/* Order ID */}
+                      <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', color: '#e2e8f0' }}>
+                        {msg.order_id || '-'}
+                      </td>
+
+                      {/* Actions */}
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }}>
+                          {/* Printable Medical Report Button */}
+                          <button
+                            className="btn btn-primary"
+                            onClick={() => handleViewMessage(msg, 'report')}
+                            disabled={isFetchingThis}
+                            style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem' }}
+                            title="Papar dan Cetak Laporan Mesra Pengguna (Human-Readable)"
+                          >
+                            {isFetchingThis ? <Loader size={12} className="spin" /> : <Printer size={12} />}
+                            <span>Laporan (Print)</span>
+                          </button>
+
+                          {/* Raw Inspector Button */}
+                          <button
+                            className="btn btn-secondary"
+                            onClick={() => handleViewMessage(msg, 'raw')}
+                            disabled={isFetchingThis}
+                            style={{ fontSize: '0.74rem', padding: '0.3rem 0.55rem' }}
+                            title="Papar Segmen HL7 Mentah (Raw Segments)"
+                          >
+                            <Eye size={12} />
+                            <span>Raw</span>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-        )}
 
-        {/* Pagination Footer */}
-        <div style={{
-          padding: '0.85rem 1.25rem',
-          borderTop: '1px solid var(--border-color)',
-          background: 'rgba(255,255,255,0.02)',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          flexWrap: 'wrap', gap: '0.75rem'
-        }}>
-          {/* Info */}
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            {messages.length > 0 ? (
-              <>Menunjukkan <strong>{(page - 1) * pageSize + 1} - {(page - 1) * pageSize + messages.length}</strong> mesej</>
-            ) : (
-              'Tiada mesej'
-            )}
-          </div>
+          {/* ── Pagination Controls ─────────────────────────────────────────── */}
+          {totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0.85rem 1.25rem',
+              borderTop: '1px solid var(--border-color)',
+              background: 'rgba(0,0,0,0.15)',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+            }}>
+              {/* Info */}
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                Papar <strong style={{ color: '#f8fafc' }}>{startIdx + 1}–{endIdx}</strong> daripada <strong style={{ color: 'var(--accent-cyan)' }}>{searchResults.length}</strong> mesej
+              </div>
 
-          {/* Page Controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            {/* Items Per Page */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              <span>Saiz:</span>
-              <select className="form-select" value={pageSize}
-                onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
-                style={{ padding: '0.25rem 1.8rem 0.25rem 0.6rem', fontSize: '0.78rem', width: 'auto' }}>
-                <option value={25}>25 / ms</option>
-                <option value={50}>50 / ms</option>
-                <option value={100}>100 / ms</option>
-              </select>
+              {/* Page Buttons */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                {/* First */}
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  style={{
+                    padding: '0.3rem 0.55rem', borderRadius: '6px', fontSize: '0.75rem',
+                    cursor: currentPage === 1 ? 'default' : 'pointer',
+                    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+                    color: currentPage === 1 ? 'var(--text-muted)' : '#f8fafc', opacity: currentPage === 1 ? 0.4 : 1
+                  }}
+                  title="Halaman Pertama"
+                >«</button>
+
+                {/* Prev */}
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  style={{
+                    padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.78rem',
+                    cursor: currentPage === 1 ? 'default' : 'pointer',
+                    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+                    color: currentPage === 1 ? 'var(--text-muted)' : '#f8fafc', opacity: currentPage === 1 ? 0.4 : 1
+                  }}
+                  title="Halaman Sebelum"
+                >‹ Sebelum</button>
+
+                {/* Page Numbers */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalPages || (p >= currentPage - 2 && p <= currentPage + 2))
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && arr[idx - 1] !== p - 1) acc.push('...');
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((item, i) =>
+                    item === '...' ? (
+                      <span key={`ellipsis-${i}`} style={{ padding: '0 0.3rem', color: 'var(--text-muted)', fontSize: '0.78rem' }}>…</span>
+                    ) : (
+                      <button
+                        key={item}
+                        onClick={() => setCurrentPage(item)}
+                        style={{
+                          padding: '0.3rem 0.6rem', borderRadius: '6px', fontSize: '0.78rem', cursor: 'pointer',
+                          minWidth: '32px', fontWeight: currentPage === item ? 700 : 400,
+                          background: currentPage === item ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.04)',
+                          border: currentPage === item ? '1px solid rgba(99,102,241,0.6)' : '1px solid rgba(255,255,255,0.08)',
+                          color: currentPage === item ? '#a5b4fc' : '#f8fafc',
+                        }}
+                      >{item}</button>
+                    )
+                  )
+                }
+
+                {/* Next */}
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  style={{
+                    padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.78rem',
+                    cursor: currentPage === totalPages ? 'default' : 'pointer',
+                    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+                    color: currentPage === totalPages ? 'var(--text-muted)' : '#f8fafc', opacity: currentPage === totalPages ? 0.4 : 1
+                  }}
+                  title="Halaman Seterusnya"
+                >Seterusnya ›</button>
+
+                {/* Last */}
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  style={{
+                    padding: '0.3rem 0.55rem', borderRadius: '6px', fontSize: '0.75rem',
+                    cursor: currentPage === totalPages ? 'default' : 'pointer',
+                    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+                    color: currentPage === totalPages ? 'var(--text-muted)' : '#f8fafc', opacity: currentPage === totalPages ? 0.4 : 1
+                  }}
+                  title="Halaman Terakhir"
+                >»</button>
+              </div>
+
+              {/* Per Page Selector */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                <span>Baris:</span>
+                {PAGE_SIZES.map(size => (
+                  <button
+                    key={size}
+                    onClick={() => { setPageSize(size); setCurrentPage(1); }}
+                    style={{
+                      padding: '0.25rem 0.5rem', borderRadius: '5px', fontSize: '0.75rem', cursor: 'pointer',
+                      fontWeight: pageSize === size ? 700 : 400,
+                      background: pageSize === size ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.04)',
+                      border: pageSize === size ? '1px solid rgba(6,182,212,0.5)' : '1px solid rgba(255,255,255,0.08)',
+                      color: pageSize === size ? 'var(--accent-cyan)' : '#f8fafc',
+                    }}
+                  >{size}</button>
+                ))}
+              </div>
             </div>
-
-            {/* Prev/Next Buttons */}
-            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-              <button
-                className="btn btn-secondary"
-                disabled={page <= 1 || loading}
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', opacity: page <= 1 ? 0.4 : 1 }}
-              >
-                ◀ Sebelumnya
-              </button>
-
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)', padding: '0 0.4rem' }}>
-                Halaman {page}
-              </span>
-
-              <button
-                className="btn btn-secondary"
-                disabled={messages.length < pageSize || loading}
-                onClick={() => setPage(p => p + 1)}
-                style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', opacity: messages.length < pageSize ? 0.4 : 1 }}
-              >
-                Seterusnya ▶
-              </button>
-            </div>
-          </div>
+          )}
         </div>
-      </div>
+        );
+      })()}
 
-      {/* Channel Manager Modal */}
-      {showManager && (
-        <ChannelManagerModal
-          allChannels={allChannels}
-          groups={groups}
-          visibleIds={visibleIds ?? allChannels.map(c => c.id)}
-          onSave={saveVisibleIds}
-          onClose={() => setShowManager(false)}
+      {/* ── Modal Laporan Perubatan (Print / PDF) ─────────────────────────── */}
+      {reportMsg && (
+        <Hl7ReportModal raw={reportMsg} onClose={() => setReportMsg(null)} />
+      )}
+
+      {/* ── Modal Raw HL7 Inspector ────────────────────────────────────────── */}
+      {inspectMsg && (
+        <Hl7Inspector
+          raw={inspectMsg}
+          onClose={() => setInspectMsg(null)}
+          onViewReport={(raw) => {
+            setInspectMsg(null);
+            setReportMsg(raw);
+          }}
         />
       )}
 
-      {/* HL7 Raw Inspector Modal */}
-      {inspectMsg && <Hl7Inspector raw={inspectMsg} onClose={() => setInspectMsg(null)} onViewReport={(raw) => setReportMsg(raw)} />}
-
-      {/* Human-Readable HL7 PDF Report Modal */}
-      {reportMsg && <Hl7ReportModal raw={reportMsg} onClose={() => setReportMsg(null)} />}
     </div>
   );
 }
-

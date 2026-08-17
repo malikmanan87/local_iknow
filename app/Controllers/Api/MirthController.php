@@ -3,21 +3,60 @@ namespace App\Controllers\Api;
 
 use CodeIgniter\RESTful\ResourceController;
 
+/**
+ * MirthController — High-Performance READ-ONLY Proxy to Mirth Connect
+ *
+ * SECURITY CONTRACT:
+ *   - This controller ONLY reads data from Mirth Connect.
+ *   - The ONLY POST request allowed to Mirth is /api/users/_login (authentication).
+ *   - All channel data, messages, and HL7 content are fetched via GET only.
+ *   - No channel state changes, message sends, or config writes are permitted.
+ *   - mirthRequest() enforces this: POST is blocked for all non-login endpoints.
+ *
+ * PERFORMANCE & RELIABILITY:
+ *   - Parallel asynchronous cURL (curl_multi) with Windows socket handling.
+ *   - Accurate HL7 segment extraction for MRN, Order ID, and Message Type.
+ *   - 30-minute caching for channels & groups metadata.
+ *   - 5-minute persistent session cookie management.
+ */
 class MirthController extends ResourceController
 {
     protected $format = 'json';
+
+    // ── Config Helpers ────────────────────────────────────────────────────────
 
     private function mirthHost(): string
     {
         return rtrim(env('MIRTH_HOST', 'https://10.0.20.210:8443'), '/');
     }
 
-    private function mirthRequest(string $endpoint, string $method = 'GET', array $postFields = [], ?string $cookieFile = null): array
+    private function mirthTimeout(): int
     {
-        $url     = $this->mirthHost() . $endpoint;
-        $timeout = (int) env('MIRTH_TIMEOUT', 15);
+        return (int) env('MIRTH_TIMEOUT', 15);
+    }
 
-        $headers = ['X-Requested-With: XMLHttpRequest', 'Accept: application/xml'];
+    // ── Single HTTP Helper ────────────────────────────────────────────────────
+
+    private function mirthRequest(
+        string $endpoint,
+        string $method = 'GET',
+        array $postFields = [],
+        ?string $cookieFile = null,
+        bool $wantXml = true
+    ): array {
+        // ── READ-ONLY SECURITY GUARD ──────────────────────────────────────────
+        if ($method !== 'GET' && $endpoint !== '/api/users/_login') {
+            return [
+                'code'  => 403,
+                'body'  => 'Forbidden: read-only mode — only GET requests are permitted to Mirth',
+                'error' => 'read_only_guard',
+            ];
+        }
+
+        $url     = $this->mirthHost() . $endpoint;
+        $headers = ['X-Requested-With: XMLHttpRequest'];
+        $headers[] = $wantXml ? 'Accept: application/xml' : 'Accept: */*';
+
         if ($method === 'POST') {
             $headers[] = 'Content-Type: application/x-www-form-urlencoded';
         }
@@ -28,7 +67,7 @@ class MirthController extends ResourceController
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_SSL_VERIFYHOST => false,
-            CURLOPT_TIMEOUT        => $timeout,
+            CURLOPT_TIMEOUT        => $this->mirthTimeout(),
             CURLOPT_HTTPHEADER     => $headers,
             CURLOPT_HEADER         => true,
         ];
@@ -54,60 +93,162 @@ class MirthController extends ResourceController
         return ['code' => $httpCode, 'body' => trim($body), 'error' => $curlErr];
     }
 
-    // Plain GET with Accept: */* (for endpoints like /api/server/version that reject application/xml)
-    private function mirthRequestRaw(string $endpoint): array
+    // ── Parallel Concurrent HTTP Helper (curl_multi) ──────────────────────────
+
+    /**
+     * Executes multiple GET requests concurrently to Mirth Connect.
+     * Includes Windows-safe select loop handling.
+     *
+     * @param array<string, string> $requests Map of [key => endpoint]
+     * @param string|null $cookieFile
+     * @return array<string, array{code: int, body: string, error: string}>
+     */
+    private function mirthMultiGet(array $requests, ?string $cookieFile = null): array
     {
-        $url = $this->mirthHost() . $endpoint;
-        $ch  = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL            => $url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => false,
-            CURLOPT_TIMEOUT        => (int) env('MIRTH_TIMEOUT', 15),
-            CURLOPT_HTTPHEADER     => ['X-Requested-With: XMLHttpRequest', 'Accept: */*'],
-            CURLOPT_HEADER         => true,
-        ]);
-        $raw        = curl_exec($ch);
-        $code       = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-        $body       = substr($raw, $headerSize);
-        $err        = curl_error($ch);
-        curl_close($ch);
-        return ['code' => $code, 'body' => trim($body), 'error' => $err];
+        if (empty($requests)) {
+            return [];
+        }
+
+        $mh      = curl_multi_init();
+        $handles = [];
+        $headers = [
+            'X-Requested-With: XMLHttpRequest',
+            'Accept: application/xml',
+        ];
+
+        foreach ($requests as $key => $endpoint) {
+            $ch = curl_init();
+            $url = $this->mirthHost() . $endpoint;
+            $opts = [
+                CURLOPT_URL            => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+                CURLOPT_TIMEOUT        => 45, // Increased: large XML payloads need more time
+                CURLOPT_HTTPHEADER     => $headers,
+                CURLOPT_HEADER         => true,
+                CURLOPT_BUFFERSIZE     => 131072, // 128KB buffer for faster XML streaming
+            ];
+
+            if ($cookieFile) {
+                $opts[CURLOPT_COOKIEFILE] = $cookieFile;
+                $opts[CURLOPT_COOKIEJAR]  = $cookieFile;
+            }
+
+            curl_setopt_array($ch, $opts);
+            curl_multi_add_handle($mh, $ch);
+            $handles[$key] = $ch;
+        }
+
+        // Execute all handles simultaneously in non-blocking mode with Windows fix
+        $running = null;
+        do {
+            $status = curl_multi_exec($mh, $running);
+            if ($running > 0) {
+                if (curl_multi_select($mh, 0.05) === -1) {
+                    usleep(10000); // 10ms fallback for Windows socket descriptors
+                }
+            }
+        } while ($running > 0 && $status === CURLM_OK);
+
+        $results = [];
+        foreach ($handles as $key => $ch) {
+            $raw        = curl_multi_getcontent($ch);
+            $httpCode   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+            $body       = ($raw && $headerSize) ? substr($raw, $headerSize) : '';
+            $curlErr    = curl_error($ch);
+
+            $results[$key] = [
+                'code'  => $httpCode,
+                'body'  => trim((string)$body),
+                'error' => $curlErr,
+            ];
+
+            curl_multi_remove_handle($mh, $ch);
+            curl_close($ch);
+        }
+
+        curl_multi_close($mh);
+
+        return $results;
     }
 
-    // Get a session cookie file path (per-request temp)
-    private function getCookieFile(): string
+    // ── Session / Login ───────────────────────────────────────────────────────
+
+    private function getCookieDir(): string
     {
         $dir = WRITEPATH . 'mirth_sessions';
         if (!is_dir($dir)) {
             mkdir($dir, 0700, true);
         }
-        return $dir . '/mirth_session.txt';
+        return $dir;
     }
 
-    // Login to Mirth and return cookie file path, or null on failure
-    private function login(): ?string
+    /**
+     * Returns a valid cookie file path with an active Mirth session,
+     * or null if login fails.
+     */
+    private function getSession(): ?string
     {
-        $cookieFile = $this->getCookieFile();
-        $user = env('MIRTH_USER', '');
-        $pass = env('MIRTH_PASS', '');
+        $cacheKey = 'mirth_session_v1';
 
+        // 1. Fast path — trust cached session
+        $cached = cache($cacheKey);
+        if ($cached && file_exists($cached)) {
+            return $cached;
+        }
+
+        // 2. Fresh login — use file lock to prevent simultaneous logins
+        $lockFile = $this->getCookieDir() . '/login.lock';
+        $lock     = fopen($lockFile, 'c');
+        if (!$lock) {
+            return $this->doLogin();
+        }
+
+        flock($lock, LOCK_EX);
+        try {
+            $cached = cache($cacheKey);
+            if ($cached && file_exists($cached)) {
+                return $cached;
+            }
+            return $this->doLogin();
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
+    }
+
+    /**
+     * Perform actual Mirth login and cache the cookie path for 5 minutes.
+     */
+    private function doLogin(): ?string
+    {
+        $cookieFile = $this->getCookieDir() . '/mirth_' . uniqid() . '.txt';
         $r = $this->mirthRequest(
             '/api/users/_login',
             'POST',
-            ['username' => $user, 'password' => $pass],
+            ['username' => env('MIRTH_USER', ''), 'password' => env('MIRTH_PASS', '')],
             $cookieFile
         );
-
         if ($r['code'] === 200) {
+            cache()->save('mirth_session_v1', $cookieFile, 300);
             return $cookieFile;
         }
         return null;
     }
 
-    // Parse simple XML to array helper
+    /**
+     * Force a fresh login (clears cache). Use when a request returns 401.
+     */
+    private function refreshSession(): ?string
+    {
+        cache()->delete('mirth_session_v1');
+        return $this->getSession();
+    }
+
+    // ── XML Helper ────────────────────────────────────────────────────────────
+
     private function xmlToArray(string $xml): array
     {
         if (empty(trim($xml))) return [];
@@ -120,55 +261,158 @@ class MirthController extends ResourceController
         }
     }
 
+    // ── HL7 Parsing Helpers ───────────────────────────────────────────────────
+
+    /**
+     * Robust parser for extracting key fields from raw HL7 string.
+     * Returns [$msgType, $mrn, $orderId].
+     */
+    private function parseHl7Fields(string $raw): array
+    {
+        $msgType = '';
+        $mrn     = '';
+        $orderId = '';
+
+        $lines = preg_split('/[\r\n]+/', trim($raw));
+
+        foreach ($lines as $line) {
+            $f = explode('|', $line);
+            $seg = $f[0] ?? '';
+
+            if ($seg === 'MSH') {
+                $msgType = trim($f[8] ?? '');
+            } elseif ($seg === 'PID') {
+                // PID-3 (Patient Identifier List - standard MRN)
+                if (!empty($f[3])) {
+                    $mrn = trim(explode('^', $f[3])[0]);
+                } elseif (!empty($f[2])) {
+                    $mrn = trim(explode('^', $f[2])[0]);
+                } elseif (!empty($f[4])) {
+                    $mrn = trim(explode('^', $f[4])[0]);
+                }
+            } elseif ($seg === 'ORC') {
+                if (empty($orderId) && !empty($f[2])) {
+                    $orderId = trim(explode('^', $f[2])[0]);
+                } elseif (empty($orderId) && !empty($f[3])) {
+                    $orderId = trim(explode('^', $f[3])[0]);
+                }
+            } elseif ($seg === 'OBR') {
+                if (empty($orderId) && !empty($f[2])) {
+                    $orderId = trim(explode('^', $f[2])[0]);
+                } elseif (empty($orderId) && !empty($f[3])) {
+                    $orderId = trim(explode('^', $f[3])[0]);
+                }
+            }
+        }
+
+        return [$msgType, $mrn, $orderId];
+    }
+
+    /**
+     * Extract raw HL7 content string from a parsed Mirth message array.
+     */
+    private function extractRawContent(array $msg): string
+    {
+        if (empty($msg['connectorMessages']['entry'])) return '';
+
+        $entries = $msg['connectorMessages']['entry'];
+        if (isset($entries['connectorMessage'])) {
+            $entries = [$entries];
+        }
+
+        foreach ((array)$entries as $entry) {
+            $cMsg = $entry['connectorMessage'] ?? $entry;
+            $raw  = $cMsg['raw']['content'] 
+                 ?? $cMsg['transformed']['content'] 
+                 ?? $cMsg['encoded']['content'] 
+                 ?? $cMsg['sent']['content'] 
+                 ?? $cMsg['response']['content'] 
+                 ?? '';
+            if (!empty($raw)) {
+                return (string)$raw;
+            }
+        }
+        return '';
+    }
+
+    // ── Endpoints ─────────────────────────────────────────────────────────────
+
     // GET /api/mirth/status
     public function status()
     {
-        // Version endpoint only accepts */* not application/xml
-        $vr = $this->mirthRequestRaw('/api/server/version');
-        $connected = ($vr['code'] === 200 && empty($vr['error']));
+        $host          = $this->mirthHost();
+        $version       = null;
+        $connected     = false;
+        $authenticated = false;
 
-        if (!$connected) {
-            // Try login anyway to double-check
-            $cookieFile = $this->login();
-            $connected  = $cookieFile !== null;
-        }
+        // Single call: Try to get a valid session then confirm with /api/server/version.
+        // This avoids double-HTTP-call overhead and Windows SSL fsockopen hangs.
+        $cookieFile = $this->getSession();
 
-        $version = $connected ? trim(strip_tags($vr['body'])) : null;
+        if ($cookieFile) {
+            $vr = $this->mirthRequest('/api/server/version', 'GET', [], $cookieFile, false);
 
-        // Try login to confirm credentials work
-        $cookieFile    = $this->login();
-        $authenticated = $cookieFile !== null;
-        $connected     = $connected || $authenticated;
-
-        // If login works but version failed (406), still show as connected
-        if ($authenticated && empty($version)) {
-            $vr2   = $this->mirthRequestRaw('/api/server/version');
-            $version = trim(strip_tags($vr2['body'])) ?: '4.x';
+            if ($vr['code'] === 200 || $vr['code'] === 406) {
+                $connected     = true;
+                $authenticated = true;
+                $version       = trim(strip_tags($vr['body'])) ?: '4.x';
+            } elseif ($vr['code'] === 401) {
+                // Server reachable but session expired — force fresh login
+                $connected  = true;
+                $cookieFile = $this->refreshSession();
+                if ($cookieFile) {
+                    $vr2 = $this->mirthRequest('/api/server/version', 'GET', [], $cookieFile, false);
+                    $authenticated = ($vr2['code'] === 200 || $vr2['code'] === 406);
+                    if ($authenticated) {
+                        $version = trim(strip_tags($vr2['body'])) ?: '4.x';
+                    }
+                }
+            } elseif (!empty($vr['error'])) {
+                // cURL error = network unreachable
+                $connected     = false;
+                $authenticated = false;
+            } else {
+                // Received some HTTP response (e.g. 302, 403) — server reachable, not authed
+                $connected = ($vr['code'] > 0);
+            }
+        } else {
+            // getSession() itself failed — try raw ping to see if at least reachable
+            $ping = $this->mirthRequest('/api/server/version', 'GET', [], null, false);
+            $connected = ($ping['code'] > 0 && empty($ping['error']));
         }
 
         return $this->respond([
-            'connected'     => $connected || $authenticated,
+            'connected'     => $connected,
             'authenticated' => $authenticated,
             'version'       => $version,
-            'host'          => $this->mirthHost(),
+            'host'          => $host,
         ]);
     }
 
-    // GET /api/mirth/channels
-    public function channels()
+    // Internal helper to get channel list (with 30-min cache)
+    private function getCachedChannels(bool $forceRefresh = false): ?array
     {
-        $cookieFile = $this->login();
-        if (!$cookieFile) {
-            return $this->fail('Gagal log masuk ke Mirth Connect. Semak credentials dalam .env', 401);
+        $cacheKey = 'mirth_channels_metadata_v1';
+        if (!$forceRefresh) {
+            $cached = cache($cacheKey);
+            if ($cached && is_array($cached)) {
+                return $cached;
+            }
         }
 
-        // 1. Fetch channel statuses
+        $cookieFile = $this->getSession();
+        if (!$cookieFile) return null;
+
+        // 1. Channel statuses
         $r = $this->mirthRequest('/api/channels/statuses', 'GET', [], $cookieFile);
-        if ($r['code'] !== 200) {
-            return $this->fail("Mirth API error: HTTP {$r['code']}", 502);
+        if ($r['code'] === 401) {
+            $cookieFile = $this->refreshSession();
+            if (!$cookieFile) return null;
+            $r = $this->mirthRequest('/api/channels/statuses', 'GET', [], $cookieFile);
         }
+        if ($r['code'] !== 200) return null;
 
-        // 2. Fetch channel groups
+        // 2. Channel groups
         $channelGroupMap = [];
         $rGroups = $this->mirthRequest('/api/channelgroups', 'GET', [], $cookieFile);
         if ($rGroups['code'] === 200 && !empty($rGroups['body'])) {
@@ -189,9 +433,7 @@ class MirthController extends ResourceController
         $channels = [];
 
         $list = $data['dashboardStatus'] ?? [];
-        if (isset($list['name'])) {
-            $list = [$list];
-        }
+        if (isset($list['name'])) $list = [$list];
 
         foreach ((array)$list as $ch) {
             $cid = (string)($ch['channelId'] ?? '');
@@ -208,55 +450,244 @@ class MirthController extends ResourceController
             ];
         }
 
-        // Sort channels alphabetically by name (A→Z)
         usort($channels, fn($a, $b) => strcasecmp($a['name'], $b['name']));
-
-        // Get unique groups
         $groups = array_values(array_unique(array_column($channels, 'group')));
         sort($groups);
 
-        return $this->respond([
+        $result = [
             'channels' => $channels,
             'groups'   => $groups,
-            'total'    => count($channels)
+            'total'    => count($channels),
+        ];
+
+        // Cache metadata for 30 minutes (1800s)
+        cache()->save($cacheKey, $result, 1800);
+
+        return $result;
+    }
+
+    // GET /api/mirth/channels
+    public function channels()
+    {
+        $refresh = $this->request->getGet('refresh') === '1';
+        $data = $this->getCachedChannels($refresh);
+
+        if ($data === null) {
+            return $this->fail('Gagal memuatkan senarai channel Mirth. Semak sambungan/credentials.', 502);
+        }
+
+        return $this->respond($data);
+    }
+
+    // GET /api/mirth/search
+    // Reliable parallel on-demand search across channels using curl_multi
+    public function search()
+    {
+        $cookieFile = $this->getSession();
+        if (!$cookieFile) {
+            return $this->fail('Gagal log masuk ke Mirth Connect.', 401);
+        }
+
+        $groupFilter     = trim($this->request->getGet('group') ?? '');
+        $channelId       = trim($this->request->getGet('channel_id') ?? '');
+        $mrnFilter       = trim($this->request->getGet('mrn') ?? '');
+        $orderIdFilter   = trim($this->request->getGet('order_id') ?? '');
+        $startDateFilter = trim($this->request->getGet('start_date') ?? '');
+        $endDateFilter   = trim($this->request->getGet('end_date') ?? '');
+        $typeFilter      = strtoupper(trim($this->request->getGet('type') ?? ''));
+        $statusFilter    = strtoupper(trim($this->request->getGet('status') ?? ''));
+        $limitPerChan    = max(10, min(300, (int)($this->request->getGet('limit') ?? 100)));
+
+        if (empty($mrnFilter) && empty($orderIdFilter) && empty($channelId) && empty($startDateFilter)) {
+            return $this->fail('Sila masukkan sekurang-kurangnya No. MRN, Order ID, atau Tarikh untuk carian.', 400);
+        }
+
+        // Get cached channel metadata
+        $chanData = $this->getCachedChannels();
+        if (!$chanData) {
+            return $this->fail('Tidak dapat memuatkan metadata channel.', 502);
+        }
+
+        $allChannels = $chanData['channels'] ?? [];
+
+        // Determine target channels
+        $targetChannels = [];
+        if (!empty($channelId)) {
+            $targetChannels = array_filter($allChannels, fn($c) => $c['id'] === $channelId);
+        } elseif (!empty($groupFilter) && $groupFilter !== 'Semua') {
+            $targetChannels = array_filter($allChannels, fn($c) => ($c['group'] ?? '[Default Group]') === $groupFilter);
+        } else {
+            $targetChannels = $allChannels;
+        }
+
+        $targetChannels = array_values($targetChannels);
+        if (empty($targetChannels)) {
+            return $this->respond([
+                'total'    => 0,
+                'messages' => [],
+                'group'    => $groupFilter ?: 'Semua',
+            ]);
+        }
+
+        // Date range boundaries for PHP-side validation (in ms)
+        $startTimeMs = !empty($startDateFilter) ? strtotime($startDateFilter . ' 00:00:00') * 1000 : null;
+        $endTimeMs   = !empty($endDateFilter)   ? strtotime($endDateFilter . ' 23:59:59') * 1000   : null;
+
+        // 1. Build parallel requests map [channel_id => endpoint]
+        $requests = [];
+        $channelMap = [];
+        foreach ($targetChannels as $ch) {
+            $cid = $ch['id'];
+            $channelMap[$cid] = $ch;
+
+            $queryParams = [
+                'offset'         => 0,
+                'limit'          => $limitPerChan,
+                'includeContent' => 'true',
+            ];
+
+            // Add textSearch when MRN or Order ID provided.
+            // This dramatically reduces Mirth XML response size (e.g. 1.6MB → 66KB)
+            // and prevents EofException caused by PHP cURL closing connection
+            // before Mirth finishes serialising large payloads.
+            $searchTerm = !empty($mrnFilter) ? $mrnFilter : $orderIdFilter;
+            if (!empty($searchTerm)) {
+                $queryParams['textSearch'] = $searchTerm;
+            }
+
+            $params = http_build_query($queryParams);
+            $requests[$cid] = "/api/channels/{$cid}/messages?{$params}";
+        }
+
+        // 2. Execute parallel queries via curl_multi
+        $responses = $this->mirthMultiGet($requests, $cookieFile);
+
+        // Session refresh on 401
+        $firstResp = reset($responses);
+        if ($firstResp && $firstResp['code'] === 401) {
+            $cookieFile = $this->refreshSession();
+            if ($cookieFile) {
+                $responses = $this->mirthMultiGet($requests, $cookieFile);
+            }
+        }
+
+        // 3. Parse and filter messages in PHP
+        $results = [];
+        foreach ($responses as $cid => $r) {
+            if ($r['code'] !== 200 || empty($r['body'])) {
+                continue;
+            }
+
+            $ch   = $channelMap[$cid] ?? ['name' => '', 'group' => '[Default Group]'];
+            $data = $this->xmlToArray($r['body']);
+            $list = $data['message'] ?? [];
+            if (isset($list['messageId'])) $list = [$list];
+
+            foreach ((array)$list as $msg) {
+                $msgDateMs  = (int)($msg['receivedDate']['time'] ?? 0);
+                $status     = (string)($msg['processedResponse']['status'] ?? $msg['status'] ?? '');
+                $rawContent = $this->extractRawContent($msg);
+
+                // Date filter check
+                if ($startTimeMs !== null && $msgDateMs > 0 && $msgDateMs < $startTimeMs) continue;
+                if ($endTimeMs !== null && $msgDateMs > 0 && $msgDateMs > $endTimeMs) continue;
+
+                [$msgType, $mrn, $orderId] = $this->parseHl7Fields($rawContent);
+
+                // Type filter
+                if (!empty($typeFilter) && $typeFilter !== 'SEMUA') {
+                    $matchType = false;
+                    if ($typeFilter === 'ORM' && str_contains($msgType, 'ORM')) $matchType = true;
+                    if ($typeFilter === 'ORR' && str_contains($msgType, 'ORR')) $matchType = true;
+                    if ($typeFilter === 'ORU' && str_contains($msgType, 'ORU')) $matchType = true;
+                    if ($typeFilter === 'P03' && (str_contains($msgType, 'P03') || str_contains($msgType, 'DFT'))) $matchType = true;
+                    if (!$matchType) continue;
+                }
+
+                // Status filter
+                if (!empty($statusFilter) && $statusFilter !== 'SEMUA' && strtoupper($status) !== $statusFilter) {
+                    continue;
+                }
+
+                // MRN filter
+                if (!empty($mrnFilter)) {
+                    $hit = (!empty($mrn) && stripos($mrn, $mrnFilter) !== false)
+                        || (!empty($rawContent) && stripos($rawContent, $mrnFilter) !== false);
+                    if (!$hit) continue;
+                }
+
+                // Order ID filter
+                if (!empty($orderIdFilter)) {
+                    $hit = (!empty($orderId) && stripos($orderId, $orderIdFilter) !== false)
+                        || (!empty($rawContent) && stripos($rawContent, $orderIdFilter) !== false);
+                    if (!$hit) continue;
+                }
+
+                $results[] = [
+                    'message_id'     => (string)($msg['messageId'] ?? ''),
+                    'channel_id'     => $cid,
+                    'channel_name'   => $ch['name'] ?? '',
+                    'channel_group'  => $ch['group'] ?? '[Default Group]',
+                    'date_time'      => (string)$msgDateMs,
+                    'msg_type'       => $msgType,
+                    'status'         => $status,
+                    'mrn'            => $mrn,
+                    'order_id'       => $orderId,
+                    'has_hl7'        => true,
+                ];
+            }
+        }
+
+        // Sort results by date_time descending
+        usort($results, fn($a, $b) => (int)($b['date_time'] ?? 0) <=> (int)($a['date_time'] ?? 0));
+
+        return $this->respond([
+            'total'    => count($results),
+            'messages' => $results,
+            'group'    => $groupFilter ?: 'Semua',
         ]);
     }
 
-
-    // GET /api/mirth/messages?channel_id=X&type=ORU&status=ERROR&mrn=&date_from=&date_to=&limit=50&offset=0
+    // GET /api/mirth/messages?channel_id=X&limit=25&offset=0
     public function messages()
     {
-        $cookieFile = $this->login();
+        $cookieFile = $this->getSession();
         if (!$cookieFile) {
-            return $this->fail('Gagal log masuk ke Mirth Connect. Semak credentials dalam .env', 401);
+            return $this->fail('Gagal log masuk ke Mirth Connect.', 401);
         }
 
-        $channelId = $this->request->getGet('channel_id');
-        $typeFilter = strtoupper($this->request->getGet('type') ?? '');
-        $statusFilter = strtoupper($this->request->getGet('status') ?? '');
-        $mrnFilter = $this->request->getGet('mrn') ?? '';
-        $limit = max(1, min(200, (int)($this->request->getGet('limit') ?? 50)));
-        $offset = max(0, (int)($this->request->getGet('offset') ?? 0));
+        $channelId       = $this->request->getGet('channel_id');
+        $typeFilter      = strtoupper(trim($this->request->getGet('type') ?? ''));
+        $statusFilter    = strtoupper(trim($this->request->getGet('status') ?? ''));
+        $startDateFilter = trim($this->request->getGet('start_date') ?? '');
+        $endDateFilter   = trim($this->request->getGet('end_date') ?? '');
+        $limit           = max(1, min(100, (int)($this->request->getGet('limit') ?? 25)));
+        $offset          = max(0, (int)($this->request->getGet('offset') ?? 0));
 
         if (empty($channelId)) {
             return $this->fail('channel_id diperlukan', 400);
         }
 
-        // Build query params for Mirth API
         $queryParams = [
-            'limit'          => $limit,
             'offset'         => $offset,
-            'includeContent' => 'true',
+            'limit'          => $limit,
+            'includeContent' => 'false',
         ];
-
-        if (!empty($mrnFilter)) {
-            $queryParams['textSearch'] = $mrnFilter;
+        if (!empty($startDateFilter)) {
+            $queryParams['startDate'] = date('Y-m-d 00:00:00', strtotime($startDateFilter));
+        }
+        if (!empty($endDateFilter)) {
+            $queryParams['endDate'] = date('Y-m-d 23:59:59', strtotime($endDateFilter));
         }
 
         $params = http_build_query($queryParams);
-
         $r = $this->mirthRequest("/api/channels/{$channelId}/messages?{$params}", 'GET', [], $cookieFile);
 
+        if ($r['code'] === 401) {
+            $cookieFile = $this->refreshSession();
+            if (!$cookieFile) return $this->fail('Mirth session tamat.', 401);
+            $r = $this->mirthRequest("/api/channels/{$channelId}/messages?{$params}", 'GET', [], $cookieFile);
+        }
 
         if ($r['code'] !== 200) {
             return $this->fail("Mirth API error: HTTP {$r['code']}", 502);
@@ -266,80 +697,20 @@ class MirthController extends ResourceController
         $messages = [];
 
         $list = $data['message'] ?? [];
-        if (isset($list['messageId'])) {
-            $list = [$list]; // Single message wrap
-        }
+        if (isset($list['messageId'])) $list = [$list];
 
         foreach ((array)$list as $msg) {
-            $rawContent = '';
-            $msgType    = '';
-            $mrn        = '';
-            $orderId    = '';
-            $status     = (string)($msg['processedResponse']['status'] ?? $msg['status'] ?? '');
-
-            // Robustly extract raw HL7 content from connectorMessages
-            if (!empty($msg['connectorMessages']['entry'])) {
-                $entries = $msg['connectorMessages']['entry'];
-                if (isset($entries['connectorMessage'])) {
-                    $entries = [$entries]; // Wrap single entry
-                }
-                foreach ((array)$entries as $entry) {
-                    $cMsg = $entry['connectorMessage'] ?? [];
-                    $raw  = $cMsg['raw']['content'] ?? $cMsg['transformed']['content'] ?? '';
-                    if (!empty($raw)) {
-                        $rawContent = (string)$raw;
-                        break;
-                    }
-                }
-            }
-
-            if (!empty($rawContent)) {
-                // Parse MSH-9 for message type
-                if (preg_match('/MSH\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|([^\|]+)/', $rawContent, $m)) {
-                    $msgType = trim($m[1]);
-                }
-                // Parse PID-3 or PID-2 for MRN
-                if (preg_match('/PID\|[^|]*\|[^|]*\|([^|^]+)/', $rawContent, $m)) {
-                    $mrn = trim($m[1]);
-                } elseif (preg_match('/PID\|[^|]*\|([^|^]+)/', $rawContent, $m)) {
-                    $mrn = trim($m[1]);
-                }
-                // Parse ORC-2 / ORC-3 or OBR-2 / OBR-3 for Order ID
-                if (preg_match('/ORC\|[^|]*\|([^|]+)/', $rawContent, $m)) {
-                    $orderId = trim($m[1]);
-                } elseif (preg_match('/OBR\|[^|]*\|([^|]+)/', $rawContent, $m)) {
-                    $orderId = trim($m[1]);
-                }
-            }
-
-            // Apply filters
-            if (!empty($typeFilter)) {
-                $matchType = false;
-                if ($typeFilter === 'ORM' && str_contains($msgType, 'ORM')) $matchType = true;
-                if ($typeFilter === 'ORR' && str_contains($msgType, 'ORR')) $matchType = true;
-                if ($typeFilter === 'ORU' && str_contains($msgType, 'ORU')) $matchType = true;
-                if ($typeFilter === 'P03' && (str_contains($msgType, 'P03') || str_contains($msgType, 'DFT'))) $matchType = true;
-                if (!$matchType) continue;
-            }
-
-            if (!empty($statusFilter) && strtoupper($status) !== $statusFilter) {
-                continue;
-            }
-
-            if (!empty($mrnFilter)) {
-                $mrnMatch = (!empty($mrn) && str_contains($mrn, $mrnFilter)) || str_contains($rawContent, $mrnFilter);
-                if (!$mrnMatch) continue;
-            }
-
+            $status = (string)($msg['processedResponse']['status'] ?? $msg['status'] ?? '');
+            if (!empty($statusFilter) && $statusFilter !== 'SEMUA' && strtoupper($status) !== $statusFilter) continue;
 
             $messages[] = [
-                'message_id'  => (string)($msg['messageId'] ?? ''),
-                'date_time'   => (string)($msg['receivedDate']['time'] ?? ''),
-                'msg_type'    => $msgType,
-                'status'      => $status,
-                'mrn'         => $mrn,
-                'order_id'    => $orderId,
-                'raw_hl7'     => $rawContent,
+                'message_id' => (string)($msg['messageId'] ?? ''),
+                'date_time'  => (string)($msg['receivedDate']['time'] ?? ''),
+                'msg_type'   => '',
+                'status'     => $status,
+                'mrn'        => '',
+                'order_id'   => '',
+                'has_hl7'    => true,
             ];
         }
 
@@ -347,6 +718,49 @@ class MirthController extends ResourceController
             'channel_id' => $channelId,
             'total'      => count($messages),
             'messages'   => $messages,
+        ]);
+    }
+
+    // GET /api/mirth/message/{messageId}?channel_id=X
+    public function messageDetail(string $messageId)
+    {
+        $cookieFile = $this->getSession();
+        if (!$cookieFile) {
+            return $this->fail('Gagal log masuk ke Mirth Connect.', 401);
+        }
+
+        $channelId = $this->request->getGet('channel_id');
+        if (empty($channelId) || empty($messageId)) {
+            return $this->fail('channel_id dan messageId diperlukan', 400);
+        }
+
+        $params = http_build_query(['includeContent' => 'true']);
+        $r = $this->mirthRequest(
+            "/api/channels/{$channelId}/messages/{$messageId}?{$params}",
+            'GET', [], $cookieFile
+        );
+
+        if ($r['code'] === 401) {
+            $cookieFile = $this->refreshSession();
+            if (!$cookieFile) return $this->fail('Mirth session tamat.', 401);
+            $r = $this->mirthRequest(
+                "/api/channels/{$channelId}/messages/{$messageId}?{$params}",
+                'GET', [], $cookieFile
+            );
+        }
+
+        if ($r['code'] !== 200) {
+            return $this->fail("Mirth API error: HTTP {$r['code']}", 502);
+        }
+
+        $data = $this->xmlToArray($r['body']);
+        $msg  = $data['message'] ?? $data;
+        $rawContent = $this->extractRawContent($msg);
+
+        return $this->respond([
+            'message_id' => $messageId,
+            'channel_id' => $channelId,
+            'raw_hl7'    => $rawContent,
         ]);
     }
 }

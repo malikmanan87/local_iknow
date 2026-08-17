@@ -63,6 +63,9 @@ Vagrantfile
 /writable/debugbar/*
 !/writable/debugbar/index.html
 
+/writable/mirth_sessions/*
+!/writable/mirth_sessions/index.html
+
 php_errors.log
 
 #-------------------------
