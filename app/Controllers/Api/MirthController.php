@@ -4,7 +4,7 @@ namespace App\Controllers\Api;
 use CodeIgniter\RESTful\ResourceController;
 
 /**
- * MirthController — High-Performance READ-ONLY Proxy to Mirth Connect
+ * MirthController — READ-ONLY Proxy to Mirth Connect
  *
  * SECURITY CONTRACT:
  *   - This controller ONLY reads data from Mirth Connect.
@@ -13,11 +13,13 @@ use CodeIgniter\RESTful\ResourceController;
  *   - No channel state changes, message sends, or config writes are permitted.
  *   - mirthRequest() enforces this: POST is blocked for all non-login endpoints.
  *
- * PERFORMANCE & RELIABILITY:
- *   - Parallel asynchronous cURL (curl_multi) with Windows socket handling.
- *   - Accurate HL7 segment extraction for MRN, Order ID, and Message Type.
- *   - 30-minute caching for channels & groups metadata.
- *   - 5-minute persistent session cookie management.
+ * ALLOWED MIRTH ENDPOINTS (READ-ONLY):
+ *   GET /api/server/version
+ *   GET /api/channels/statuses
+ *   GET /api/channelgroups
+ *   GET /api/channels/{id}/messages
+ *   GET /api/channels/{id}/messages/{msgId}
+ *   POST /api/users/_login  ← authentication only, not a data write
  */
 class MirthController extends ResourceController
 {
@@ -35,7 +37,7 @@ class MirthController extends ResourceController
         return (int) env('MIRTH_TIMEOUT', 15);
     }
 
-    // ── Single HTTP Helper ────────────────────────────────────────────────────
+    // ── HTTP Helper ───────────────────────────────────────────────────────────
 
     private function mirthRequest(
         string $endpoint,
@@ -45,6 +47,8 @@ class MirthController extends ResourceController
         bool $wantXml = true
     ): array {
         // ── READ-ONLY SECURITY GUARD ──────────────────────────────────────────
+        // POST is ONLY permitted for the Mirth login endpoint.
+        // Any other write method (POST/PUT/DELETE/PATCH) is blocked here.
         if ($method !== 'GET' && $endpoint !== '/api/users/_login') {
             return [
                 'code'  => 403,
@@ -70,6 +74,7 @@ class MirthController extends ResourceController
             CURLOPT_TIMEOUT        => $this->mirthTimeout(),
             CURLOPT_HTTPHEADER     => $headers,
             CURLOPT_HEADER         => true,
+            CURLOPT_FOLLOWLOCATION => true,
         ];
 
         if ($cookieFile) {
@@ -86,7 +91,7 @@ class MirthController extends ResourceController
         $raw        = curl_exec($ch);
         $httpCode   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-        $body       = substr($raw, $headerSize);
+        $body       = ($raw && $headerSize) ? substr($raw, $headerSize) : '';
         $curlErr    = curl_error($ch);
         curl_close($ch);
 
@@ -97,7 +102,7 @@ class MirthController extends ResourceController
 
     /**
      * Executes multiple GET requests concurrently to Mirth Connect.
-     * Includes Windows-safe select loop handling.
+     * Includes Windows-safe select loop handling and 45s timeout.
      *
      * @param array<string, string> $requests Map of [key => endpoint]
      * @param string|null $cookieFile
@@ -124,10 +129,11 @@ class MirthController extends ResourceController
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_SSL_VERIFYHOST => false,
-                CURLOPT_TIMEOUT        => 45, // Increased: large XML payloads need more time
+                CURLOPT_TIMEOUT        => 45,
                 CURLOPT_HTTPHEADER     => $headers,
                 CURLOPT_HEADER         => true,
-                CURLOPT_BUFFERSIZE     => 131072, // 128KB buffer for faster XML streaming
+                CURLOPT_BUFFERSIZE     => 131072,
+                CURLOPT_FOLLOWLOCATION => true,
             ];
 
             if ($cookieFile) {
@@ -140,7 +146,6 @@ class MirthController extends ResourceController
             $handles[$key] = $ch;
         }
 
-        // Execute all handles simultaneously in non-blocking mode with Windows fix
         $running = null;
         do {
             $status = curl_multi_exec($mh, $running);
@@ -199,7 +204,7 @@ class MirthController extends ResourceController
             return $cached;
         }
 
-        // 2. Fresh login — use file lock to prevent simultaneous logins
+        // 2. Fresh login — use file lock to prevent race conditions
         $lockFile = $this->getCookieDir() . '/login.lock';
         $lock     = fopen($lockFile, 'c');
         if (!$lock) {
@@ -253,7 +258,7 @@ class MirthController extends ResourceController
     {
         if (empty(trim($xml))) return [];
         try {
-            $obj = simplexml_load_string($xml, 'SimpleXMLElement', LIBXML_NOCDATA);
+            $obj = @simplexml_load_string($xml, 'SimpleXMLElement', LIBXML_NOCDATA);
             if ($obj === false) return [];
             return json_decode(json_encode($obj), true);
         } catch (\Throwable $e) {
@@ -264,8 +269,10 @@ class MirthController extends ResourceController
     // ── HL7 Parsing Helpers ───────────────────────────────────────────────────
 
     /**
-     * Robust parser for extracting key fields from raw HL7 string.
-     * Returns [$msgType, $mrn, $orderId].
+     * Extract key fields from raw HL7 string.
+     * Extracts Message Type, MRN (PID-3 / PID-2), and Order ID (ORC-2 / OBR-2 / OBR-3).
+     *
+     * @return array{0: string, 1: string, 2: string} [msgType, mrn, orderId]
      */
     private function parseHl7Fields(string $raw): array
     {
@@ -273,21 +280,38 @@ class MirthController extends ResourceController
         $mrn     = '';
         $orderId = '';
 
-        $lines = preg_split('/[\r\n]+/', trim($raw));
+        if (empty($raw)) {
+            return [$msgType, $mrn, $orderId];
+        }
+
+        $lines = preg_split('/[\r\n]+/', $raw);
 
         foreach ($lines as $line) {
-            $f = explode('|', $line);
+            $line = trim($line);
+            if (empty($line)) continue;
+
+            $f   = explode('|', $line);
             $seg = $f[0] ?? '';
 
             if ($seg === 'MSH') {
-                $msgType = trim($f[8] ?? '');
+                $msgType = $f[8] ?? '';
             } elseif ($seg === 'PID') {
-                // PID-3 (Patient Identifier List - standard MRN)
-                if (!empty($f[3])) {
-                    $mrn = trim(explode('^', $f[3])[0]);
-                } elseif (!empty($f[2])) {
+                if (empty($mrn) && !empty($f[3])) {
+                    $pid3 = $f[3];
+                    $repParts = explode('~', $pid3);
+                    foreach ($repParts as $rp) {
+                        $compParts = explode('^', $rp);
+                        $candidate = trim($compParts[0]);
+                        if (!empty($candidate)) {
+                            $mrn = $candidate;
+                            break;
+                        }
+                    }
+                }
+                if (empty($mrn) && !empty($f[2])) {
                     $mrn = trim(explode('^', $f[2])[0]);
-                } elseif (!empty($f[4])) {
+                }
+                if (empty($mrn) && !empty($f[4])) {
                     $mrn = trim(explode('^', $f[4])[0]);
                 }
             } elseif ($seg === 'ORC') {
@@ -345,8 +369,6 @@ class MirthController extends ResourceController
         $connected     = false;
         $authenticated = false;
 
-        // Single call: Try to get a valid session then confirm with /api/server/version.
-        // This avoids double-HTTP-call overhead and Windows SSL fsockopen hangs.
         $cookieFile = $this->getSession();
 
         if ($cookieFile) {
@@ -357,7 +379,6 @@ class MirthController extends ResourceController
                 $authenticated = true;
                 $version       = trim(strip_tags($vr['body'])) ?: '4.x';
             } elseif ($vr['code'] === 401) {
-                // Server reachable but session expired — force fresh login
                 $connected  = true;
                 $cookieFile = $this->refreshSession();
                 if ($cookieFile) {
@@ -368,15 +389,12 @@ class MirthController extends ResourceController
                     }
                 }
             } elseif (!empty($vr['error'])) {
-                // cURL error = network unreachable
                 $connected     = false;
                 $authenticated = false;
             } else {
-                // Received some HTTP response (e.g. 302, 403) — server reachable, not authed
                 $connected = ($vr['code'] > 0);
             }
         } else {
-            // getSession() itself failed — try raw ping to see if at least reachable
             $ping = $this->mirthRequest('/api/server/version', 'GET', [], null, false);
             $connected = ($ping['code'] > 0 && empty($ping['error']));
         }
@@ -460,7 +478,6 @@ class MirthController extends ResourceController
             'total'    => count($channels),
         ];
 
-        // Cache metadata for 30 minutes (1800s)
         cache()->save($cacheKey, $result, 1800);
 
         return $result;
@@ -546,10 +563,6 @@ class MirthController extends ResourceController
                 'includeContent' => 'true',
             ];
 
-            // Add textSearch when MRN or Order ID provided.
-            // This dramatically reduces Mirth XML response size (e.g. 1.6MB → 66KB)
-            // and prevents EofException caused by PHP cURL closing connection
-            // before Mirth finishes serialising large payloads.
             $searchTerm = !empty($mrnFilter) ? $mrnFilter : $orderIdFilter;
             if (!empty($searchTerm)) {
                 $queryParams['textSearch'] = $searchTerm;
@@ -651,74 +664,7 @@ class MirthController extends ResourceController
     // GET /api/mirth/messages?channel_id=X&limit=25&offset=0
     public function messages()
     {
-        $cookieFile = $this->getSession();
-        if (!$cookieFile) {
-            return $this->fail('Gagal log masuk ke Mirth Connect.', 401);
-        }
-
-        $channelId       = $this->request->getGet('channel_id');
-        $typeFilter      = strtoupper(trim($this->request->getGet('type') ?? ''));
-        $statusFilter    = strtoupper(trim($this->request->getGet('status') ?? ''));
-        $startDateFilter = trim($this->request->getGet('start_date') ?? '');
-        $endDateFilter   = trim($this->request->getGet('end_date') ?? '');
-        $limit           = max(1, min(100, (int)($this->request->getGet('limit') ?? 25)));
-        $offset          = max(0, (int)($this->request->getGet('offset') ?? 0));
-
-        if (empty($channelId)) {
-            return $this->fail('channel_id diperlukan', 400);
-        }
-
-        $queryParams = [
-            'offset'         => $offset,
-            'limit'          => $limit,
-            'includeContent' => 'false',
-        ];
-        if (!empty($startDateFilter)) {
-            $queryParams['startDate'] = date('Y-m-d 00:00:00', strtotime($startDateFilter));
-        }
-        if (!empty($endDateFilter)) {
-            $queryParams['endDate'] = date('Y-m-d 23:59:59', strtotime($endDateFilter));
-        }
-
-        $params = http_build_query($queryParams);
-        $r = $this->mirthRequest("/api/channels/{$channelId}/messages?{$params}", 'GET', [], $cookieFile);
-
-        if ($r['code'] === 401) {
-            $cookieFile = $this->refreshSession();
-            if (!$cookieFile) return $this->fail('Mirth session tamat.', 401);
-            $r = $this->mirthRequest("/api/channels/{$channelId}/messages?{$params}", 'GET', [], $cookieFile);
-        }
-
-        if ($r['code'] !== 200) {
-            return $this->fail("Mirth API error: HTTP {$r['code']}", 502);
-        }
-
-        $data = $this->xmlToArray($r['body']);
-        $messages = [];
-
-        $list = $data['message'] ?? [];
-        if (isset($list['messageId'])) $list = [$list];
-
-        foreach ((array)$list as $msg) {
-            $status = (string)($msg['processedResponse']['status'] ?? $msg['status'] ?? '');
-            if (!empty($statusFilter) && $statusFilter !== 'SEMUA' && strtoupper($status) !== $statusFilter) continue;
-
-            $messages[] = [
-                'message_id' => (string)($msg['messageId'] ?? ''),
-                'date_time'  => (string)($msg['receivedDate']['time'] ?? ''),
-                'msg_type'   => '',
-                'status'     => $status,
-                'mrn'        => '',
-                'order_id'   => '',
-                'has_hl7'    => true,
-            ];
-        }
-
-        return $this->respond([
-            'channel_id' => $channelId,
-            'total'      => count($messages),
-            'messages'   => $messages,
-        ]);
+        return $this->search();
     }
 
     // GET /api/mirth/message/{messageId}?channel_id=X
@@ -759,7 +705,6 @@ class MirthController extends ResourceController
 
         return $this->respond([
             'message_id' => $messageId,
-            'channel_id' => $channelId,
             'raw_hl7'    => $rawContent,
         ]);
     }
