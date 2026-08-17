@@ -9,7 +9,7 @@ import api from '../services/api';
 
 const MSG_TYPES  = ['Semua', 'ORM', 'ORR', 'ORU', 'P03'];
 const STATUSES   = ['Semua', 'SENT', 'ERROR', 'QUEUED', 'FILTERED'];
-const PAGE_SIZES = [10, 20, 50];
+const PAGE_SIZE  = 10;
 
 const statusStyle = {
   SENT:     { bg: 'rgba(16,185,129,0.15)', color: '#10b981', icon: <CheckCircle size={12}/> },
@@ -299,7 +299,7 @@ export default function MirthViewer() {
 
   // Pagination
   const [currentPage, setCurrentPage]   = useState(1);
-  const [pageSize, setPageSize]         = useState(20);
+  const pageSize = PAGE_SIZE; // Fixed 10 max per page
   const [inspectMsg, setInspectMsg]       = useState(null);
   const [reportMsg, setReportMsg]         = useState(null);
   const [fetchingHl7Id, setFetchingHl7Id] = useState(null);
@@ -1178,22 +1178,9 @@ export default function MirthViewer() {
                 >»</button>
               </div>
 
-              {/* Per Page Selector */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                <span>Baris:</span>
-                {PAGE_SIZES.map(size => (
-                  <button
-                    key={size}
-                    onClick={() => { setPageSize(size); setCurrentPage(1); }}
-                    style={{
-                      padding: '0.25rem 0.5rem', borderRadius: '5px', fontSize: '0.75rem', cursor: 'pointer',
-                      fontWeight: pageSize === size ? 700 : 400,
-                      background: pageSize === size ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.04)',
-                      border: pageSize === size ? '1px solid rgba(6,182,212,0.5)' : '1px solid rgba(255,255,255,0.08)',
-                      color: pageSize === size ? 'var(--accent-cyan)' : '#f8fafc',
-                    }}
-                  >{size}</button>
-                ))}
+              {/* Fixed 10 Per Page Badge */}
+              <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', padding: '0.2rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                Maksimum <strong>10</strong> rekod / halaman
               </div>
             </div>
           )}
