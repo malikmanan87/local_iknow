@@ -973,7 +973,7 @@ export default function MirthViewer() {
                 </tr>
               </thead>
               <tbody>
-                {searchResults.map((msg, idx) => {
+                {pagedResults.map((msg, idx) => {
                   const baseType = getMsgBaseType(msg.msg_type);
                   const typeBg   = msgTypeBadge[baseType] || { bg: 'rgba(255,255,255,0.08)', color: '#94a3b8' };
                   const stStyle  = statusStyle[msg.status] || { bg: 'rgba(255,255,255,0.08)', color: '#94a3b8' };
