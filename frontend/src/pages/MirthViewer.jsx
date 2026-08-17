@@ -283,10 +283,9 @@ export default function MirthViewer() {
   const [statusLoading, setStatusLoading] = useState(false);
 
   // Search Filters
-  const [selectedGroup, setSelectedGroup]     = useState('Semua');
-  const [selectedChannelId, setSelectedChannelId] = useState('');
-  const [mrnInput, setMrnInput]               = useState('');
-  const [orderIdInput, setOrderIdInput]       = useState('');
+  const [selectedGroup, setSelectedGroup] = useState('Semua');
+  const [mrnInput, setMrnInput]           = useState('');
+  const [orderIdInput, setOrderIdInput]   = useState('');
   const [startDate, setStartDate]         = useState('');
   const [endDate, setEndDate]             = useState('');
   const [typeFilter, setTypeFilter]       = useState('Semua');
@@ -322,7 +321,6 @@ export default function MirthViewer() {
 
       if (chanRes.status === 'fulfilled') {
         setGroups(chanRes.value.data.groups || []);
-        setChannels(chanRes.value.data.channels || []);
         setChannelsTotal(chanRes.value.data.total || 0);
       }
     } catch {
@@ -331,12 +329,6 @@ export default function MirthViewer() {
       setStatusLoading(false);
     }
   }, []);
-
-  // Filter channels based on selected group
-  const visibleChannels = useMemo(() => {
-    if (selectedGroup === 'Semua') return channels;
-    return channels.filter(c => (c.group || '[Default Group]') === selectedGroup);
-  }, [channels, selectedGroup]);
 
   // Initial load: Only status & group chips metadata — ZERO message queries!
   useEffect(() => {
@@ -386,7 +378,6 @@ export default function MirthViewer() {
     try {
       const params = {
         group:        selectedGroup,
-        ...(selectedChannelId && { channel_id: selectedChannelId }),
         ...(cleanMrn     && { mrn: cleanMrn }),
         ...(cleanOrderId && { order_id: cleanOrderId }),
         ...(cleanStart   && { start_date: cleanStart }),
@@ -419,7 +410,6 @@ export default function MirthViewer() {
     setStartDate('');
     setEndDate('');
     setSelectedGroup('Semua');
-    setSelectedChannelId('');
     setTypeFilter('Semua');
     setStatusFilter('Semua');
     setIsSearched(false);
@@ -733,14 +723,14 @@ export default function MirthViewer() {
           </div>
 
           {/* 2. Channel Group Selection as Buttons/Chips */}
-          <div style={{ marginBottom: '1rem' }}>
+          <div style={{ marginBottom: '1.25rem' }}>
             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.5rem' }}>
               <Folder size={13} style={{ display: 'inline', marginRight: '4px' }} /> Pilih Kumpulan Channel Mirth:
             </label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
               <button
                 type="button"
-                onClick={() => { setSelectedGroup('Semua'); setSelectedChannelId(''); }}
+                onClick={() => setSelectedGroup('Semua')}
                 style={{
                   padding: '0.45rem 0.95rem',
                   borderRadius: '20px',
@@ -762,7 +752,7 @@ export default function MirthViewer() {
                   <button
                     key={g}
                     type="button"
-                    onClick={() => { setSelectedGroup(g); setSelectedChannelId(''); }}
+                    onClick={() => setSelectedGroup(g)}
                     style={{
                       padding: '0.45rem 0.95rem',
                       borderRadius: '20px',
@@ -781,66 +771,6 @@ export default function MirthViewer() {
               })}
             </div>
           </div>
-
-          {/* 2b. Specific Individual Channel Selection as Buttons/Chips */}
-          {visibleChannels.length > 0 && (
-            <div style={{
-              marginBottom: '1.25rem',
-              padding: '0.85rem 1rem',
-              background: 'rgba(0,0,0,0.2)',
-              borderRadius: '12px',
-              border: '1px solid rgba(255,255,255,0.05)'
-            }}>
-              <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: 'var(--accent-cyan)', marginBottom: '0.5rem' }}>
-                <Layers size={13} style={{ display: 'inline', marginRight: '4px' }} />
-                Saluran Khusus ({visibleChannels.length} channel dalam {selectedGroup === 'Semua' ? 'Semua Kumpulan' : selectedGroup}):
-              </label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', maxHeight: '140px', overflowY: 'auto' }}>
-                <button
-                  type="button"
-                  onClick={() => setSelectedChannelId('')}
-                  style={{
-                    padding: '0.3rem 0.65rem',
-                    borderRadius: '16px',
-                    fontSize: '0.74rem',
-                    fontWeight: !selectedChannelId ? 700 : 400,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    border: !selectedChannelId ? '1px solid var(--accent-cyan)' : '1px solid rgba(255,255,255,0.08)',
-                    background: !selectedChannelId ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.03)',
-                    color: !selectedChannelId ? 'var(--accent-cyan)' : 'var(--text-muted)'
-                  }}
-                >
-                  ⚡ Semua Saluran
-                </button>
-
-                {visibleChannels.map(ch => {
-                  const isSelected = selectedChannelId === ch.id;
-                  return (
-                    <button
-                      key={ch.id}
-                      type="button"
-                      onClick={() => setSelectedChannelId(isSelected ? '' : ch.id)}
-                      style={{
-                        padding: '0.3rem 0.65rem',
-                        borderRadius: '16px',
-                        fontSize: '0.74rem',
-                        fontWeight: isSelected ? 700 : 400,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                        border: isSelected ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.08)',
-                        background: isSelected ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.03)',
-                        color: isSelected ? '#10b981' : '#cbd5e1',
-                      }}
-                      title={`${ch.name} (${ch.group})`}
-                    >
-                      {ch.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
 
           {/* 3. Secondary Filters (Type & Status) */}
           <div style={{
