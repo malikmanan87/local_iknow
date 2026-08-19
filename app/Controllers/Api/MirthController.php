@@ -344,32 +344,19 @@ class MirthController extends ResourceController
             $entries = [$entries];
         }
 
-        // Collect all non-empty content candidates across ALL connectors.
-        // For ORU messages (e.g. LIS Strateq with many OBX segments), the source
-        // connector's 'raw' content may be partial/incomplete. The destination
-        // connector's 'encoded' or 'sent' content often holds the full HL7.
-        // We return the longest content found to ensure all result segments are captured.
-        $best = '';
         foreach ((array)$entries as $entry) {
             $cMsg = $entry['connectorMessage'] ?? $entry;
-
-            $candidates = [
-                $cMsg['raw']['content']         ?? '',
-                $cMsg['transformed']['content'] ?? '',
-                $cMsg['encoded']['content']     ?? '',
-                $cMsg['sent']['content']        ?? '',
-                $cMsg['response']['content']    ?? '',
-            ];
-
-            foreach ($candidates as $candidate) {
-                $candidate = (string)$candidate;
-                if (!empty($candidate) && strlen($candidate) > strlen($best)) {
-                    $best = $candidate;
-                }
+            $raw  = $cMsg['raw']['content'] 
+                 ?? $cMsg['transformed']['content'] 
+                 ?? $cMsg['encoded']['content'] 
+                 ?? $cMsg['sent']['content'] 
+                 ?? $cMsg['response']['content'] 
+                 ?? '';
+            if (!empty($raw)) {
+                return (string)$raw;
             }
         }
-
-        return $best;
+        return '';
     }
 
     // ── Endpoints ─────────────────────────────────────────────────────────────
