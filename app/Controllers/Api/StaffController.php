@@ -25,7 +25,8 @@ class StaffController extends ResourceController
     {
         $query = trim($this->request->getGet('q') ?? '');
         $page  = max(1, (int) ($this->request->getGet('page') ?? 1));
-        $limit = max(1, min(50, (int) ($this->request->getGet('limit') ?? 10)));
+        // API UniSZA menetapkan had maksimum limit <= 20
+        $limit = max(1, min(20, (int) ($this->request->getGet('limit') ?? 10)));
 
         if (empty($query)) {
             return $this->respond([
@@ -76,7 +77,13 @@ class StaffController extends ResourceController
 
         $decoded = json_decode($response, true);
         if ($httpCode >= 400 || !$decoded) {
-            return $this->fail($decoded['message'] ?? 'Ralat semasa mendapatkan data staf daripada API.', $httpCode ?: 500);
+            $msg = 'Ralat semasa mendapatkan data staf daripada API.';
+            if (isset($decoded['detail'][0]['msg'])) {
+                $msg = $decoded['detail'][0]['msg'];
+            } elseif (isset($decoded['message'])) {
+                $msg = $decoded['message'];
+            }
+            return $this->fail($msg, $httpCode ?: 500);
         }
 
         return $this->respond($decoded);

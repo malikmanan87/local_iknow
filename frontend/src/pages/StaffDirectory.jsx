@@ -310,9 +310,10 @@ export default function StaffDirectory() {
               onChange={(e) => handlePageSizeChange(Number(e.target.value))}
               style={{ width: 'auto', padding: '0.35rem 2rem 0.35rem 0.75rem', fontSize: '0.88rem', borderRadius: '8px' }}
             >
+              <option value={5}>5</option>
               <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={30}>30</option>
+              <option value={15}>15</option>
+              <option value={20}>20 (Maksimum)</option>
             </select>
           </div>
         </div>
