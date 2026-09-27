@@ -78,5 +78,16 @@ export const getMirthStatus   = ()       => api.get('/mirth/status');
 export const getMirthChannels = ()       => api.get('/mirth/channels');
 export const getMirthMessages = (params) => api.get('/mirth/messages', { params });
 
+// Notes & Scratchpad
+export const getNotes        = (params) => api.get('/notes', { params });
+export const createNote      = (data)   => api.post('/notes', data);
+export const updateNote      = (id, data) => api.put(`/notes/${id}`, data);
+export const deleteNote      = (id)     => api.delete(`/notes/${id}`);
+export const toggleNoteLock  = (id)     => api.post(`/notes/${id}/toggle-lock`);
+
+// Staff Directory (UniSZA)
+export const searchStaff     = (params) => api.get('/staff/search', { params });
+
+
 
 

@@ -3,6 +3,8 @@ import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import ModuleDetail from './pages/ModuleDetail';
 import MirthViewer from './pages/MirthViewer';
+import NotesManager from './pages/NotesManager';
+import StaffDirectory from './pages/StaffDirectory';
 import AddModuleModal from './components/AddModuleModal';
 
 export default function App() {
@@ -35,7 +37,11 @@ export default function App() {
       />
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem', paddingBottom: '3rem' }}>
-        {activeTab === 'mirth' ? (
+        {activeTab === 'staff' ? (
+          <StaffDirectory />
+        ) : activeTab === 'notes' ? (
+          <NotesManager />
+        ) : activeTab === 'mirth' ? (
           <MirthViewer />
         ) : activeTab === 'dashboard' ? (
           <Dashboard

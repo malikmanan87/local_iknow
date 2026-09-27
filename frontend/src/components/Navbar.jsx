@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, PlusCircle, Activity } from 'lucide-react';
+import { BookOpen, PlusCircle, Activity, StickyNote, Users } from 'lucide-react';
 
 export default function Navbar({ onOpenAddModule, activeTab, setActiveTab }) {
   return (
@@ -9,13 +9,35 @@ export default function Navbar({ onOpenAddModule, activeTab, setActiveTab }) {
         <span className="logo-text">System Knowledge Hub</span>
       </div>
 
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
         <button
           className="btn btn-secondary"
           onClick={() => setActiveTab('dashboard')}
           style={{ borderColor: activeTab === 'dashboard' ? 'var(--primary)' : undefined }}
         >
           <BookOpen size={18} /> Modul Sistem
+        </button>
+
+        <button
+          className="btn btn-secondary"
+          onClick={() => setActiveTab('staff')}
+          style={{ 
+            borderColor: activeTab === 'staff' ? 'var(--accent-emerald)' : undefined, 
+            color: activeTab === 'staff' ? 'var(--accent-emerald)' : undefined 
+          }}
+        >
+          <Users size={18} /> Direktori Staf
+        </button>
+
+        <button
+          className="btn btn-secondary"
+          onClick={() => setActiveTab('notes')}
+          style={{ 
+            borderColor: activeTab === 'notes' ? 'var(--accent-amber)' : undefined, 
+            color: activeTab === 'notes' ? 'var(--accent-amber)' : undefined 
+          }}
+        >
+          <StickyNote size={18} /> Papan Nota
         </button>
 
         <button

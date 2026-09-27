@@ -57,6 +57,9 @@ Vagrantfile
 /writable/session/*
 !/writable/session/index.html
 
+/writable/mirth_sessions/*
+!/writable/mirth_sessions/index.html
+
 /writable/uploads/*
 !/writable/uploads/index.html
 

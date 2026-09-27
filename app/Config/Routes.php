@@ -74,6 +74,14 @@ $routes->group('api', function($routes) {
     $routes->get('flowcharts/(:num)/(:any)',                 'Api\\FlowchartController::load/$1/$2');
     $routes->match(['put', 'post'], 'flowcharts/(:num)/(:any)', 'Api\\FlowchartController::save/$1/$2');
 
+    // Notes & Scratchpad
+    $routes->get('notes', 'Api\NoteController::index');
+    $routes->get('notes/(:num)', 'Api\NoteController::show/$1');
+    $routes->post('notes', 'Api\NoteController::create');
+    $routes->match(['PUT', 'POST'], 'notes/(:num)', 'Api\NoteController::update/$1');
+    $routes->match(['PUT', 'POST'], 'notes/(:num)/toggle-lock', 'Api\NoteController::toggleLock/$1');
+    $routes->delete('notes/(:num)', 'Api\NoteController::delete/$1');
+
     // Global Search
     $routes->get('search', 'Api\SearchController::index');
 
@@ -83,4 +91,7 @@ $routes->group('api', function($routes) {
     $routes->get('mirth/search',             'Api\MirthController::search');
     $routes->get('mirth/messages',           'Api\MirthController::messages');
     $routes->get('mirth/message/(:segment)', 'Api\MirthController::messageDetail/$1');
+
+    // Staff Directory (UniSZA Staff API)
+    $routes->get('staff/search',             'Api\StaffController::search');
 });

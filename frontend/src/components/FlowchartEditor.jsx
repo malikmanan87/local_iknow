@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GitFork, Trash2, Link2, Download, Save, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
-import { getFlowchart, saveFlowchart } from '../services/api';
+import { getFlowchart, saveFlowchart, API_BASE_URL } from '../services/api';
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
 const CANVAS_W = 2400;
 const CANVAS_H = 1600;
+const LINE_HEIGHT = 17;
+const FONT_SIZE = 12;
 
 const SHAPE_CATALOG = [
   { type: 'terminator', label: 'Terminator', sublabel: 'Start / End',       color: '#818cf8' },
@@ -14,13 +16,111 @@ const SHAPE_CATALOG = [
   { type: 'subprocess', label: 'Sub-Process',sublabel: 'Proses Kecil',      color: '#c084fc' },
 ];
 
-const SHAPE_SIZE = {
-  terminator: { w: 150, h: 55  },
-  process:    { w: 160, h: 65  },
-  decision:   { w: 150, h: 90  },
-  io:         { w: 160, h: 65  },
-  subprocess: { w: 160, h: 65  },
+const MIN_SHAPE_SIZE = {
+  terminator: { w: 140, h: 50 },
+  process:    { w: 150, h: 55 },
+  decision:   { w: 140, h: 80 },
+  io:         { w: 150, h: 55 },
+  subprocess: { w: 150, h: 55 },
 };
+
+/* ─── Text measurement and shape dimension calculation ─────────────────── */
+let _measureCtx = null;
+function measureLineWidth(line, font = '600 12px Inter, system-ui, sans-serif') {
+  if (typeof document === 'undefined') {
+    return (line || '').length * 7.5;
+  }
+  if (!_measureCtx) {
+    const c = document.createElement('canvas');
+    _measureCtx = c.getContext('2d');
+  }
+  if (_measureCtx) {
+    _measureCtx.font = font;
+    return _measureCtx.measureText(line || '').width;
+  }
+  return (line || '').length * 7.5;
+}
+
+function wrapText(text, maxWidth = 190) {
+  if (!text) return [''];
+  const rawLines = String(text).split('\n');
+  const result = [];
+
+  for (const rawLine of rawLines) {
+    const trimmed = rawLine.trim();
+    if (!trimmed) {
+      result.push('');
+      continue;
+    }
+    const words = trimmed.split(/\s+/);
+    let currentLine = '';
+
+    for (const word of words) {
+      const candidate = currentLine ? currentLine + ' ' + word : word;
+      if (measureLineWidth(candidate) <= maxWidth || !currentLine) {
+        currentLine = candidate;
+      } else {
+        result.push(currentLine);
+        currentLine = word;
+      }
+    }
+    if (currentLine) {
+      result.push(currentLine);
+    }
+  }
+
+  return result.length > 0 ? result : [''];
+}
+
+export function calculateShapeSize(type, label) {
+  const lines = wrapText(label || '');
+  let maxLineWidth = 0;
+  for (const line of lines) {
+    const w = measureLineWidth(line);
+    if (w > maxLineWidth) maxLineWidth = w;
+  }
+  const textWidth = Math.ceil(maxLineWidth);
+  const textHeight = Math.ceil(lines.length * LINE_HEIGHT);
+
+  const min = MIN_SHAPE_SIZE[type] || { w: 150, h: 55 };
+
+  let width = min.w;
+  let height = min.h;
+
+  switch (type) {
+    case 'terminator':
+      width = Math.max(min.w, textWidth + 56);
+      height = Math.max(min.h, textHeight + 28);
+      break;
+
+    case 'process':
+      width = Math.max(min.w, textWidth + 40);
+      height = Math.max(min.h, textHeight + 28);
+      break;
+
+    case 'decision':
+      // Diamond rhombus needs extra space at corners
+      width = Math.max(min.w, Math.ceil(textWidth * 1.55 + 50));
+      height = Math.max(min.h, Math.ceil(textHeight * 1.75 + 40));
+      break;
+
+    case 'io':
+      width = Math.max(min.w, textWidth + 44 + 36);
+      height = Math.max(min.h, textHeight + 28);
+      break;
+
+    case 'subprocess':
+      width = Math.max(min.w, textWidth + 28 + 40);
+      height = Math.max(min.h, textHeight + 28);
+      break;
+
+    default:
+      width = Math.max(min.w, textWidth + 40);
+      height = Math.max(min.h, textHeight + 28);
+  }
+
+  return { width, height, lines, textWidth, textHeight };
+}
 
 let _uid = Date.now();
 const uid = () => String(++_uid);
@@ -37,7 +137,7 @@ function ShapePreview({ type, color }) {
     case 'terminator':
       return <svg width={W} height={H}><ellipse cx={cx} cy={cy} rx={cx} ry={cy} {...props} /></svg>;
     case 'process':
-      return <svg width={W} height={H}><rect x={0} y={0} width={W} height={H} {...props} /></svg>;
+      return <svg width={W} height={H}><rect x={0} y={0} width={W} height={H} rx={4} {...props} /></svg>;
     case 'decision': {
       const pts = `${cx},0 ${W},${cy} ${cx},${H} 0,${cy}`;
       return <svg width={W} height={H}><polygon points={pts} {...props} /></svg>;
@@ -77,11 +177,21 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
   const [saving,      setSaving]      = useState(false);
   const [loadMsg,     setLoadMsg]     = useState('Memuatkan...');
   const [zoom,        setZoom]        = useState(1);
+  const [autoSaveStatus, setAutoSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'saved' | 'error'
+  const [lastSavedAt, setLastSavedAt] = useState(null);
 
   /* ── Refs ── */
-  const svgRef     = useRef(null);
-  const wrapRef    = useRef(null);
-  const editRef    = useRef(null);
+  const svgRef          = useRef(null);
+  const wrapRef         = useRef(null);
+  const editRef         = useRef(null);
+  const isLoadedRef     = useRef(false);
+  const isDirtyRef      = useRef(false);
+  const autoSaveTimerRef = useRef(null);
+
+  const shapesRef      = useRef(shapes);
+  const connectionsRef = useRef(connections);
+  shapesRef.current      = shapes;
+  connectionsRef.current = connections;
 
   /* unique SVG element ids per instance */
   const iid  = (moduleId + '_' + (contextKey || 'main')).replace(/\W/g, '_');
@@ -90,19 +200,117 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
   const GLOW_ID      = `glow_${iid}`;
   const GRID_ID      = `grid_${iid}`;
 
+  /* ── Core save function ── */
+  const doSave = useCallback(async (shapesToSave, connsToSave) => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+    setAutoSaveStatus('saving');
+    try {
+      await saveFlowchart(moduleId, ctxKey, {
+        shapes: shapesToSave,
+        connections: connsToSave,
+      });
+      isDirtyRef.current = false;
+      setAutoSaveStatus('saved');
+      const now = new Date();
+      setLastSavedAt(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      setTimeout(() => {
+        setAutoSaveStatus(prev => prev === 'saved' ? 'idle' : prev);
+      }, 3500);
+    } catch (err) {
+      console.error('Autosave flowchart error:', err);
+      setAutoSaveStatus('error');
+    }
+  }, [moduleId, ctxKey]);
+
+  /* ── Trigger save helper (immediate for actions like adding arrows, or debounced for typing) ── */
+  const triggerSave = useCallback((shapesToSave, connsToSave, immediate = true) => {
+    isDirtyRef.current = true;
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+
+    if (immediate) {
+      doSave(shapesToSave, connsToSave);
+    } else {
+      setAutoSaveStatus('saving');
+      autoSaveTimerRef.current = setTimeout(() => {
+        doSave(shapesToSave, connsToSave);
+      }, 400);
+    }
+  }, [doSave]);
+
+  /* ── Ensure data is saved on browser refresh or navigation ── */
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (isDirtyRef.current) {
+        const url = `${API_BASE_URL}/flowcharts/${moduleId}/${ctxKey}`;
+        const payload = JSON.stringify({
+          shapes: shapesRef.current,
+          connections: connectionsRef.current,
+        });
+        if (navigator.sendBeacon) {
+          const blob = new Blob([payload], { type: 'application/json' });
+          navigator.sendBeacon(url, blob);
+        } else {
+          fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload,
+            keepalive: true,
+          }).catch(() => {});
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (isDirtyRef.current) {
+        doSave(shapesRef.current, connectionsRef.current);
+      }
+    };
+  }, [moduleId, ctxKey, doSave]);
+
   /* ── Load from database on mount ── */
   useEffect(() => {
     let cancelled = false;
+    isLoadedRef.current = false;
     setLoadMsg('Memuatkan flow chart...');
     getFlowchart(moduleId, ctxKey)
       .then(res => {
         if (cancelled) return;
-        setShapes(res.data.shapes      || []);
+        const loadedShapes = (res.data.shapes || []).map(s => {
+          const { width, height } = calculateShapeSize(s.type, s.label || '');
+          const w = Math.max(s.width || 0, width);
+          const h = Math.max(s.height || 0, height);
+          const cx = (s.x || 0) + (s.width || w) / 2;
+          const cy = (s.y || 0) + (s.height || h) / 2;
+          return {
+            ...s,
+            width: w,
+            height: h,
+            x: Math.max(10, cx - w / 2),
+            y: Math.max(10, cy - h / 2),
+          };
+        });
+        setShapes(loadedShapes);
         setConnections(res.data.connections || []);
         setLoadMsg('');
+        setTimeout(() => {
+          if (!cancelled) isLoadedRef.current = true;
+        }, 300);
       })
       .catch(() => {
-        if (!cancelled) setLoadMsg(''); // fail silently, canvas empty
+        if (!cancelled) {
+          setLoadMsg('');
+          setTimeout(() => {
+            if (!cancelled) isLoadedRef.current = true;
+          }, 300);
+        }
       });
     return () => { cancelled = true; };
   }, [moduleId, ctxKey]);
@@ -147,16 +355,25 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
     setConnections(last.connections);
     setHistory(prev => prev.slice(0, -1));
     setSelected(null);
+    triggerSave(last.shapes, last.connections, true);
   };
 
   const save = async () => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
     setSaving(true);
     try {
       await saveFlowchart(moduleId, ctxKey, { shapes, connections });
+      isDirtyRef.current = false;
       setSavedFlash(true);
+      setAutoSaveStatus('saved');
+      setLastSavedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
       setTimeout(() => setSavedFlash(false), 2500);
     } catch (err) {
       alert('Gagal menyimpan ke database: ' + (err.response?.data?.message || err.message));
+      setAutoSaveStatus('error');
     } finally {
       setSaving(false);
     }
@@ -168,20 +385,27 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
     setShapes([]);
     setConnections([]);
     setSelected(null);
+    triggerSave([], [], true);
   };
 
   const handleDelete = useCallback(() => {
     if (!selected) return;
     pushHistory();
+    let nextShapes = shapes;
+    let nextConns = connections;
     if (shapes.find(s => s.id === selected)) {
-      setShapes(prev => prev.filter(s => s.id !== selected));
-      setConnections(prev => prev.filter(c => c.from !== selected && c.to !== selected));
+      nextShapes = shapes.filter(s => s.id !== selected);
+      nextConns = connections.filter(c => c.from !== selected && c.to !== selected);
+      setShapes(nextShapes);
+      setConnections(nextConns);
     } else {
-      setConnections(prev => prev.filter(c => c.id !== selected));
+      nextConns = connections.filter(c => c.id !== selected);
+      setConnections(nextConns);
     }
     setSelected(null);
+    triggerSave(nextShapes, nextConns, true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected, shapes]);
+  }, [selected, shapes, connections, triggerSave, pushHistory]);
 
   /* ── SVG coordinate from mouse event ── */
   const svgCoord = (e) => {
@@ -202,10 +426,10 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
     e.preventDefault();
     const type = e.dataTransfer.getData('shapeType');
     if (!type) return;
-    const { w, h } = SHAPE_SIZE[type];
-    const coord     = svgCoord(e);
-    const catalog   = SHAPE_CATALOG.find(s => s.type === type);
-    pushHistory();
+    const catalog = SHAPE_CATALOG.find(s => s.type === type);
+    const label   = catalog ? catalog.label : type;
+    const { width: w, height: h } = calculateShapeSize(type, label);
+    const coord   = svgCoord(e);
     const shape = {
       id:     uid(),
       type,
@@ -213,10 +437,13 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
       y:      Math.max(10, coord.y - h / 2),
       width:  w,
       height: h,
-      label:  catalog.label,
+      label,
       color:  catalog.color,
     };
-    setShapes(prev => [...prev, shape]);
+    const nextShapes = [...shapes, shape];
+    pushHistory();
+    setShapes(nextShapes);
+    triggerSave(nextShapes, connections, true);
   };
 
   /* ── Shape interaction ── */
@@ -240,7 +467,12 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
         const exists = connections.find(c => c.from === connectFrom && c.to === id);
         if (!exists) {
           pushHistory();
-          setConnections(prev => [...prev, { id: uid(), from: connectFrom, to: id, label: '' }]);
+          const nextConns = [...connections, { id: uid(), from: connectFrom, to: id, label: '' }];
+          setConnections(nextConns);
+          setConnectFrom(null);
+          setConnectMode(false);
+          triggerSave(shapes, nextConns, true); // Immediate autosave when arrow added!
+          return;
         }
         setConnectFrom(null);
         setConnectMode(false);
@@ -254,6 +486,7 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
     e.stopPropagation();
     if (connectMode) return;
     const shape = shapes.find(s => s.id === id);
+    if (!shape) return;
     setEditingId(id);
     setEditLabel(shape.label);
   };
@@ -271,7 +504,13 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
     ));
   };
 
-  const onSvgMouseUp   = () => setDragging(null);
+  const onSvgMouseUp = () => {
+    if (dragging) {
+      setDragging(null);
+      triggerSave(shapesRef.current, connectionsRef.current, true); // Immediate save on drag end!
+    }
+  };
+
   const onCanvasClick  = () => { if (!connectMode) setSelected(null); };
 
   /* ── Connection interaction ── */
@@ -279,48 +518,108 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
   const onConnDblClick = (e, id) => {
     e.stopPropagation();
     const conn = connections.find(c => c.id === id);
+    if (!conn) return;
     setEditingId('conn:' + id);
     setEditLabel(conn.label || '');
+  };
+
+  /* ── Real-time label change (updates box size dynamically) ── */
+  const handleLabelChange = (newLabel) => {
+    setEditLabel(newLabel);
+    if (editingId && !editingId.startsWith('conn:')) {
+      const nextShapes = shapes.map(s => {
+        if (s.id !== editingId) return s;
+        const { width, height } = calculateShapeSize(s.type, newLabel);
+        const cx = s.x + s.width / 2;
+        const cy = s.y + s.height / 2;
+        return {
+          ...s,
+          label: newLabel,
+          width,
+          height,
+          x: Math.max(10, cx - width / 2),
+          y: Math.max(10, cy - height / 2),
+        };
+      });
+      setShapes(nextShapes);
+      triggerSave(nextShapes, connections, false); // Debounced while typing
+    }
   };
 
   /* ── Label commit ── */
   const commitLabel = () => {
     if (!editingId) return;
+    pushHistory();
+    let nextShapes = shapes;
+    let nextConns = connections;
     if (editingId.startsWith('conn:')) {
       const cid = editingId.slice(5);
-      setConnections(prev => prev.map(c => c.id === cid ? { ...c, label: editLabel } : c));
+      nextConns = connections.map(c => c.id === cid ? { ...c, label: editLabel } : c);
+      setConnections(nextConns);
     } else {
-      setShapes(prev => prev.map(s => s.id === editingId ? { ...s, label: editLabel } : s));
+      nextShapes = shapes.map(s => {
+        if (s.id !== editingId) return s;
+        const { width, height } = calculateShapeSize(s.type, editLabel);
+        const cx = s.x + s.width / 2;
+        const cy = s.y + s.height / 2;
+        return {
+          ...s,
+          label: editLabel,
+          width,
+          height,
+          x: Math.max(10, cx - width / 2),
+          y: Math.max(10, cy - height / 2),
+        };
+      });
+      setShapes(nextShapes);
     }
     setEditingId(null);
+    triggerSave(nextShapes, nextConns, true); // Immediate save on commit!
   };
 
   const onEditKey = (e) => {
-    if (e.key === 'Enter')  commitLabel();
-    if (e.key === 'Escape') setEditingId(null);
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      commitLabel();
+    }
+    if (e.key === 'Escape') {
+      setEditingId(null);
+    }
   };
 
   /* ── Connection path helpers ── */
   const shapeCenter = (s) => ({ x: s.x + s.width / 2, y: s.y + s.height / 2 });
 
-  /**
-   * Returns the point on the shape boundary that lies in the given direction
-   * (angleRad) from the shape center.  padding adds extra space outside the shape.
-   *
-   * Fix: single, clear function — always go from center outward in the given direction.
-   * For exit point (source → target): use angle as-is.
-   * For entry point (target ← source): use angle + Math.PI (i.e. the side of target
-   *   that faces the source).  This eliminates the previous double-negation bug where
-   *   the arrow was entering from the wrong side.
-   */
   const getBoundaryPoint = (shape, dirAngle, padding = 6) => {
     const cx = shape.x + shape.width  / 2;
     const cy = shape.y + shape.height / 2;
-    const rx = shape.width  / 2 + padding;
-    const ry = shape.height / 2 + padding;
+    const hw = shape.width  / 2;
+    const hh = shape.height / 2;
+    const cos = Math.cos(dirAngle);
+    const sin = Math.sin(dirAngle);
+    const absCos = Math.abs(cos);
+    const absSin = Math.abs(sin);
+
+    let t = 0;
+    if (shape.type === 'decision') {
+      // Diamond: |x|/hw + |y|/hh = 1
+      const denom = (absCos / hw) + (absSin / hh);
+      t = denom > 0.0001 ? (1 / denom) : Math.min(hw, hh);
+    } else if (shape.type === 'terminator') {
+      // Ellipse: (x/hw)^2 + (y/hh)^2 = 1
+      const denom = Math.sqrt((cos / hw) ** 2 + (sin / hh) ** 2);
+      t = denom > 0.0001 ? (1 / denom) : Math.min(hw, hh);
+    } else {
+      // Rectangles (process, subprocess, io)
+      const tx = absCos > 0.0001 ? (hw / absCos) : Infinity;
+      const ty = absSin > 0.0001 ? (hh / absSin) : Infinity;
+      t = Math.min(tx, ty);
+    }
+
+    t += padding;
     return {
-      x: cx + Math.cos(dirAngle) * rx,
-      y: cy + Math.sin(dirAngle) * ry,
+      x: cx + cos * t,
+      y: cy + sin * t,
     };
   };
 
@@ -331,13 +630,9 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
 
     const c1 = shapeCenter(from);
     const c2 = shapeCenter(to);
-    // angle: direction from source center → target center
     const angle = Math.atan2(c2.y - c1.y, c2.x - c1.x);
 
-    // p1 = exit point on source (go toward target, padding 6)
     const p1 = getBoundaryPoint(from, angle, 6);
-    // p2 = entry point on target (go toward source = angle + PI, padding 10)
-    //   This ensures the arrowhead touches the correct face of the target shape.
     const p2 = getBoundaryPoint(to, angle + Math.PI, 10);
 
     const midX = (p1.x + p2.x) / 2;
@@ -364,7 +659,7 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
         body = <ellipse cx={cx} cy={cy} rx={w / 2} ry={h / 2} fill={fill} stroke={stroke} strokeWidth={strokeWidth} filter={filterAttr} />;
         break;
       case 'process':
-        body = <rect x={x} y={y} width={w} height={h} fill={fill} stroke={stroke} strokeWidth={strokeWidth} filter={filterAttr} />;
+        body = <rect x={x} y={y} width={w} height={h} rx={6} fill={fill} stroke={stroke} strokeWidth={strokeWidth} filter={filterAttr} />;
         break;
       case 'decision': {
         const pts = `${cx},${y} ${x + w},${cy} ${cx},${y + h} ${x},${cy}`;
@@ -387,12 +682,12 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
         );
         break;
       default:
-        body = <rect x={x} y={y} width={w} height={h} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />;
+        body = <rect x={x} y={y} width={w} height={h} rx={6} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />;
     }
 
-    // Truncate label for display
-    const displayLabel = label.length > 20 ? label.slice(0, 18) + '…' : label;
-    const isEditing    = editingId === id;
+    const { lines } = calculateShapeSize(type, label);
+    const startY = cy - ((lines.length - 1) * LINE_HEIGHT) / 2;
+    const isEditing = editingId === id;
 
     return (
       <g
@@ -405,16 +700,25 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
         {body}
         {!isEditing && (
           <text
-            x={cx} y={cy}
+            x={cx}
+            y={startY}
             textAnchor="middle"
             dominantBaseline="central"
             fill="#f1f5f9"
-            fontSize={12}
+            fontSize={FONT_SIZE}
             fontWeight={600}
             fontFamily="Inter, system-ui, sans-serif"
             style={{ pointerEvents: 'none' }}
           >
-            {displayLabel}
+            {lines.map((line, idx) => (
+              <tspan
+                key={idx}
+                x={cx}
+                dy={idx === 0 ? 0 : LINE_HEIGHT}
+              >
+                {line}
+              </tspan>
+            ))}
           </text>
         )}
       </g>
@@ -462,9 +766,13 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
     img.src = url;
   };
 
-  /* ── Inline edit overlay position ── */
+  /* ── Inline edit overlay references ── */
   const editShape = editingId && !editingId.startsWith('conn:')
     ? shapes.find(s => s.id === editingId) : null;
+
+  const editConn = editingId && editingId.startsWith('conn:')
+    ? connections.find(c => c.id === editingId.slice(5)) : null;
+  const editConnMid = editConn ? getConnPath(editConn) : null;
 
   /* ── Render ── */
   return (
@@ -527,6 +835,48 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
           Clear
         </button>
 
+        {/* Autosave Status Badge */}
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.35rem',
+          fontSize: '0.72rem',
+          padding: '0.22rem 0.55rem',
+          borderRadius: '16px',
+          background: autoSaveStatus === 'saving' ? 'rgba(56, 189, 248, 0.12)'
+                    : autoSaveStatus === 'saved'  ? 'rgba(16, 185, 129, 0.12)'
+                    : autoSaveStatus === 'error'  ? 'rgba(239, 68, 68, 0.15)'
+                    : 'rgba(255, 255, 255, 0.04)',
+          border: `1px solid ${
+            autoSaveStatus === 'saving' ? 'rgba(56, 189, 248, 0.3)'
+            : autoSaveStatus === 'saved' ? 'rgba(16, 185, 129, 0.3)'
+            : autoSaveStatus === 'error' ? 'rgba(239, 68, 68, 0.4)'
+            : 'var(--border-color)'
+          }`,
+          color: autoSaveStatus === 'saving' ? 'var(--accent-cyan)'
+               : autoSaveStatus === 'saved' ? '#34d399'
+               : autoSaveStatus === 'error' ? '#f87171'
+               : 'var(--text-muted)',
+          transition: 'all 0.3s ease',
+        }}>
+          <span style={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: autoSaveStatus === 'saving' ? 'var(--accent-cyan)'
+                      : autoSaveStatus === 'saved' ? '#10b981'
+                      : autoSaveStatus === 'error' ? '#ef4444'
+                      : '#64748b',
+            boxShadow: autoSaveStatus === 'saving' ? '0 0 6px var(--accent-cyan)'
+                     : autoSaveStatus === 'saved' ? '0 0 6px #10b981'
+                     : 'none',
+          }} />
+          {autoSaveStatus === 'saving' && 'Menyimpan...'}
+          {autoSaveStatus === 'saved' && `Tersimpan automatik ${lastSavedAt ? `(${lastSavedAt})` : '✓'}`}
+          {autoSaveStatus === 'error' && 'Autosave gagal'}
+          {autoSaveStatus === 'idle' && (lastSavedAt ? `Tersimpan (${lastSavedAt})` : 'Autosave aktif')}
+        </div>
+
         {/* Save */}
         <button className="btn btn-secondary" onClick={save} disabled={saving}
           style={{
@@ -547,7 +897,7 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
       {/* ─ Help hint ─────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: '1.2rem', flexWrap: 'wrap', fontSize: '0.68rem', color: 'var(--text-muted)' }}>
         <span>🖱 Drag shape dari panel kiri</span>
-        <span>✌ Double-click untuk edit label</span>
+        <span>✌ Double-click untuk edit teks (kotak berubah saiz automatik mengikut teks)</span>
         <span>🔗 Connect mode → klik shape sumber → klik target</span>
         <span>⌨ Del untuk padam pilihan</span>
       </div>
@@ -684,7 +1034,7 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
             {shapes.map(renderShape)}
           </svg>
 
-          {/* ── Inline label input overlay ── */}
+          {/* ── Inline shape label input overlay ── */}
           {editShape && (
             <div style={{
               position: 'absolute',
@@ -697,24 +1047,68 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
               justifyContent: 'center',
               pointerEvents: 'all',
               zIndex: 10,
+              padding: '6px',
+            }}>
+              <textarea
+                ref={editRef}
+                value={editLabel}
+                onChange={e => handleLabelChange(e.target.value)}
+                onBlur={commitLabel}
+                onKeyDown={onEditKey}
+                rows={Math.max(1, (editLabel.match(/\n/g) || []).length + 1)}
+                placeholder="Tulis label..."
+                style={{
+                  width: '92%',
+                  maxHeight: '92%',
+                  background: 'rgba(10,14,22,0.96)',
+                  border: '1.5px solid var(--primary)',
+                  borderRadius: '6px',
+                  color: '#f1f5f9',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                  textAlign: 'center',
+                  padding: '4px 6px',
+                  outline: 'none',
+                  resize: 'none',
+                  lineHeight: `${LINE_HEIGHT}px`,
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
+                }}
+              />
+            </div>
+          )}
+
+          {/* ── Inline connection label input overlay ── */}
+          {editConn && editConnMid && editConnMid.d && (
+            <div style={{
+              position: 'absolute',
+              left:   editConnMid.mx * zoom - 60,
+              top:    (editConnMid.my - 14) * zoom,
+              width:  120,
+              zIndex: 10,
             }}>
               <input
                 ref={editRef}
                 value={editLabel}
                 onChange={e => setEditLabel(e.target.value)}
                 onBlur={commitLabel}
-                onKeyDown={onEditKey}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') commitLabel();
+                  if (e.key === 'Escape') setEditingId(null);
+                }}
+                placeholder="Label..."
                 style={{
-                  width: '88%',
+                  width: '100%',
                   background: 'rgba(10,14,22,0.96)',
                   border: '1.5px solid var(--primary)',
                   borderRadius: '5px',
                   color: '#f1f5f9',
-                  fontSize: '12px',
+                  fontSize: '11px',
                   fontWeight: 600,
                   textAlign: 'center',
-                  padding: '3px 6px',
+                  padding: '2px 6px',
                   outline: 'none',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
                 }}
               />
             </div>
