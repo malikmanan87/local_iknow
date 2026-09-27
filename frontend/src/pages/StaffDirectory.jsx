@@ -246,39 +246,6 @@ export default function StaffDirectory() {
             <span>Cari</span>
           </button>
         </form>
-
-        {/* Quick query chips if empty */}
-        {!activeQuery && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem', fontSize: '0.85rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
-            <span>Cadangan carian:</span>
-            {['Nik', 'Ahmad', 'Siti', 'Ismail', 'Nor'].map((keyword) => (
-              <button
-                key={keyword}
-                type="button"
-                onClick={() => {
-                  setSearchTerm(keyword);
-                  setActiveQuery(keyword);
-                  setCurrentPage(1);
-                  fetchStaff(keyword, 1, pageSize);
-                }}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-main)',
-                  padding: '0.25rem 0.65rem',
-                  borderRadius: '20px',
-                  cursor: 'pointer',
-                  fontSize: '0.8rem',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--accent-emerald)'; }}
-                onMouseOut={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; }}
-              >
-                {keyword}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Results Header Info & Page size selector */}
