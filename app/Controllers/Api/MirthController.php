@@ -229,6 +229,8 @@ class MirthController extends ResourceController
      */
     private function doLogin(): ?string
     {
+        $this->cleanupOldSessions();
+
         $cookieFile = $this->getCookieDir() . '/mirth_' . uniqid() . '.txt';
         $r = $this->mirthRequest(
             '/api/users/_login',
@@ -248,8 +250,31 @@ class MirthController extends ResourceController
      */
     private function refreshSession(): ?string
     {
+        $oldFile = cache('mirth_session_v1');
+        if ($oldFile && is_file($oldFile)) {
+            @unlink($oldFile);
+        }
         cache()->delete('mirth_session_v1');
         return $this->getSession();
+    }
+
+    /**
+     * Auto-cleanup session cookie files older than 15 minutes.
+     */
+    private function cleanupOldSessions(): void
+    {
+        $dir = $this->getCookieDir();
+        $files = glob($dir . '/mirth_*.txt');
+        if (!$files) {
+            return;
+        }
+
+        $cutoff = time() - 900; // 15 minutes ago (sessions cache for 5 minutes)
+        foreach ($files as $file) {
+            if (is_file($file) && filemtime($file) < $cutoff) {
+                @unlink($file);
+            }
+        }
     }
 
     // ── XML Helper ────────────────────────────────────────────────────────────
