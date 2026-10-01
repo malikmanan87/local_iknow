@@ -94,4 +94,12 @@ $routes->group('api', function($routes) {
 
     // Staff Directory (UniSZA Staff API)
     $routes->get('staff/search',             'Api\StaffController::search');
+
+    // Procurement & Finance Documents
+    $routes->get('procurement-documents', 'Api\ProcurementDocumentController::index');
+    $routes->get('procurement-documents/(:num)', 'Api\ProcurementDocumentController::show/$1');
+    $routes->post('procurement-documents', 'Api\ProcurementDocumentController::create');
+    $routes->match(['put', 'post'], 'procurement-documents/(:num)', 'Api\ProcurementDocumentController::update/$1');
+    $routes->delete('procurement-documents/(:num)', 'Api\ProcurementDocumentController::delete/$1');
 });
+

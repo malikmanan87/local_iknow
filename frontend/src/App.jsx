@@ -5,6 +5,7 @@ import ModuleDetail from './pages/ModuleDetail';
 import MirthViewer from './pages/MirthViewer';
 import NotesManager from './pages/NotesManager';
 import StaffDirectory from './pages/StaffDirectory';
+import FinanceProcurement from './pages/FinanceProcurement';
 import AddModuleModal from './components/AddModuleModal';
 
 export default function App() {
@@ -41,6 +42,8 @@ export default function App() {
           <StaffDirectory />
         ) : activeTab === 'notes' ? (
           <NotesManager />
+        ) : activeTab === 'procurement' ? (
+          <FinanceProcurement />
         ) : activeTab === 'mirth' ? (
           <MirthViewer />
         ) : activeTab === 'dashboard' ? (
@@ -57,6 +60,7 @@ export default function App() {
           />
         )}
       </div>
+
 
       {showAddModule && (
         <AddModuleModal

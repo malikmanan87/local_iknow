@@ -88,6 +88,19 @@ export const toggleNoteLock  = (id)     => api.post(`/notes/${id}/toggle-lock`);
 // Staff Directory (UniSZA)
 export const searchStaff     = (params) => api.get('/staff/search', { params });
 
-
-
-
+// Kewangan & Perolehan Documents
+export const getProcurementDocuments    = (params) => api.get('/procurement-documents', { params });
+export const getProcurementDocument     = (id)     => api.get(`/procurement-documents/${id}`);
+export const createProcurementDocument  = (formData) => api.post('/procurement-documents', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+});
+export const updateProcurementDocument  = (id, data) => {
+  // If data is FormData
+  if (data instanceof FormData) {
+    return api.post(`/procurement-documents/${id}`, data, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  }
+  return api.put(`/procurement-documents/${id}`, data);
+};
+export const deleteProcurementDocument  = (id) => api.delete(`/procurement-documents/${id}`);

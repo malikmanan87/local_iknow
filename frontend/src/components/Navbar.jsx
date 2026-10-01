@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, PlusCircle, Activity, StickyNote, Users } from 'lucide-react';
+import { BookOpen, PlusCircle, Activity, StickyNote, Users, Landmark } from 'lucide-react';
 
 export default function Navbar({ onOpenAddModule, activeTab, setActiveTab }) {
   return (
@@ -42,6 +42,17 @@ export default function Navbar({ onOpenAddModule, activeTab, setActiveTab }) {
 
         <button
           className="btn btn-secondary"
+          onClick={() => setActiveTab('procurement')}
+          style={{ 
+            borderColor: activeTab === 'procurement' ? '#a855f7' : undefined, 
+            color: activeTab === 'procurement' ? '#c084fc' : undefined 
+          }}
+        >
+          <Landmark size={18} /> Kewangan & Perolehan
+        </button>
+
+        <button
+          className="btn btn-secondary"
           onClick={() => setActiveTab('mirth')}
           style={{ borderColor: activeTab === 'mirth' ? 'var(--accent-cyan)' : undefined, color: activeTab === 'mirth' ? 'var(--accent-cyan)' : undefined }}
         >
@@ -55,3 +66,4 @@ export default function Navbar({ onOpenAddModule, activeTab, setActiveTab }) {
     </nav>
   );
 }
+
