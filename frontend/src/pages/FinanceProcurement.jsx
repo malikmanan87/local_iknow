@@ -130,6 +130,16 @@ export default function FinanceProcurement() {
       return;
     }
 
+    if (!editingDoc && !formData.file) {
+      showToast('Sila pilih fail PDF atau dokumen terlebih dahulu untuk dimuat naik', 'error');
+      return;
+    }
+
+    if (editingDoc && !editingDoc.file_path && !formData.file) {
+      showToast('Dokumen ini belum mempunyai fail. Sila pilih fail PDF atau dokumen untuk dimuat naik', 'error');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const data = new FormData();
@@ -737,15 +747,19 @@ export default function FinanceProcurement() {
                 <label className="form-label">
                   Muat Naik Fail PDF / Dokumen {editingDoc && <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>(Biarkan kosong jika tidak mahu menggantikan fail sedia ada)</span>}
                 </label>
-                <div style={{ 
-                  border: formData.file ? '2px solid #34d399' : '2px dashed var(--border-color)', 
-                  borderRadius: '10px', 
-                  padding: '1.5rem', 
-                  textAlign: 'center', 
-                  background: formData.file ? 'rgba(16, 185, 129, 0.05)' : 'rgba(255, 255, 255, 0.02)',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}>
+                <label 
+                  htmlFor="docFileInput"
+                  style={{ 
+                    border: formData.file ? '2px solid #34d399' : '2px dashed var(--border-color)', 
+                    borderRadius: '10px', 
+                    padding: '1.75rem 1.5rem', 
+                    textAlign: 'center', 
+                    background: formData.file ? 'rgba(16, 185, 129, 0.05)' : 'rgba(255, 255, 255, 0.02)',
+                    cursor: 'pointer',
+                    display: 'block',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
                   <input 
                     type="file" 
                     id="docFileInput"
@@ -756,26 +770,25 @@ export default function FinanceProcurement() {
                         setFormData((prev) => ({ ...prev, file: selected }));
                       }
                     }}
+                    onClick={(e) => { e.target.value = null; }}
                     style={{ display: 'none' }}
                   />
-                  <label htmlFor="docFileInput" style={{ cursor: 'pointer', display: 'block' }}>
+                  {formData.file ? (
+                    <CheckCircle size={36} style={{ color: '#34d399', marginBottom: '0.6rem' }} />
+                  ) : (
+                    <Upload size={36} style={{ color: '#c084fc', marginBottom: '0.6rem' }} />
+                  )}
+                  <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.35rem', color: formData.file ? '#34d399' : 'inherit' }}>
                     {formData.file ? (
-                      <CheckCircle size={32} style={{ color: '#34d399', marginBottom: '0.5rem' }} />
-                    ) : (
-                      <Upload size={32} style={{ color: '#c084fc', marginBottom: '0.5rem' }} />
-                    )}
-                    <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: '0.25rem', color: formData.file ? '#34d399' : 'inherit' }}>
-                      {formData.file ? (
-                        `📄 ${formData.file.name} (${formData.file.size > 1048576 ? (formData.file.size / 1048576).toFixed(2) + ' MB' : (formData.file.size / 1024).toFixed(1) + ' KB'})`
-                      ) : (editingDoc && editingDoc.file_name ? (
-                        `Fail semasa: ${editingDoc.file_name} (${editingDoc.file_size || ''}). Klik untuk ganti fail.`
-                      ) : 'Klik untuk pilih fail PDF atau dokumen')}
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      {formData.file ? 'Fail sedia untuk dimuat naik' : 'Menyokong format PDF, Word (.docx) atau Excel (.xlsx)'}
-                    </div>
-                  </label>
-                </div>
+                      `📄 ${formData.file.name} (${formData.file.size > 1048576 ? (formData.file.size / 1048576).toFixed(2) + ' MB' : (formData.file.size / 1024).toFixed(1) + ' KB'})`
+                    ) : (editingDoc && editingDoc.file_name ? (
+                      `Fail Semasa: ${editingDoc.file_name} (${editingDoc.file_size || ''}). Klik untuk tukar fail baharu.`
+                    ) : 'Klik Di Sini Untuk Memilih Fail PDF / Dokumen')}
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: formData.file ? '#34d399' : 'var(--text-muted)' }}>
+                    {formData.file ? '✅ Fail sedia dimuat naik apabila borang dihantar' : 'Menyokong format PDF (sehingga 256MB), Word (.docx) atau Excel (.xlsx)'}
+                  </div>
+                </label>
               </div>
 
               {/* Form Buttons */}

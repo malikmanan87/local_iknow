@@ -91,11 +91,24 @@ export const searchStaff     = (params) => api.get('/staff/search', { params });
 // Kewangan & Perolehan Documents
 export const getProcurementDocuments    = (params) => api.get('/procurement-documents', { params });
 export const getProcurementDocument     = (id)     => api.get(`/procurement-documents/${id}`);
-export const createProcurementDocument  = (formData) => api.post('/procurement-documents', formData);
+export const createProcurementDocument  = (formData) => {
+  return axios.post(`${API_BASE_URL}/procurement-documents`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+    timeout: 600000,
+  });
+};
 export const updateProcurementDocument  = (id, data) => {
   if (data instanceof FormData) {
-    return api.post(`/procurement-documents/${id}`, data);
+    return axios.post(`${API_BASE_URL}/procurement-documents/${id}`, data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: 600000,
+    });
   }
   return api.put(`/procurement-documents/${id}`, data);
 };
 export const deleteProcurementDocument  = (id) => api.delete(`/procurement-documents/${id}`);
+

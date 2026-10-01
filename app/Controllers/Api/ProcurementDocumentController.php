@@ -140,29 +140,31 @@ class ProcurementDocumentController extends ResourceController {
         $fileSize = null;
 
         $file = $this->request->getFile('file');
-        if ($file && $file->getError() !== UPLOAD_ERR_NO_FILE) {
-            if (!$file->isValid()) {
-                return $this->fail('Ralat muat naik fail: ' . $file->getErrorString(), 400);
-            }
-
-            $allowedExts = ['pdf', 'doc', 'docx', 'xls', 'xlsx'];
-            $ext = strtolower($file->getClientExtension() ?: $file->getExtension());
-            if (!in_array($ext, $allowedExts)) {
-                return $this->fail('Hanya fail PDF, Word (.doc/.docx), atau Excel (.xls/.xlsx) dibenarkan. Format dikesan: ' . ($ext ?: 'tidak diketahui'), 400);
-            }
-
-            $uploadDir = FCPATH . 'uploads/documents';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-
-            $fileName = $file->getClientName();
-            $fileSize = $this->formatBytes($file->getSize());
-            $newFileName = $file->getRandomName();
-            $file->move($uploadDir, $newFileName);
-
-            $filePath = 'uploads/documents/' . $newFileName;
+        if (!$file || $file->getError() === UPLOAD_ERR_NO_FILE) {
+            return $this->fail('Sila pilih dan muat naik fail dokumen (PDF, Word, atau Excel)', 400);
         }
+
+        if (!$file->isValid()) {
+            return $this->fail('Ralat muat naik fail: ' . $file->getErrorString(), 400);
+        }
+
+        $allowedExts = ['pdf', 'doc', 'docx', 'xls', 'xlsx'];
+        $ext = strtolower($file->getClientExtension() ?: $file->getExtension());
+        if (!in_array($ext, $allowedExts)) {
+            return $this->fail('Hanya fail PDF, Word (.doc/.docx), atau Excel (.xls/.xlsx) dibenarkan. Format dikesan: ' . ($ext ?: 'tidak diketahui'), 400);
+        }
+
+        $uploadDir = FCPATH . 'uploads/documents';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $fileName = $file->getClientName();
+        $fileSize = $this->formatBytes($file->getSize());
+        $newFileName = $file->getRandomName();
+        $file->move($uploadDir, $newFileName);
+
+        $filePath = 'uploads/documents/' . $newFileName;
 
         $insertData = [
             'title' => $title,
