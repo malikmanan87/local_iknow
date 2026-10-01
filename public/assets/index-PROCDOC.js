@@ -101,12 +101,17 @@ Error generating stack: `+e.message+`
     }
   };
 
+  let getDocUrl=docItem=>{
+    if(!docItem||!docItem.file_path)return"";
+    if(docItem.file_path.startsWith("http://")||docItem.file_path.startsWith("https://"))return docItem.file_path;
+    return"./"+docItem.file_path.replace(/^\/+/,"");
+  };
   let te=docItem=>{
     if(!docItem.file_path){
       T("Tiada fail PDF dilampirkan untuk dokumen ini. Sila klik butang edit (pensel) untuk memuat naik fail.","error");
       return;
     }
-    let fileUrl=docItem.full_url||(zi+docItem.file_path);
+    let fileUrl=getDocUrl(docItem);
     h(docItem.title);
     p(fileUrl);
   };
@@ -229,8 +234,11 @@ Error generating stack: `+e.message+`
         ]}),
         (0,L.jsxs)("div",{style:{borderTop:"1px solid var(--border-color)",paddingTop:"1rem",display:"flex",justifyContent:"space-between",alignItems:"center"},children:[
           (0,L.jsxs)("div",{style:{display:"flex",gap:"0.5rem"},children:[
-            hasPdf?(0,L.jsxs)("button",{className:"btn btn-secondary",onClick:()=>te(docItem),style:{padding:"0.45rem 0.85rem",fontSize:"0.85rem",display:"flex",alignItems:"center",gap:"0.35rem",borderColor:"var(--accent-cyan)",color:"var(--accent-cyan)"},title:"Lihat PDF secara langsung",children:[(0,L.jsx)(me,{size:15})," Lihat PDF"]}):(0,L.jsxs)("button",{className:"btn btn-secondary",onClick:()=>O(docItem),style:{padding:"0.45rem 0.85rem",fontSize:"0.85rem",display:"flex",alignItems:"center",gap:"0.35rem",borderColor:"#a855f7",color:"#c084fc"},title:"Muat naik fail untuk dokumen ini",children:[(0,L.jsx)(I,{size:15})," Muat Naik Fail"]}),
-            hasPdf&&(0,L.jsxs)("a",{href:docItem.full_url||(zi+docItem.file_path),download:docItem.file_name||"dokumen.pdf",className:"btn btn-secondary",style:{padding:"0.45rem 0.85rem",fontSize:"0.85rem",display:"flex",alignItems:"center",gap:"0.35rem"},target:"_blank",rel:"noreferrer",title:"Muat turun fail",children:[(0,L.jsx)(fe,{size:15})," Muat Turun"]})
+            hasPdf?(0,L.jsxs)("div",{style:{display:"flex",gap:"0.4rem",flexWrap:"wrap"},children:[
+              (0,L.jsxs)("a",{href:getDocUrl(docItem),target:"_blank",rel:"noreferrer",className:"btn btn-primary",style:{padding:"0.45rem 0.85rem",fontSize:"0.85rem",display:"flex",alignItems:"center",gap:"0.35rem",background:"linear-gradient(135deg, #0284c7, #2563eb)",border:"none",color:"#fff"},title:"Buka fail PDF dalam tab baharu secara langsung",children:[(0,L.jsx)(me,{size:15})," Buka PDF ↗"]}),
+              (0,L.jsxs)("button",{className:"btn btn-secondary",onClick:()=>te(docItem),style:{padding:"0.45rem 0.75rem",fontSize:"0.85rem",display:"flex",alignItems:"center",gap:"0.35rem",borderColor:"var(--accent-cyan)",color:"var(--accent-cyan)"},title:"Pratonton dalam bingkai paparan",children:[(0,L.jsx)(he,{size:15})," Pratonton"]}),
+              (0,L.jsxs)("a",{href:getDocUrl(docItem),download:docItem.file_name||"dokumen.pdf",className:"btn btn-secondary",style:{padding:"0.45rem 0.75rem",fontSize:"0.85rem",display:"flex",alignItems:"center",gap:"0.35rem"},target:"_blank",rel:"noreferrer",title:"Muat turun fail dokumen",children:[(0,L.jsx)(fe,{size:15})," Muat Turun"]})
+            ]}):(0,L.jsxs)("button",{className:"btn btn-secondary",onClick:()=>O(docItem),style:{padding:"0.45rem 0.85rem",fontSize:"0.85rem",display:"flex",alignItems:"center",gap:"0.35rem",borderColor:"#a855f7",color:"#c084fc"},title:"Muat naik fail untuk dokumen ini",children:[(0,L.jsx)(I,{size:15})," Muat Naik Fail"]})
           ]}),
           (0,L.jsxs)("div",{style:{display:"flex",gap:"0.4rem"},children:[
             (0,L.jsx)("button",{onClick:()=>O(docItem),style:{background:"none",border:"none",color:"var(--text-muted)",cursor:"pointer",padding:"0.35rem",borderRadius:"4px"},title:"Kemaskini maklumat",children:(0,L.jsx)(je,{size:16})}),
@@ -246,7 +254,7 @@ Error generating stack: `+e.message+`
           (0,L.jsx)("div",{style:{background:"rgba(168, 85, 247, 0.2)",color:"#c084fc",padding:"0.5rem",borderRadius:"8px"},children:(0,L.jsx)(he,{size:20})}),
           (0,L.jsxs)("div",{children:[
             (0,L.jsx)("h3",{style:{margin:0,fontSize:"1.15rem",fontWeight:700},children:m}),
-            (0,L.jsx)("span",{style:"font-size:0.8rem;color:var(--text-muted)",children:"Pemapar Dokumen PDF"})
+            (0,L.jsx)("span",{style:{fontSize:"0.8rem",color:"var(--text-muted)"},children:"Pemapar Dokumen PDF"})
           ]})
         ]}),
         (0,L.jsxs)("div",{style:{display:"flex",alignItems:"center",gap:"0.5rem"},children:[
@@ -254,6 +262,10 @@ Error generating stack: `+e.message+`
           (0,L.jsxs)("a",{href:f,download:!0,className:"btn btn-secondary",style:{fontSize:"0.85rem",padding:"0.4rem 0.75rem"},children:[(0,L.jsx)(fe,{size:15})," Muat Turun"]}),
           (0,L.jsx)("button",{onClick:()=>p(null),style:{background:"none",border:"none",color:"var(--text-muted)",cursor:"pointer",padding:"0.35rem"},children:(0,L.jsx)(Je,{size:22})})
         ]})
+      ]}),
+      (0,L.jsxs)("div",{style:{background:"rgba(59, 130, 246, 0.1)",border:"1px solid rgba(59, 130, 246, 0.25)",padding:"0.6rem 1rem",borderRadius:"8px",marginBottom:"0.85rem",display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:"0.84rem"},children:[
+        (0,L.jsx)("span",{children:"ℹ️ Untuk paparan yang lebih lancar dan pantas (fail PDF 68MB+), anda boleh terus buka fail dalam tab baharu."}),
+        (0,L.jsxs)("a",{href:f,target:"_blank",rel:"noreferrer",className:"btn btn-primary",style:{padding:"0.35rem 0.75rem",fontSize:"0.82rem",background:"#2563eb",border:"none",display:"flex",alignItems:"center",gap:"0.3rem"},children:[(0,L.jsx)(me,{size:14})," Buka Tab Penuh ↗"]})
       ]}),
       (0,L.jsx)("div",{style:{flex:1,width:"100%",background:"#1e293b",borderRadius:"8px",overflow:"hidden"},children:
         (0,L.jsx)("iframe",{src:f,title:m,style:{width:"100%",height:"100%",border:"none"}})

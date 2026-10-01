@@ -185,14 +185,22 @@ export default function FinanceProcurement() {
     }
   };
 
+  const getDocFileUrl = (doc) => {
+    if (!doc || !doc.file_path) return '';
+    if (doc.file_path.startsWith('http://') || doc.file_path.startsWith('https://')) {
+      return doc.file_path;
+    }
+    return './' + doc.file_path.replace(/^\/+/, '');
+  };
+
   const handlePreviewPdf = (doc) => {
     if (!doc.file_path) {
       showToast('Tiada fail PDF dilampirkan untuk dokumen ini. Sila kemaskini untuk muat naik.', 'error');
       return;
     }
-    const fullUrl = doc.full_url || (UPLOAD_BASE_URL + doc.file_path);
+    const fileUrl = getDocFileUrl(doc);
     setPreviewTitle(doc.title);
-    setPreviewPdfUrl(fullUrl);
+    setPreviewPdfUrl(fileUrl);
   };
 
   // Helper to count stats
@@ -518,16 +526,39 @@ export default function FinanceProcurement() {
 
                 {/* Card Actions */}
                 <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                     {hasPdf ? (
-                      <button 
-                        className="btn btn-secondary"
-                        onClick={() => handlePreviewPdf(doc)}
-                        style={{ padding: '0.45rem 0.85rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.35rem', borderColor: 'var(--accent-cyan)', color: 'var(--accent-cyan)' }}
-                        title="Lihat PDF secara langsung"
-                      >
-                        <Eye size={15} /> Lihat PDF
-                      </button>
+                      <>
+                        <a 
+                          href={getDocFileUrl(doc)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn btn-primary"
+                          style={{ padding: '0.45rem 0.85rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.35rem', background: 'linear-gradient(135deg, #0284c7, #2563eb)', border: 'none', color: '#fff' }}
+                          title="Buka fail PDF dalam tab baharu secara langsung"
+                        >
+                          <Eye size={15} /> Buka PDF ↗
+                        </a>
+                        <button 
+                          className="btn btn-secondary"
+                          onClick={() => handlePreviewPdf(doc)}
+                          style={{ padding: '0.45rem 0.75rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.35rem', borderColor: 'var(--accent-cyan)', color: 'var(--accent-cyan)' }}
+                          title="Pratonton dalam bingkai paparan"
+                        >
+                          <FileText size={15} /> Pratonton
+                        </button>
+                        <a 
+                          href={getDocFileUrl(doc)}
+                          download={doc.file_name || 'dokumen.pdf'}
+                          className="btn btn-secondary"
+                          style={{ padding: '0.45rem 0.75rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                          title="Muat turun fail dokumen"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <Download size={15} /> Muat Turun
+                        </a>
+                      </>
                     ) : (
                       <button 
                         className="btn btn-secondary"
@@ -537,19 +568,6 @@ export default function FinanceProcurement() {
                       >
                         <PlusCircle size={15} /> Muat Naik Fail
                       </button>
-                    )}
-                    {hasPdf && (
-                      <a 
-                        href={doc.full_url || (UPLOAD_BASE_URL + doc.file_path)}
-                        download={doc.file_name || 'dokumen.pdf'}
-                        className="btn btn-secondary"
-                        style={{ padding: '0.45rem 0.85rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
-                        title="Muat turun fail"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <Download size={15} /> Muat Turun
-                      </a>
                     )}
                   </div>
 
@@ -622,6 +640,20 @@ export default function FinanceProcurement() {
                   <X size={22} />
                 </button>
               </div>
+            </div>
+
+            {/* Quick Action Info Banner */}
+            <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.25)', padding: '0.6rem 1rem', borderRadius: '8px', marginBottom: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.84rem' }}>
+              <span>ℹ️ Untuk paparan yang lebih lancar dan pantas (fail PDF 68MB+), anda disyorkan terus membuka fail dalam tab baharu.</span>
+              <a 
+                href={previewPdfUrl} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="btn btn-primary" 
+                style={{ padding: '0.35rem 0.75rem', fontSize: '0.82rem', background: '#2563eb', border: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+              >
+                <Eye size={14} /> Buka Tab Penuh ↗
+              </a>
             </div>
 
             {/* Embedded Iframe */}

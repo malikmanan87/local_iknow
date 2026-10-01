@@ -133,3 +133,8 @@ _modules/*
 node_modules/
 frontend/node_modules/
 frontend/dist/
+
+# Uploaded documents
+/public/uploads/documents/*
+!/public/uploads/documents/index.html
+
