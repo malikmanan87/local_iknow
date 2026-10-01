@@ -318,7 +318,7 @@ Error generating stack: `+e.message+`
         ]}),
         (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"flex-end",gap:"0.75rem"},children:[
           (0,L.jsx)("button",{type:"button",className:"btn btn-secondary",onClick:()=>l(!1),disabled:x,children:"Batal"}),
-          (0,L.jsx)("button",{type:"submit",className:"btn btn-primary",style:{background:"linear-gradient(135deg, #a855f7, #6366f1)",border:"none"},disabled:x,children:x?"Sedang Menyimpan...":u?"Simpan Kemaskini":"Daftar Dokumen"})
+          (0,L.jsx)("button",{type:"submit",className:"btn btn-primary",style:{background:"linear-gradient(135deg, #a855f7, #6366f1)",border:"none"},disabled:x,children:x?(C.file?`Sedang Memuat Naik (${(C.file.size/1048576).toFixed(1)} MB)...`:"Sedang Menyimpan..."):u?"Simpan Kemaskini":"Daftar Dokumen"})
         ]})
       ]})
     ]})})

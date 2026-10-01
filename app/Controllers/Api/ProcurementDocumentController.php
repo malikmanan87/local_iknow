@@ -23,6 +23,32 @@ class ProcurementDocumentController extends ResourceController {
         return round($bytes, $precision) . ' ' . $units[$pow];
     }
 
+    private function returnBytes($val) {
+        $val = trim((string)$val);
+        if (empty($val)) return 0;
+        $last = strtolower($val[strlen($val)-1]);
+        $val = (int) $val;
+        switch($last) {
+            case 'g': $val *= 1024 * 1024 * 1024; break;
+            case 'm': $val *= 1024 * 1024; break;
+            case 'k': $val *= 1024; break;
+        }
+        return $val;
+    }
+
+    private function checkUploadOverflow() {
+        $contentLength = (int) ($this->request->getServer('CONTENT_LENGTH') ?? 0);
+        $postMax = ini_get('post_max_size');
+        $postMaxBytes = $this->returnBytes($postMax);
+
+        if ($contentLength > 0 && ($contentLength > $postMaxBytes || (empty($this->request->getPost()) && empty($this->request->getFiles())))) {
+            $sentMb = round($contentLength / 1048576, 1);
+            $limitMb = round($postMaxBytes / 1048576, 1);
+            return "Saiz fail yang dihantar ({$sentMb} MB) melebihi had muat naik pelayan ({$limitMb} MB). Sila kecilkan fail atau pastikan konfigurasi post_max_size dan upload_max_filesize dinaikkan.";
+        }
+        return null;
+    }
+
     public function index() {
         $model = $this->getModelInstance();
         $db = Database::connect();
@@ -79,6 +105,10 @@ class ProcurementDocumentController extends ResourceController {
     }
 
     public function create() {
+        if ($overflowError = $this->checkUploadOverflow()) {
+            return $this->fail($overflowError, 413);
+        }
+
         $model = $this->getModelInstance();
 
         $title = $this->request->getPost('title') ?? '';
@@ -161,6 +191,10 @@ class ProcurementDocumentController extends ResourceController {
     }
 
     public function update($id = null) {
+        if ($overflowError = $this->checkUploadOverflow()) {
+            return $this->fail($overflowError, 413);
+        }
+
         $model = $this->getModelInstance();
         $doc = $model->find($id);
 

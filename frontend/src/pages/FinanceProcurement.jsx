@@ -794,7 +794,11 @@ export default function FinanceProcurement() {
                   style={{ background: 'linear-gradient(135deg, #a855f7, #6366f1)', border: 'none' }}
                   disabled={submitting}
                 >
-                  {submitting ? 'Sedang Menyimpan...' : (editingDoc ? 'Simpan Kemaskini' : 'Daftar Dokumen')}
+                  {submitting ? (
+                    formData.file ? `Sedang Memuat Naik (${(formData.file.size / 1048576).toFixed(1)} MB)...` : 'Sedang Menyimpan...'
+                  ) : (
+                    editingDoc ? 'Simpan Kemaskini' : 'Daftar Dokumen'
+                  )}
                 </button>
               </div>
             </form>
