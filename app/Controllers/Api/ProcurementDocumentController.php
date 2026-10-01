@@ -41,10 +41,10 @@ class ProcurementDocumentController extends ResourceController {
         $postMax = ini_get('post_max_size');
         $postMaxBytes = $this->returnBytes($postMax);
 
-        if ($contentLength > 0 && ($contentLength > $postMaxBytes || (empty($this->request->getPost()) && empty($this->request->getFiles())))) {
+        if ($postMaxBytes > 0 && $contentLength > $postMaxBytes) {
             $sentMb = round($contentLength / 1048576, 1);
             $limitMb = round($postMaxBytes / 1048576, 1);
-            return "Saiz fail yang dihantar ({$sentMb} MB) melebihi had muat naik pelayan ({$limitMb} MB). Sila kecilkan fail atau pastikan konfigurasi post_max_size dan upload_max_filesize dinaikkan.";
+            return "Saiz fail yang dihantar ({$sentMb} MB) melebihi had muat naik pelayan ({$limitMb} MB). Sila kecilkan fail atau pastikan konfigurasi post_max_size dinaikkan.";
         }
         return null;
     }
