@@ -24,11 +24,12 @@ class StaffController extends ResourceController
     public function search()
     {
         $query = trim($this->request->getGet('q') ?? '');
+        $nokp  = trim($this->request->getGet('nokp') ?? '');
         $page  = max(1, (int) ($this->request->getGet('page') ?? 1));
         // API UniSZA menetapkan had maksimum limit <= 20
         $limit = max(1, min(20, (int) ($this->request->getGet('limit') ?? 10)));
 
-        if (empty($query)) {
+        if (empty($query) && empty($nokp)) {
             return $this->respond([
                 'success'       => true,
                 'total_found'   => 0,
@@ -45,11 +46,18 @@ class StaffController extends ResourceController
         $apiUrl = $this->getApiUrl();
         $apiKey = $this->getApiKey();
 
-        $queryParams = http_build_query([
-            'q'     => $query,
+        $params = [
             'page'  => $page,
             'limit' => $limit
-        ]);
+        ];
+        if (!empty($query)) {
+            $params['q'] = $query;
+        }
+        if (!empty($nokp)) {
+            $params['nokp'] = $nokp;
+        }
+
+        $queryParams = http_build_query($params);
 
         $fullUrl = $apiUrl . '?' . $queryParams;
 
@@ -78,8 +86,12 @@ class StaffController extends ResourceController
         $decoded = json_decode($response, true);
         if ($httpCode >= 400 || !$decoded) {
             $msg = 'Ralat semasa mendapatkan data staf daripada API.';
-            if (isset($decoded['detail'][0]['msg'])) {
-                $msg = $decoded['detail'][0]['msg'];
+            if (isset($decoded['detail'])) {
+                if (is_string($decoded['detail'])) {
+                    $msg = $decoded['detail'];
+                } elseif (is_array($decoded['detail']) && isset($decoded['detail'][0]['msg'])) {
+                    $msg = $decoded['detail'][0]['msg'];
+                }
             } elseif (isset($decoded['message'])) {
                 $msg = $decoded['message'];
             }

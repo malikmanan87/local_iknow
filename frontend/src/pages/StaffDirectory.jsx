@@ -8,6 +8,7 @@ import {
   Building2, 
   Phone, 
   CreditCard, 
+  Mail,
   ChevronLeft, 
   ChevronRight, 
   AlertCircle,
@@ -31,6 +32,7 @@ export default function StaffDirectory() {
   const [error, setError] = useState(null);
   const [copiedIc, setCopiedIc] = useState(null);
   const [copiedName, setCopiedName] = useState(null);
+  const [copiedEmail, setCopiedEmail] = useState(null);
   const debounceTimerRef = useRef(null);
 
   // Format Malaysian IC (e.g. 940413145823 -> 940413-14-5823)
@@ -176,6 +178,30 @@ export default function StaffDirectory() {
     setCopiedName(nama);
     setTimeout(() => {
       setCopiedName(null);
+    }, 2000);
+  };
+
+  // Auto Copy Email (salin bahagian sebelum simbol @)
+  const handleCopyEmail = (email) => {
+    if (!email) return;
+
+    // Ambil bahagian sebelum simbol '@' (e.g. malikmanan daripada malikmanan@unisza.edu.my)
+    const username = email.includes('@') ? email.split('@')[0] : email;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(username);
+    } else {
+      const textArea = document.createElement('textarea');
+      textArea.value = username;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+
+    setCopiedEmail(email);
+    setTimeout(() => {
+      setCopiedEmail(null);
     }, 2000);
   };
 
@@ -336,7 +362,7 @@ export default function StaffDirectory() {
       {/* Table Container */}
       <div className="glass-panel" style={{ overflow: 'hidden', padding: 0 }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '750px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '900px' }}>
             <thead>
               <tr style={{ 
                 background: 'rgba(255, 255, 255, 0.03)', 
@@ -347,25 +373,31 @@ export default function StaffDirectory() {
                 letterSpacing: '0.75px'
               }}>
                 <th style={{ padding: '1rem 1.25rem', width: '50px', textAlign: 'center' }}>#</th>
-                <th style={{ padding: '1rem 1.25rem', width: '280px' }}>
+                <th style={{ padding: '1rem 1.25rem', width: '220px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Mail size={15} />
+                    <span>E-mel (Klik Salin)</span>
+                  </div>
+                </th>
+                <th style={{ padding: '1rem 1.25rem', width: '260px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <span>Nama Staf (Klik Salin)</span>
                   </div>
                 </th>
-                <th style={{ padding: '1rem 1.25rem', width: '180px' }}>
+                <th style={{ padding: '1rem 1.25rem', width: '170px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <CreditCard size={15} />
                     <span>No. KP (Klik Salin)</span>
                   </div>
                 </th>
-                <th style={{ padding: '1rem 1.25rem', width: '170px' }}>Gred / Skim</th>
+                <th style={{ padding: '1rem 1.25rem', width: '140px' }}>Gred / Skim</th>
                 <th style={{ padding: '1rem 1.25rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <Building2 size={15} />
                     <span>Jabatan / Fakulti</span>
                   </div>
                 </th>
-                <th style={{ padding: '1rem 1.25rem', width: '150px' }}>
+                <th style={{ padding: '1rem 1.25rem', width: '140px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <Phone size={15} />
                     <span>No. Telefon</span>
@@ -380,6 +412,9 @@ export default function StaffDirectory() {
                   <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
                     <td style={{ padding: '1.25rem', textAlign: 'center' }}>
                       <div style={{ height: '14px', width: '18px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', margin: '0 auto' }}></div>
+                    </td>
+                    <td style={{ padding: '1.25rem' }}>
+                      <div style={{ height: '14px', width: '150px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px' }}></div>
                     </td>
                     <td style={{ padding: '1.25rem' }}>
                       <div style={{ height: '16px', width: '200px', background: 'rgba(255,255,255,0.08)', borderRadius: '4px', marginBottom: '6px' }}></div>
@@ -404,6 +439,8 @@ export default function StaffDirectory() {
                   const rowIndex = (currentPage - 1) * pageSize + index + 1;
                   const isCopied = copiedIc === staff.nokp;
                   const isNameCopied = copiedName === staff.nama;
+                  const emailValue = staff.email || staff.emel || null;
+                  const isEmailCopied = copiedEmail === emailValue;
                   const formattedIc = formatIcNumber(staff.nokp);
                   const formattedPhone = formatPhoneNumber(staff.no_tel);
 
@@ -420,6 +457,58 @@ export default function StaffDirectory() {
                       {/* Bilangan */}
                       <td style={{ padding: '1.1rem 1.25rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                         {rowIndex}
+                      </td>
+
+                      {/* E-mel dengan Klik Auto-Copy */}
+                      <td style={{ padding: '1.1rem 1.25rem' }}>
+                        {emailValue ? (
+                          <button
+                            type="button"
+                            onClick={() => handleCopyEmail(emailValue)}
+                            title="Klik untuk salin ID emel"
+                            style={{
+                              background: isEmailCopied ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                              border: `1px solid ${isEmailCopied ? 'var(--accent-emerald)' : 'transparent'}`,
+                              color: isEmailCopied ? 'var(--accent-emerald)' : '#e2e8f0',
+                              padding: '0.35rem 0.6rem',
+                              margin: '-0.35rem -0.6rem',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                              fontFamily: 'inherit'
+                            }}
+                            onMouseOver={(e) => {
+                              if (!isEmailCopied) {
+                                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                              }
+                            }}
+                            onMouseOut={(e) => {
+                              if (!isEmailCopied) {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.borderColor = 'transparent';
+                              }
+                            }}
+                          >
+                            <span style={{ fontSize: '0.9rem', wordBreak: 'break-all' }}>
+                              {emailValue}
+                            </span>
+                            {isEmailCopied ? (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontWeight: 600, fontSize: '0.75rem', color: 'var(--accent-emerald)', flexShrink: 0 }}>
+                                <Check size={14} color="var(--accent-emerald)" />
+                                <span>Disalin!</span>
+                              </span>
+                            ) : (
+                              <Copy size={13} style={{ opacity: 0.35, flexShrink: 0 }} />
+                            )}
+                          </button>
+                        ) : (
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>-</span>
+                        )}
                       </td>
 
                       {/* Nama Staf dengan Klik Auto-Copy */}
@@ -579,7 +668,7 @@ export default function StaffDirectory() {
               ) : activeQuery ? (
                 // No Results State
                 <tr>
-                  <td colSpan={6} style={{ padding: '3.5rem 1rem', textAlign: 'center' }}>
+                  <td colSpan={7} style={{ padding: '3.5rem 1rem', textAlign: 'center' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
                       <div style={{
                         background: 'rgba(255, 255, 255, 0.04)',
@@ -599,7 +688,7 @@ export default function StaffDirectory() {
               ) : (
                 // Initial Empty State
                 <tr>
-                  <td colSpan={6} style={{ padding: '4rem 1rem', textAlign: 'center' }}>
+                  <td colSpan={7} style={{ padding: '4rem 1rem', textAlign: 'center' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
                       <div style={{
                         background: 'rgba(16, 185, 129, 0.08)',
@@ -611,7 +700,7 @@ export default function StaffDirectory() {
                       </div>
                       <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Pencarian Direktori Staf</h3>
                       <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', maxWidth: '420px', lineHeight: 1.5 }}>
-                        Taipkan nama staf pada kotak carian di atas untuk mendapatkan maklumat perjawatan, no. kad pengenalan, fakulti, dan no. telefon.
+                        Taipkan nama staf pada kotak carian di atas untuk mendapatkan maklumat perjawatan, no. kad pengenalan, e-mel, fakulti, dan no. telefon.
                       </p>
                     </div>
                   </td>
