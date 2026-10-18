@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import ModuleDetail from './pages/ModuleDetail';
@@ -7,6 +7,7 @@ import NotesManager from './pages/NotesManager';
 import StaffDirectory from './pages/StaffDirectory';
 import FinanceProcurement from './pages/FinanceProcurement';
 import AddModuleModal from './components/AddModuleModal';
+import { getBackupStatus, runManualBackup } from './services/api';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -15,6 +16,43 @@ export default function App() {
   const [editModuleData, setEditModuleData] = useState(null);
   const [showAddModule, setShowAddModule] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Backup status state
+  const [backupInfo, setBackupInfo] = useState(null);
+  const [backingUp, setBackingUp] = useState(false);
+
+  // Auto-backup setiap kali aplikasi iKNOW dibuka
+  const checkAndBackup = async (auto = true) => {
+    try {
+      const res = await getBackupStatus(auto);
+      setBackupInfo(res.data);
+    } catch (err) {
+      console.error('Ralat menyemak status backup:', err);
+    }
+  };
+
+  const handleManualBackup = async () => {
+    setBackingUp(true);
+    try {
+      const res = await runManualBackup();
+      if (res.data?.info) {
+        setBackupInfo(res.data.info);
+      }
+    } catch (err) {
+      console.error('Ralat manual backup:', err);
+      alert('Gagal menghasilkan sandaran pangkalan data.');
+    } finally {
+      setBackingUp(false);
+    }
+  };
+
+  useEffect(() => {
+    checkAndBackup(true); // Auto backup semasa buka sistem (atau jika terlepas waktu 8:00 AM)
+    const interval = setInterval(() => {
+      checkAndBackup(true); // Semak kitaran setiap minit (cth: apabila melepasi jam 8:00 AM)
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSelectModule = (id, tab = 'flows') => {
     setSelectedModuleId(id);
@@ -35,6 +73,9 @@ export default function App() {
         onOpenAddModule={() => { setEditModuleData(null); setShowAddModule(true); }}
         activeTab={activeTab}
         setActiveTab={handleSetTab}
+        backupInfo={backupInfo}
+        backingUp={backingUp}
+        onManualBackup={handleManualBackup}
       />
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem', paddingBottom: '3rem' }}>
@@ -51,6 +92,9 @@ export default function App() {
             key={refreshTrigger}
             onSelectModule={handleSelectModule}
             onEditModule={(moduleData) => { setEditModuleData(moduleData); setShowAddModule(true); }}
+            backupInfo={backupInfo}
+            backingUp={backingUp}
+            onManualBackup={handleManualBackup}
           />
         ) : (
           <ModuleDetail

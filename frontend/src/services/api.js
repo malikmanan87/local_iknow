@@ -112,3 +112,7 @@ export const updateProcurementDocument  = (id, data) => {
 };
 export const deleteProcurementDocument  = (id) => api.delete(`/procurement-documents/${id}`);
 
+// Database Backup
+export const getBackupStatus = (auto = false) => api.get('/backup/status', { params: { auto: auto ? 1 : 0 } });
+export const runManualBackup = () => api.post('/backup/run');
+

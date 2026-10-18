@@ -101,5 +101,9 @@ $routes->group('api', function($routes) {
     $routes->post('procurement-documents', 'Api\ProcurementDocumentController::create');
     $routes->match(['put', 'post'], 'procurement-documents/(:num)', 'Api\ProcurementDocumentController::update/$1');
     $routes->delete('procurement-documents/(:num)', 'Api\ProcurementDocumentController::delete/$1');
+
+    // Database Auto-Backup & Manual Trigger
+    $routes->get('backup/status', 'Api\BackupController::status');
+    $routes->post('backup/run',   'Api\BackupController::run');
 });
 

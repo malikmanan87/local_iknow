@@ -138,3 +138,8 @@ frontend/dist/
 /public/uploads/documents/*
 !/public/uploads/documents/index.html
 
+# Database Backups & Dumps
+iknow_db_backup/
+*.sql
+*.backup.js
+

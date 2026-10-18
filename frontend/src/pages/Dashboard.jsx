@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Layers, AlertCircle, ArrowRight, Trash2, RefreshCw, Pencil, GitCommit, AlertTriangle, Phone, FileText, CheckCircle } from 'lucide-react';
+import { Search, Layers, AlertCircle, ArrowRight, Trash2, RefreshCw, Pencil, GitCommit, AlertTriangle, Phone, FileText, CheckCircle, Database } from 'lucide-react';
 import { getModules, deleteModule, searchSystem } from '../services/api';
 
-export default function Dashboard({ onSelectModule, onEditModule }) {
+export default function Dashboard({ onSelectModule, onEditModule, backupInfo, backingUp, onManualBackup }) {
   const [modules, setModules] = useState([]);
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState(null);
@@ -92,6 +92,58 @@ export default function Dashboard({ onSelectModule, onEditModule }) {
             </button>
           )}
         </div>
+
+        {/* Simple Database Backup Status Strip */}
+        {backupInfo && (
+          <div style={{
+            marginTop: '1.15rem',
+            padding: '0.35rem 0.85rem',
+            background: 'rgba(15, 23, 42, 0.5)',
+            border: '1px solid rgba(255, 255, 255, 0.09)',
+            borderRadius: '999px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.6rem',
+            fontSize: '0.78rem',
+            color: 'var(--text-muted)'
+          }}
+          title={`Sandaran Pangkalan Data Harian (iknow_db_backup):\nKitaran: Setiap 24 Jam (8:00 AM)\nFail: iknow_db_backup/${backupInfo.file_name}\nSeterusnya: ${backupInfo.next_cycle_formatted || '-'}`}>
+            <span style={{
+              width: '7px',
+              height: '7px',
+              borderRadius: '50%',
+              background: backupInfo.status === 'healthy' ? '#10b981' : '#f59e0b',
+              boxShadow: `0 0 6px ${backupInfo.status === 'healthy' ? '#10b981' : '#f59e0b'}`,
+              flexShrink: 0
+            }} />
+            <span>
+              Backup DB (8 AM): <strong style={{ color: '#e2e8f0', fontWeight: 600 }}>{backupInfo.last_backup_formatted || '-'}</strong>
+              <span style={{ opacity: 0.8, marginLeft: '0.25rem' }}>({backupInfo.file_size || '0 B'})</span>
+            </span>
+            <span style={{ opacity: 0.35 }}>•</span>
+            <button
+              onClick={onManualBackup}
+              disabled={backingUp}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#38bdf8',
+                cursor: backingUp ? 'not-allowed' : 'pointer',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                padding: '0.15rem 0.4rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                borderRadius: '6px'
+              }}
+              title="Klik untuk sandar sekarang"
+            >
+              <RefreshCw size={12} className={backingUp ? 'spin' : ''} />
+              {backingUp ? 'Menyandar...' : 'Sandar Sekarang'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Global Search Results Mode */}
