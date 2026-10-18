@@ -1,6 +1,6 @@
 /**
  * iKNOW Database Daily Backup Widget (Every 24 Hours Starting 8:00 AM)
- * Paparan ringkas dan minimalist untuk sandaran pangkalan data harian.
+ * Paparan ringkas dan minimalist untuk sandaran pangkalan data harian pada Dashboard sahaja.
  */
 (function() {
   'use strict';
@@ -17,7 +17,6 @@
     return origin + cleanPath + 'api/backup';
   }
 
-  const dbSmallIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"></path></svg>`;
   const refreshIconSvg = `<svg class="spin-icon iknow-spin" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg>`;
 
   // Inject CSS styles
@@ -87,29 +86,6 @@
         opacity: 0.6;
         cursor: not-allowed;
       }
-      .iknow-nav-backup-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.45rem;
-        padding: 0.35rem 0.85rem;
-        border-radius: 999px;
-        font-size: 0.78rem;
-        font-weight: 500;
-        cursor: pointer;
-        user-select: none;
-        transition: all 0.2s ease;
-        margin-left: 0.75rem;
-      }
-      .iknow-nav-backup-badge.healthy {
-        background: rgba(16, 185, 129, 0.12);
-        border: 1px solid rgba(16, 185, 129, 0.3);
-        color: #34d399;
-      }
-      .iknow-nav-backup-badge.warning {
-        background: rgba(245, 158, 11, 0.12);
-        border: 1px solid rgba(245, 158, 11, 0.3);
-        color: #fbbf24;
-      }
       @keyframes iknow-spin {
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
@@ -155,50 +131,11 @@
     }
   }
 
-  function renderNavbarBadge() {
-    if (!backupData) return;
-    const navbar = document.querySelector('.navbar');
-    if (!navbar) return;
-
-    let badge = document.getElementById('iknow-nav-backup-badge');
-    const stateKey = `${backupData.last_backup_timestamp}_${backupData.file_size}_${isBackingUp}`;
-
-    if (!badge) {
-      badge = document.createElement('div');
-      badge.id = 'iknow-nav-backup-badge';
-      badge.addEventListener('click', runManualBackup);
-      
-      const logoContainer = navbar.querySelector('.logo-container');
-      if (logoContainer && logoContainer.parentNode) {
-        logoContainer.insertAdjacentElement('afterend', badge);
-      }
-    }
-
-    if (badge.dataset.stateKey === stateKey) {
-      return;
-    }
-    badge.dataset.stateKey = stateKey;
-
-    const isHealthy = backupData.status === 'healthy';
-    badge.className = `iknow-nav-backup-badge ${isHealthy ? 'healthy' : 'warning'}`;
-    badge.title = `Sandaran Pangkalan Data Harian:\n` +
-      `Kitaran: Setiap 24 Jam (8:00 AM)\n` +
-      `Waktu: ${backupData.last_backup_formatted || '-'}\n` +
-      `Seterusnya: ${backupData.next_cycle_formatted || '-'}\n` +
-      `Fail: iknow_db_backup/${backupData.file_name || '-'}\n` +
-      `Saiz: ${backupData.file_size || '-'}\n\n` +
-      `Klik untuk buat sandaran baru serta-merta.`;
-
-    badge.innerHTML = `
-      <span class="${isBackingUp ? 'iknow-spin' : ''}" style="display:inline-flex; align-items:center;">
-        ${dbSmallIconSvg}
-      </span>
-      <span>${isBackingUp ? 'Menyandar...' : 'Backup 8AM: ' + (backupData.last_backup_relative || 'Aktif')}</span>
-      <span style="font-size:0.7rem; opacity:0.85;">(${backupData.file_size || '0 B'})</span>
-    `;
-  }
-
   function renderDashboardCard() {
+    // Pastikan jika ada badge navbar lama terlekat, padamkannya
+    const oldNavbarBadge = document.getElementById('iknow-nav-backup-badge');
+    if (oldNavbarBadge) oldNavbarBadge.remove();
+
     if (!backupData) return;
     
     const glassPanel = document.querySelector('.glass-panel');
@@ -254,7 +191,6 @@
     if (isUpdatingDom) return;
     isUpdatingDom = true;
     try {
-      renderNavbarBadge();
       renderDashboardCard();
     } finally {
       isUpdatingDom = false;
@@ -268,7 +204,7 @@
     for (let i = 0; i < mutations.length; i++) {
       const target = mutations[i].target;
       if (target && target.closest) {
-        if (target.closest('#iknow-dashboard-backup-card') || target.closest('#iknow-nav-backup-badge')) {
+        if (target.closest('#iknow-dashboard-backup-card')) {
           continue;
         }
       }

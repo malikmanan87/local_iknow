@@ -73,9 +73,6 @@ export default function App() {
         onOpenAddModule={() => { setEditModuleData(null); setShowAddModule(true); }}
         activeTab={activeTab}
         setActiveTab={handleSetTab}
-        backupInfo={backupInfo}
-        backingUp={backingUp}
-        onManualBackup={handleManualBackup}
       />
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem', paddingBottom: '3rem' }}>
