@@ -143,7 +143,7 @@ export default function NotesManager() {
   const categories = Array.from(new Set([...baseCategories, ...dynamicCategories]));
 
   return (
-    <div style={{ padding: '2rem 0' }}>
+    <div style={{ padding: '1.25rem 0' }}>
       {/* Toast Notification */}
       {notification && (
         <div style={{
@@ -172,8 +172,8 @@ export default function NotesManager() {
       <div 
         className="glass-panel" 
         style={{ 
-          padding: '2.5rem', 
-          marginBottom: '2rem', 
+          padding: '1.25rem 1.5rem', 
+          marginBottom: '1.25rem', 
           textAlign: 'center', 
           background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(99, 102, 241, 0.1))',
           border: '1px solid rgba(245, 158, 11, 0.25)'
@@ -182,29 +182,29 @@ export default function NotesManager() {
         <div style={{ 
           display: 'inline-flex', 
           alignItems: 'center', 
-          gap: '0.6rem', 
+          gap: '0.45rem', 
           background: 'rgba(245, 158, 11, 0.15)', 
           color: 'var(--accent-amber)', 
-          padding: '0.4rem 1.1rem', 
+          padding: '0.25rem 0.75rem', 
           borderRadius: '9999px', 
-          fontSize: '0.85rem', 
+          fontSize: '0.75rem', 
           fontWeight: 700, 
-          marginBottom: '1rem', 
+          marginBottom: '0.45rem', 
           border: '1px solid rgba(245, 158, 11, 0.3)' 
         }}>
-          <StickyNote size={16} /> PAPAN NOTA & TAMPALAN
+          <StickyNote size={13} /> PAPAN NOTA & TAMPALAN
         </div>
 
-        <h1 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '-0.5px' }}>
+        <h1 style={{ fontSize: '1.45rem', fontWeight: 800, marginBottom: '0.3rem', letterSpacing: '-0.3px' }}>
           Papan Nota Pantas & Salin-Tampal
         </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', maxWidth: '650px', margin: '0 auto 1.5rem auto', lineHeight: '1.6' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '650px', margin: '0 auto 0.85rem auto', lineHeight: '1.4' }}>
           Simpan catatan, skrip, arahan kerja, atau mesej rujukan pasukan. Dilengkapi butang <strong>Salin & Tampal Pantas</strong> serta <strong>Kunci Perlindungan</strong>.
         </p>
 
         {/* Global Search Bar */}
-        <div style={{ maxWidth: '600px', margin: '0 auto', position: 'relative' }}>
-          <Search style={{ position: 'absolute', left: '1.2rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={20} />
+        <div style={{ maxWidth: '560px', margin: '0 auto', position: 'relative' }}>
+          <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={18} />
           <input 
             type="text" 
             className="form-input" 
@@ -212,18 +212,18 @@ export default function NotesManager() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{ 
-              paddingLeft: '3.2rem', 
-              paddingRight: search ? '3rem' : '1rem', 
-              paddingTop: '0.85rem', 
-              paddingBottom: '0.85rem', 
-              fontSize: '0.98rem', 
-              borderRadius: '12px' 
+              paddingLeft: '2.75rem', 
+              paddingRight: search ? '2.5rem' : '0.85rem', 
+              paddingTop: '0.55rem', 
+              paddingBottom: '0.55rem', 
+              fontSize: '0.88rem', 
+              borderRadius: '10px' 
             }}
           />
           {search && (
             <button 
               onClick={() => setSearch('')}
-              style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}
+              style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.1rem' }}
             >
               ✕
             </button>
