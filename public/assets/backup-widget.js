@@ -164,7 +164,8 @@
     card.title = `Sandaran Pangkalan Data Harian (iknow_db_backup):\n` +
       `Kitaran: Setiap 24 Jam (8:00 AM)\n` +
       `Fail: iknow_db_backup/${backupData.file_name || '-'}\n` +
-      `Seterusnya: ${backupData.next_cycle_formatted || '-'}`;
+      `Seterusnya: ${backupData.next_cycle_formatted || '-'}\n` +
+      `Dasar Simpanan: ${backupData.retention_label || 'Simpanan 30 Hari (Pembersihan Automatik)'}`;
 
     card.innerHTML = `
       <span class="iknow-simple-dot ${isHealthy ? 'healthy' : 'warning'}"></span>

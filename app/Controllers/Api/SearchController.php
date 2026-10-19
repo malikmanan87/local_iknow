@@ -89,16 +89,49 @@ class SearchController extends ResourceController {
             ->groupEnd()
             ->get()->getResultArray();
 
-        $totalResults = count($modules) + count($submodules) + count($flows) + count($issues) + count($solutions) + count($contacts);
+        // 7. Papan Nota & Skrip (Notes)
+        $notes = [];
+        if ($db->tableExists('notes')) {
+            $notes = $db->table('notes')
+                ->groupStart()
+                    ->like('title', $q)
+                    ->orLike('category', $q)
+                    ->orLike('content', $q)
+                    ->orLike('author', $q)
+                ->groupEnd()
+                ->orderBy('id', 'DESC')
+                ->limit(10)
+                ->get()->getResultArray();
+        }
+
+        // 8. Dokumen Kewangan & Perolehan (Procurement)
+        $procurement = [];
+        if ($db->tableExists('procurement_documents')) {
+            $procurement = $db->table('procurement_documents')
+                ->groupStart()
+                    ->like('title', $q)
+                    ->orLike('reference_no', $q)
+                    ->orLike('category', $q)
+                    ->orLike('description', $q)
+                    ->orLike('tags', $q)
+                ->groupEnd()
+                ->orderBy('id', 'DESC')
+                ->limit(10)
+                ->get()->getResultArray();
+        }
+
+        $totalResults = count($modules) + count($submodules) + count($flows) + count($issues) + count($solutions) + count($contacts) + count($notes) + count($procurement);
 
         return $this->respond([
-            'query' => $q,
-            'modules' => $modules,
-            'submodules' => $submodules,
-            'flows' => $flows,
-            'issues' => $issues,
-            'solutions' => $solutions,
-            'contacts' => $contacts,
+            'query'         => $q,
+            'modules'       => $modules,
+            'submodules'    => $submodules,
+            'flows'         => $flows,
+            'issues'        => $issues,
+            'solutions'     => $solutions,
+            'contacts'      => $contacts,
+            'notes'         => $notes,
+            'procurement'   => $procurement,
             'total_results' => $totalResults
         ]);
     }

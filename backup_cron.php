@@ -42,6 +42,29 @@ $returnVar = -1;
 
 $dumpContent = implode("\n", $output);
 
+/**
+ * Dasar Pembersihan Automatik (Retention Policy: 30 Hari)
+ */
+function applyRetentionPolicy($backupDir, $dailyPath, $logFile, $timestampFormatted, $retentionDays = 30) {
+    $cutoff = time() - ($retentionDays * 86400);
+    $files = glob($backupDir . 'iknow_db_backup_*.sql');
+    if (!empty($files)) {
+        foreach ($files as $file) {
+            if (str_contains($file, '_latest.sql') || $file === $dailyPath) {
+                continue;
+            }
+            if (filemtime($file) < $cutoff) {
+                $base = basename($file);
+                if (@unlink($file)) {
+                    $cleanMsg = "[$timestampFormatted] RETENTION POLICY: Fail arkib dipadam (melebihi {$retentionDays} hari): $base\n";
+                    echo $cleanMsg;
+                    @file_put_contents($logFile, $cleanMsg, FILE_APPEND);
+                }
+            }
+        }
+    }
+}
+
 if ($returnVar === 0 && strlen($dumpContent) > 1000 && str_contains($dumpContent, 'Dump completed')) {
     @file_put_contents($dailyPath, $dumpContent);
     @file_put_contents($folderLatestPath, $dumpContent);
@@ -51,6 +74,8 @@ if ($returnVar === 0 && strlen($dumpContent) > 1000 && str_contains($dumpContent
     $msg = "[$timestampFormatted] BERJAYA: Sandaran pangkalan data disimpan ke $dailyPath (" . filesize($dailyPath) . " bytes)\n";
     echo $msg;
     @file_put_contents($logFile, $msg, FILE_APPEND);
+
+    applyRetentionPolicy($backupDir, $dailyPath, $logFile, $timestampFormatted, 30);
     exit(0);
 } else {
     // Fallback enjin PHP
@@ -96,6 +121,8 @@ if ($returnVar === 0 && strlen($dumpContent) > 1000 && str_contains($dumpContent
         $msg = "[$timestampFormatted] BERJAYA (PHP Engine): Sandaran disimpan ke $dailyPath (" . filesize($dailyPath) . " bytes)\n";
         echo $msg;
         @file_put_contents($logFile, $msg, FILE_APPEND);
+
+        applyRetentionPolicy($backupDir, $dailyPath, $logFile, $timestampFormatted, 30);
         exit(0);
     } catch (Exception $e) {
         $msg = "[$timestampFormatted] GAGAL: " . $e->getMessage() . "\n";

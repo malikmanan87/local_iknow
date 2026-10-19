@@ -21,6 +21,7 @@ import {
 import { getNotes, deleteNote, toggleNoteLock } from '../services/api';
 import NoteModal from '../components/NoteModal';
 import { showAlert, showError, showConfirm } from '../utils/swal';
+import { highlightCode } from '../utils/syntaxHighlight';
 
 export default function NotesManager() {
   const [notes, setNotes] = useState([]);
@@ -433,26 +434,33 @@ export default function NotesManager() {
                     {note.title}
                   </h3>
 
-                  {/* KOTAK KANDUNGAN NOTA */}
-                  <div style={{ position: 'relative', marginBottom: '0.85rem' }}>
-                    <div 
-                      style={{ 
-                        background: '#090d16',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        borderRadius: '10px',
-                        padding: '0.9rem',
-                        fontFamily: 'Consolas, "Fira Code", monospace, sans-serif',
-                        fontSize: '0.88rem',
-                        lineHeight: '1.55',
-                        color: '#f1f5f9',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word',
-                        maxHeight: !isExpanded && isLong ? '140px' : 'none',
-                        overflow: 'hidden'
-                      }}
-                    >
-                      {note.content}
-                    </div>
+                  {/* KOTAK KANDUNGAN NOTA BERSERTA SYNTAX HIGHLIGHTING */}
+                  {(() => {
+                    const highlighted = highlightCode(note.content, note.category);
+                    return (
+                      <div className="iknow-code-wrapper" style={{ position: 'relative', marginBottom: '0.85rem' }}>
+                        <div className="iknow-code-header">
+                          <span className={`iknow-code-lang-tag lang-${highlighted.lang}`}>{highlighted.label}</span>
+                          <button 
+                            className={`iknow-code-copy-btn ${isCopied ? 'copied' : ''}`}
+                            onClick={(e) => { e.stopPropagation(); handleCopy(note.id, note.content); }}
+                            title="Salin kod ini"
+                          >
+                            {isCopied ? <Check size={12} /> : <Copy size={12} />}
+                            <span>{isCopied ? 'Tersalin!' : 'Salin'}</span>
+                          </button>
+                        </div>
+                        <div 
+                          className="iknow-code-pre"
+                          style={{ 
+                            maxHeight: !isExpanded && isLong ? '140px' : 'none',
+                            overflow: 'hidden'
+                          }}
+                          dangerouslySetInnerHTML={{ __html: highlighted.html }}
+                        />
+                      </div>
+                    );
+                  })()}
 
                     {isLong && (
                       <div style={{ textAlign: 'center', marginTop: '0.35rem' }}>
