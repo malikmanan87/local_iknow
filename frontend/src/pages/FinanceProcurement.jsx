@@ -239,56 +239,58 @@ export default function FinanceProcurement() {
         </div>
       )}
 
-      {/* Header Banner */}
-      <div className="glass-panel" style={{ 
-        padding: '1.25rem 1.5rem', 
-        marginBottom: '1.25rem', 
-        textAlign: 'center', 
-        background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(59, 130, 246, 0.12))' 
+      {/* Page Header (No glass-panel banner) */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '1.5rem', 
+        flexWrap: 'wrap', 
+        gap: '1rem',
+        paddingBottom: '1rem',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
       }}>
-        <div style={{ 
-          display: 'inline-flex', 
-          alignItems: 'center', 
-          gap: '0.45rem', 
-          background: 'rgba(168, 85, 247, 0.2)', 
-          color: '#c084fc', 
-          padding: '0.25rem 0.75rem', 
-          borderRadius: '9999px', 
-          fontSize: '0.75rem', 
-          fontWeight: 600, 
-          marginBottom: '0.45rem' 
-        }}>
-          <FileCheck size={13} /> Modul Pengurusan & Tatakelola
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <span style={{ 
+              display: 'inline-flex', 
+              padding: '0.35rem', 
+              borderRadius: '8px', 
+              background: 'rgba(168, 85, 247, 0.15)', 
+              color: '#c084fc',
+              border: '1px solid rgba(168, 85, 247, 0.3)'
+            }}>
+              <FileCheck size={20} />
+            </span>
+            Kewangan & Perolehan
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', margin: '0.35rem 0 0 0' }}>
+            Pusat rujukan tatacara penyediaan laporan penilaian perolehan, garis panduan tender & sebut harga, serta templat dokumen.
+          </p>
         </div>
-        <h1 style={{ fontSize: '1.45rem', fontWeight: 800, marginBottom: '0.3rem', letterSpacing: '-0.3px' }}>
-          Kewangan & Perolehan
-        </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '700px', margin: '0 auto 0.85rem auto', lineHeight: '1.4' }}>
-          Pusat rujukan tatacara penyediaan laporan penilaian perolehan, garis panduan tender & sebut harga, SOP perolehan ICT, serta templat dokumen rasmi.
-        </p>
 
-        {/* Global Search Bar */}
-        <div style={{ maxWidth: '560px', margin: '0 auto', position: 'relative' }}>
-          <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={18} />
+        {/* Local Search / Filter Bar */}
+        <div style={{ position: 'relative', width: '280px' }}>
+          <Search style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={16} />
           <input 
             type="text" 
             className="form-input" 
-            placeholder="Cari tatacara, no. rujukan (PK), kata kunci, atau tajuk dokumen..."
+            placeholder="Cari tatacara, no. rujukan, dokumen..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{ 
-              paddingLeft: '2.75rem', 
-              paddingRight: search ? '2.5rem' : '0.85rem', 
-              paddingTop: '0.55rem', 
-              paddingBottom: '0.55rem', 
-              fontSize: '0.88rem', 
+              paddingLeft: '2.4rem', 
+              paddingRight: search ? '2rem' : '0.75rem', 
+              paddingTop: '0.45rem', 
+              paddingBottom: '0.45rem', 
+              fontSize: '0.85rem', 
               borderRadius: '10px' 
             }}
           />
           {search && (
             <button 
               onClick={() => setSearch('')}
-              style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.1rem' }}
+              style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1rem' }}
             >
               ✕
             </button>

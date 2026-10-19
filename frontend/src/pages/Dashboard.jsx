@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Layers, AlertCircle, ArrowRight, Trash2, RefreshCw, Pencil, GitCommit, AlertTriangle, Phone, FileText, CheckCircle, Database } from 'lucide-react';
+import { Search, Layers, AlertCircle, ArrowRight, Trash2, RefreshCw, Pencil, GitCommit, AlertTriangle, Phone, FileText, CheckCircle, Database, PlusCircle } from 'lucide-react';
 import { getModules, deleteModule, searchSystem } from '../services/api';
 import { showConfirm, showSuccess, showError } from '../utils/swal';
 
-export default function Dashboard({ onSelectModule, onEditModule, backupInfo, backingUp, onManualBackup }) {
+export default function Dashboard({ onSelectModule, onEditModule, onOpenAddModule }) {
   const [modules, setModules] = useState([]);
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState(null);
@@ -66,87 +66,74 @@ export default function Dashboard({ onSelectModule, onEditModule, backupInfo, ba
 
   return (
     <div style={{ padding: '1.25rem 0' }}>
-      {/* Header Banner - Compact Design */}
-      <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', marginBottom: '1.25rem', textAlign: 'center', background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(6,182,212,0.1))' }}>
-        <h1 style={{ fontSize: '1.45rem', fontWeight: 800, marginBottom: '0.3rem', letterSpacing: '-0.3px' }}>
-          Pusat Dokumentasi & Troubleshooting System Modul
-        </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '650px', margin: '0 auto 0.85rem auto', lineHeight: '1.4' }}>
-          Cari modul, alur kerja (flow), penyelesaian isu umum, serta hubungan pegawai bertugas (PIC) seluruh sistem.
-        </p>
-
-        {/* Global Search Bar */}
-        <div style={{ maxWidth: '560px', margin: '0 auto', position: 'relative' }}>
-          <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={18} />
-          <input 
-            type="text" 
-            className="form-input" 
-            placeholder="Cari kata kunci isu, error code, langkah flow, PIC, atau modul..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ paddingLeft: '2.75rem', paddingRight: search ? '2.5rem' : '0.85rem', padding: '0.55rem 0.85rem 0.55rem 2.75rem', fontSize: '0.88rem', borderRadius: '10px' }}
-          />
-          {search && (
-            <button 
-              onClick={() => setSearch('')}
-              style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.1rem' }}
-            >
-              ✕
-            </button>
-          )}
+      {/* Header Bar Modul Sistem */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '1.5rem', 
+        flexWrap: 'wrap', 
+        gap: '1rem',
+        paddingBottom: '1rem',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
+      }}>
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <Layers size={24} color="var(--primary)" /> Modul Sistem & Alur Kerja
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', margin: '0.35rem 0 0 0' }}>
+            Dokumentasi modul, alur kerja (flow), penyelesaian isu umum & hubungan pegawai bertugas (PIC).
+          </p>
         </div>
 
-        {/* Simple Database Backup Status Strip */}
-        {backupInfo && (
-          <div style={{
-            marginTop: '0.75rem',
-            padding: '0.25rem 0.75rem',
-            background: 'rgba(15, 23, 42, 0.5)',
-            border: '1px solid rgba(255, 255, 255, 0.09)',
-            borderRadius: '999px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.75rem',
-            color: 'var(--text-muted)'
-          }}
-          title={`Sandaran Pangkalan Data Harian (iknow_db_backup):\nKitaran: Setiap 24 Jam (8:00 AM)\nFail: iknow_db_backup/${backupInfo.file_name}\nSeterusnya: ${backupInfo.next_cycle_formatted || '-'}`}>
-            <span style={{
-              width: '7px',
-              height: '7px',
-              borderRadius: '50%',
-              background: backupInfo.status === 'healthy' ? '#10b981' : '#f59e0b',
-              boxShadow: `0 0 6px ${backupInfo.status === 'healthy' ? '#10b981' : '#f59e0b'}`,
-              flexShrink: 0
-            }} />
-            <span>
-              Backup DB (8 AM): <strong style={{ color: '#e2e8f0', fontWeight: 600 }}>{backupInfo.last_backup_formatted || '-'}</strong>
-              <span style={{ opacity: 0.8, marginLeft: '0.25rem' }}>({backupInfo.file_size || '0 B'})</span>
-            </span>
-            <span style={{ opacity: 0.35 }}>•</span>
-            <button
-              onClick={onManualBackup}
-              disabled={backingUp}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#38bdf8',
-                cursor: backingUp ? 'not-allowed' : 'pointer',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                padding: '0.1rem 0.35rem',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.3rem',
-                borderRadius: '6px'
-              }}
-              title="Klik untuk sandar sekarang"
-            >
-              <RefreshCw size={12} className={backingUp ? 'spin' : ''} />
-              {backingUp ? 'Menyandar...' : 'Sandar Sekarang'}
-            </button>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Carian Pantas Modul */}
+          <div style={{ position: 'relative', width: '260px' }}>
+            <Search style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={16} />
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Cari modul..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ paddingLeft: '2.2rem', paddingRight: search ? '2rem' : '0.75rem', padding: '0.45rem 0.75rem 0.45rem 2.2rem', fontSize: '0.85rem', borderRadius: '10px' }}
+            />
+            {search && (
+              <button 
+                onClick={() => setSearch('')}
+                style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1rem' }}
+              >
+                ✕
+              </button>
+            )}
           </div>
-        )}
+
+          <button 
+            className="btn btn-secondary" 
+            onClick={fetchModules}
+            style={{ padding: '0.45rem 0.85rem', fontSize: '0.85rem' }}
+            title="Muat semula senarai modul"
+          >
+            <RefreshCw size={14} className={loading ? 'spin' : ''} />
+          </button>
+
+          {/* Butang Daftar Modul Baharu */}
+          <button 
+            className="btn btn-primary" 
+            onClick={onOpenAddModule}
+            style={{ 
+              padding: '0.5rem 1.1rem', 
+              fontSize: '0.88rem', 
+              fontWeight: 700, 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '0.45rem',
+              boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)'
+            }}
+          >
+            <PlusCircle size={17} /> Daftar Modul Baharu
+          </button>
+        </div>
       </div>
 
       {/* Global Search Results Mode */}

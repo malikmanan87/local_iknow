@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
+import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import ModuleDetail from './pages/ModuleDetail';
 import MirthViewer from './pages/MirthViewer';
@@ -11,7 +12,7 @@ import { getBackupStatus, runManualBackup } from './services/api';
 import { showError } from './utils/swal';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('home');
   const [selectedModuleId, setSelectedModuleId] = useState(null);
   const [initialModuleTab, setInitialModuleTab] = useState('flows');
   const [editModuleData, setEditModuleData] = useState(null);
@@ -62,7 +63,7 @@ export default function App() {
   };
 
   const handleSetTab = (tab) => {
-    if (tab === 'dashboard') {
+    if (tab === 'dashboard' || tab === 'home') {
       setSelectedModuleId(null);
     }
     setActiveTab(tab);
@@ -71,13 +72,20 @@ export default function App() {
   return (
     <div>
       <Navbar
-        onOpenAddModule={() => { setEditModuleData(null); setShowAddModule(true); }}
         activeTab={activeTab}
         setActiveTab={handleSetTab}
       />
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem', paddingBottom: '3rem' }}>
-        {activeTab === 'staff' ? (
+        {activeTab === 'home' ? (
+          <Home
+            onNavigate={handleSetTab}
+            onSelectModule={handleSelectModule}
+            backupInfo={backupInfo}
+            backingUp={backingUp}
+            onManualBackup={handleManualBackup}
+          />
+        ) : activeTab === 'staff' ? (
           <StaffDirectory />
         ) : activeTab === 'notes' ? (
           <NotesManager />
@@ -90,6 +98,7 @@ export default function App() {
             key={refreshTrigger}
             onSelectModule={handleSelectModule}
             onEditModule={(moduleData) => { setEditModuleData(moduleData); setShowAddModule(true); }}
+            onOpenAddModule={() => { setEditModuleData(null); setShowAddModule(true); }}
             backupInfo={backupInfo}
             backingUp={backingUp}
             onManualBackup={handleManualBackup}

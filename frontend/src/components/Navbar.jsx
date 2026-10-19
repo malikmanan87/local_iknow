@@ -1,66 +1,91 @@
 import React from 'react';
-import { BookOpen, PlusCircle, Activity, StickyNote, Users, Landmark, Database } from 'lucide-react';
+import { Home as HomeIcon, BookOpen, Activity, StickyNote, Users, Landmark } from 'lucide-react';
 
-export default function Navbar({ onOpenAddModule, activeTab, setActiveTab }) {
+export default function Navbar({ activeTab, setActiveTab }) {
   return (
     <nav className="navbar">
-      <div className="logo-container" onClick={() => setActiveTab('dashboard')} style={{ cursor: 'pointer' }}>
+      <div className="logo-container" onClick={() => setActiveTab('home')} style={{ cursor: 'pointer' }}>
         <div className="logo-badge">iKNOW</div>
         <span className="logo-text">System Knowledge Hub</span>
       </div>
 
-      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        {/* 1. Home (Laman Utama) */}
+        <button
+          className="btn btn-secondary"
+          onClick={() => setActiveTab('home')}
+          style={{ 
+            borderColor: activeTab === 'home' ? '#6366f1' : undefined,
+            color: activeTab === 'home' ? '#818cf8' : undefined,
+            background: activeTab === 'home' ? 'rgba(99, 102, 241, 0.15)' : undefined
+          }}
+        >
+          <HomeIcon size={17} /> Home
+        </button>
+
+        {/* 2. Modul Sistem */}
         <button
           className="btn btn-secondary"
           onClick={() => setActiveTab('dashboard')}
-          style={{ borderColor: activeTab === 'dashboard' ? 'var(--primary)' : undefined }}
-        >
-          <BookOpen size={18} /> Modul Sistem
-        </button>
-
-        <button
-          className="btn btn-secondary"
-          onClick={() => setActiveTab('staff')}
           style={{ 
-            borderColor: activeTab === 'staff' ? 'var(--accent-emerald)' : undefined, 
-            color: activeTab === 'staff' ? 'var(--accent-emerald)' : undefined 
+            borderColor: activeTab === 'dashboard' ? 'var(--primary)' : undefined,
+            color: activeTab === 'dashboard' ? '#a5b4fc' : undefined,
+            background: activeTab === 'dashboard' ? 'rgba(99, 102, 241, 0.15)' : undefined
           }}
         >
-          <Users size={18} /> Direktori Staf
+          <BookOpen size={17} /> Modul Sistem
         </button>
 
+        {/* 3. Papan Nota */}
         <button
           className="btn btn-secondary"
           onClick={() => setActiveTab('notes')}
           style={{ 
             borderColor: activeTab === 'notes' ? 'var(--accent-amber)' : undefined, 
-            color: activeTab === 'notes' ? 'var(--accent-amber)' : undefined 
+            color: activeTab === 'notes' ? 'var(--accent-amber)' : undefined,
+            background: activeTab === 'notes' ? 'rgba(245, 158, 11, 0.12)' : undefined
           }}
         >
-          <StickyNote size={18} /> Papan Nota
+          <StickyNote size={17} /> Papan Nota
         </button>
 
+        {/* 4. Kewangan & Perolehan */}
         <button
           className="btn btn-secondary"
           onClick={() => setActiveTab('procurement')}
           style={{ 
             borderColor: activeTab === 'procurement' ? '#a855f7' : undefined, 
-            color: activeTab === 'procurement' ? '#c084fc' : undefined 
+            color: activeTab === 'procurement' ? '#c084fc' : undefined,
+            background: activeTab === 'procurement' ? 'rgba(168, 85, 247, 0.12)' : undefined
           }}
         >
-          <Landmark size={18} /> Kewangan & Perolehan
+          <Landmark size={17} /> Kewangan & Perolehan
         </button>
 
+        {/* 5. Direktori Staf */}
+        <button
+          className="btn btn-secondary"
+          onClick={() => setActiveTab('staff')}
+          style={{ 
+            borderColor: activeTab === 'staff' ? 'var(--accent-emerald)' : undefined, 
+            color: activeTab === 'staff' ? 'var(--accent-emerald)' : undefined,
+            background: activeTab === 'staff' ? 'rgba(16, 185, 129, 0.12)' : undefined
+          }}
+        >
+          <Users size={17} /> Direktori Staf
+        </button>
+
+        {/* 6. Mirth HL7 */}
         <button
           className="btn btn-secondary"
           onClick={() => setActiveTab('mirth')}
-          style={{ borderColor: activeTab === 'mirth' ? 'var(--accent-cyan)' : undefined, color: activeTab === 'mirth' ? 'var(--accent-cyan)' : undefined }}
+          style={{ 
+            borderColor: activeTab === 'mirth' ? 'var(--accent-cyan)' : undefined, 
+            color: activeTab === 'mirth' ? 'var(--accent-cyan)' : undefined,
+            background: activeTab === 'mirth' ? 'rgba(6, 182, 212, 0.12)' : undefined
+          }}
         >
-          <Activity size={18} /> Mirth HL7
-        </button>
-
-        <button className="btn btn-primary" onClick={onOpenAddModule}>
-          <PlusCircle size={18} /> Daftar Modul Baru
+          <Activity size={17} /> Mirth HL7
         </button>
       </div>
     </nav>

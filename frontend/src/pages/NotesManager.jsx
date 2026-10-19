@@ -169,62 +169,58 @@ export default function NotesManager() {
         </div>
       )}
 
-      {/* Header Banner */}
-      <div 
-        className="glass-panel" 
-        style={{ 
-          padding: '1.25rem 1.5rem', 
-          marginBottom: '1.25rem', 
-          textAlign: 'center', 
-          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(99, 102, 241, 0.1))',
-          border: '1px solid rgba(245, 158, 11, 0.25)'
-        }}
-      >
-        <div style={{ 
-          display: 'inline-flex', 
-          alignItems: 'center', 
-          gap: '0.45rem', 
-          background: 'rgba(245, 158, 11, 0.15)', 
-          color: 'var(--accent-amber)', 
-          padding: '0.25rem 0.75rem', 
-          borderRadius: '9999px', 
-          fontSize: '0.75rem', 
-          fontWeight: 700, 
-          marginBottom: '0.45rem', 
-          border: '1px solid rgba(245, 158, 11, 0.3)' 
-        }}>
-          <StickyNote size={13} /> PAPAN NOTA & TAMPALAN
+      {/* Page Header (No glass-panel banner) */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '1.5rem', 
+        flexWrap: 'wrap', 
+        gap: '1rem',
+        paddingBottom: '1rem',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
+      }}>
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <span style={{ 
+              display: 'inline-flex', 
+              padding: '0.35rem', 
+              borderRadius: '8px', 
+              background: 'rgba(245, 158, 11, 0.15)', 
+              color: 'var(--accent-amber)',
+              border: '1px solid rgba(245, 158, 11, 0.3)'
+            }}>
+              <StickyNote size={20} />
+            </span>
+            Papan Nota Pantas & Salin-Tampal
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', margin: '0.35rem 0 0 0' }}>
+            Simpan catatan pantas, skrip, arahan kerja, log ralat, serta kunci perlindungan dokumen nota.
+          </p>
         </div>
 
-        <h1 style={{ fontSize: '1.45rem', fontWeight: 800, marginBottom: '0.3rem', letterSpacing: '-0.3px' }}>
-          Papan Nota Pantas & Salin-Tampal
-        </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '650px', margin: '0 auto 0.85rem auto', lineHeight: '1.4' }}>
-          Simpan catatan, skrip, arahan kerja, atau mesej rujukan pasukan. Dilengkapi butang <strong>Salin & Tampal Pantas</strong> serta <strong>Kunci Perlindungan</strong>.
-        </p>
-
-        {/* Global Search Bar */}
-        <div style={{ maxWidth: '560px', margin: '0 auto', position: 'relative' }}>
-          <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={18} />
+        {/* Local Search / Filter Bar */}
+        <div style={{ position: 'relative', width: '280px' }}>
+          <Search style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={16} />
           <input 
             type="text" 
             className="form-input" 
-            placeholder="Cari kata kunci dalam nota, tajuk, atau pengarang..."
+            placeholder="Cari nota, tajuk, isi kandungan..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{ 
-              paddingLeft: '2.75rem', 
-              paddingRight: search ? '2.5rem' : '0.85rem', 
-              paddingTop: '0.55rem', 
-              paddingBottom: '0.55rem', 
-              fontSize: '0.88rem', 
+              paddingLeft: '2.4rem', 
+              paddingRight: search ? '2rem' : '0.75rem', 
+              paddingTop: '0.45rem', 
+              paddingBottom: '0.45rem', 
+              fontSize: '0.85rem', 
               borderRadius: '10px' 
             }}
           />
           {search && (
             <button 
               onClick={() => setSearch('')}
-              style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.1rem' }}
+              style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1rem' }}
             >
               ✕
             </button>
