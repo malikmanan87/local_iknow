@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home as HomeIcon, BookOpen, Activity, StickyNote, Users, Landmark } from 'lucide-react';
+import { Home as HomeIcon, BookOpen, Activity, StickyNote, Users, Landmark, Server } from 'lucide-react';
 
 export default function Navbar({ activeTab, setActiveTab }) {
   return (
@@ -86,6 +86,19 @@ export default function Navbar({ activeTab, setActiveTab }) {
           }}
         >
           <Activity size={17} /> Mirth HL7
+        </button>
+
+        {/* 7. Pelayan & IP */}
+        <button
+          className="btn btn-secondary"
+          onClick={() => setActiveTab('servers')}
+          style={{ 
+            borderColor: activeTab === 'servers' ? '#38bdf8' : undefined, 
+            color: activeTab === 'servers' ? '#38bdf8' : undefined,
+            background: activeTab === 'servers' ? 'rgba(56, 189, 248, 0.12)' : undefined
+          }}
+        >
+          <Server size={17} /> Pelayan & IP
         </button>
       </div>
     </nav>

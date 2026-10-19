@@ -7,6 +7,7 @@ import MirthViewer from './pages/MirthViewer';
 import NotesManager from './pages/NotesManager';
 import StaffDirectory from './pages/StaffDirectory';
 import FinanceProcurement from './pages/FinanceProcurement';
+import ServerManager from './pages/ServerManager';
 import AddModuleModal from './components/AddModuleModal';
 import { getBackupStatus, runManualBackup } from './services/api';
 import { showError } from './utils/swal';
@@ -63,7 +64,7 @@ export default function App() {
   };
 
   const handleSetTab = (tab) => {
-    if (tab === 'dashboard' || tab === 'home') {
+    if (tab === 'dashboard' || tab === 'home' || tab === 'servers') {
       setSelectedModuleId(null);
     }
     setActiveTab(tab);
@@ -93,6 +94,8 @@ export default function App() {
           <FinanceProcurement />
         ) : activeTab === 'mirth' ? (
           <MirthViewer />
+        ) : activeTab === 'servers' ? (
+          <ServerManager />
         ) : activeTab === 'dashboard' ? (
           <Dashboard
             key={refreshTrigger}

@@ -105,5 +105,13 @@ $routes->group('api', function($routes) {
     // Database Auto-Backup & Manual Trigger
     $routes->get('backup/status', 'Api\BackupController::status');
     $routes->post('backup/run',   'Api\BackupController::run');
+
+    // Server IP & Network Monitor
+    $routes->get('servers', 'Api\ServerController::index');
+    $routes->post('servers', 'Api\ServerController::create');
+    $routes->match(['put', 'post'], 'servers/(:num)', 'Api\ServerController::update/$1');
+    $routes->delete('servers/(:num)', 'Api\ServerController::delete/$1');
+    $routes->post('servers/ping/(:any)', 'Api\ServerController::ping/$1');
+    $routes->get('servers/ping-all', 'Api\ServerController::pingAll');
 });
 
