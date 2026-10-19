@@ -350,11 +350,7 @@ function HomePage({onNavigate:nav,onSelectModule:selMod}){
     }catch(err){console.error(err)}finally{setPingingAll(!1)}
   };
 
-  (0,v.useEffect)(()=>{
-    fetchServers();
-    let timer=setInterval(fetchServers,120000);
-    return()=>clearInterval(timer);
-  },[]);
+  (0,v.useEffect)(()=>{ fetchServers(); },[]);
 
   (0,v.useEffect)(()=>{
     if(!q||q.trim().length<2){setRes(null);return}
@@ -464,91 +460,91 @@ function HomePage({onNavigate:nav,onSelectModule:selMod}){
       style:{marginTop:"0.5rem",marginBottom:"2.5rem"},
       children:[
         (0,L.jsxs)("div",{
-          style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem",flexWrap:"wrap",gap:"0.75rem"},
+          style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.85rem",flexWrap:"wrap",gap:"0.6rem"},
           children:[
-            (0,L.jsxs)("div",{children:[
-              (0,L.jsxs)("h2",{style:{fontSize:"1.2rem",fontWeight:800,margin:0,display:"flex",alignItems:"center",gap:"0.55rem"},children:[
-                (0,L.jsx)("span",{style:{color:"#38bdf8"},children:"📡"}),
-                (0,L.jsx)("span",{children:"Status Pelayan & Rangkaian Hospital"}),
-                (0,L.jsxs)("span",{
-                  style:{fontSize:"0.75rem",fontWeight:700,padding:"0.15rem 0.6rem",borderRadius:"999px",background:"rgba(16, 185, 129, 0.15)",color:"#34d399",border:"1px solid rgba(16, 185, 129, 0.3)"},
-                  children:[servers.filter(s=>s.status==="online").length," / ",servers.length," Online"]
-                })
-              ]}),
-              (0,L.jsx)("p",{style:{color:"var(--text-muted)",fontSize:"0.82rem",margin:"0.25rem 0 0 0"},children:"Pemantauan masa-nyata ketersediaan hos pelayan RIS, PACS, LIS, dan pintu laluan HL7 hospital."})
-            ]}),
+            (0,L.jsxs)("div",{
+              style:{display:"flex",alignItems:"center",gap:"0.65rem",flexWrap:"wrap"},
+              children:[
+                (0,L.jsxs)("h2",{style:{fontSize:"1.05rem",fontWeight:800,margin:0,display:"flex",alignItems:"center",gap:"0.5rem"},children:[
+                  (0,L.jsx)("span",{style:{color:"#38bdf8"},children:"📡"}),
+                  (0,L.jsx)("span",{children:"Status Pelayan Hospital"}),
+                  (0,L.jsxs)("span",{
+                    style:{fontSize:"0.72rem",fontWeight:700,padding:"0.12rem 0.55rem",borderRadius:"999px",background:"rgba(16, 185, 129, 0.15)",color:"#34d399",border:"1px solid rgba(16, 185, 129, 0.3)"},
+                    children:[servers.filter(s=>s.status==="online").length," / ",servers.length," Online"]
+                  })
+                ]}),
+                (0,L.jsx)("span",{style:{color:"var(--text-muted)",fontSize:"0.75rem"},children:"(Status rekod terkini. Semak hanya bila perlu untuk lindungi kestabilan pelayan)"})
+              ]
+            }),
 
             (0,L.jsxs)("div",{style:{display:"flex",gap:"0.5rem",alignItems:"center"},children:[
               (0,L.jsxs)("button",{
                 className:"btn btn-secondary",
                 onClick:pingAllServers,
                 disabled:pingingAll,
-                style:{padding:"0.35rem 0.75rem",fontSize:"0.8rem",display:"inline-flex",alignItems:"center",gap:"0.4rem"},
-                title:"Semak talian semua pelayan sekarang",
+                style:{padding:"0.3rem 0.75rem",fontSize:"0.78rem",display:"inline-flex",alignItems:"center",gap:"0.35rem"},
+                title:"Hantar ping ujian ke semua pelayan hanya bila perlu",
                 children:[
-                  (0,L.jsx)(k,{size:14,className:pingingAll?"spin":""}),
-                  pingingAll?"Menyemak...":"Semak Live"
+                  (0,L.jsx)(k,{size:13,className:pingingAll?"spin":""}),
+                  pingingAll?"Sedang Menguji...":"Uji Sambungan (Ping)"
                 ]
               }),
 
               (0,L.jsx)("button",{
                 className:"btn btn-secondary",
                 onClick:()=>nav("servers"),
-                style:{padding:"0.35rem 0.85rem",fontSize:"0.8rem",borderColor:"rgba(56, 189, 248, 0.35)",color:"#38bdf8",background:"rgba(56, 189, 248, 0.1)"},
+                style:{padding:"0.3rem 0.75rem",fontSize:"0.78rem",borderColor:"rgba(56, 189, 248, 0.35)",color:"#38bdf8",background:"rgba(56, 189, 248, 0.1)",display:"inline-flex",alignItems:"center",gap:"0.35rem"},
                 children:"⚙️ Urus Pelayan"
               })
             ]})
           ]
         }),
 
-        /* Server Cards Grid */
-        loadingServers&&servers.length===0?(0,L.jsxs)("div",{style:{textAlign:"center",padding:"2rem",color:"var(--text-muted)",fontSize:"0.85rem"},children:[
-          (0,L.jsx)(k,{size:20,className:"spin",style:{margin:"0 auto 0.5rem auto"}}),
-          (0,L.jsx)("div",{children:"Menyemak status sambungan pelayan..."})
-        ]}):servers.length===0?(0,L.jsxs)("div",{className:"glass-panel",style:{padding:"2rem",textAlign:"center",color:"var(--text-muted)"},children:[
-          (0,L.jsx)("div",{children:"Tiada pelayan didaftarkan lagi."}),
-          (0,L.jsx)("button",{className:"btn btn-primary",onClick:()=>nav("servers"),style:{marginTop:"0.75rem",fontSize:"0.85rem"},children:"+ Daftar Pelayan Baharu"})
+        /* Server Compact List (Hanya Nama Pelayan & Status Online/Offline) */
+        loadingServers&&servers.length===0?(0,L.jsxs)("div",{style:{textAlign:"center",padding:"1.5rem",color:"var(--text-muted)",fontSize:"0.82rem"},children:[
+          (0,L.jsx)(k,{size:18,className:"spin",style:{margin:"0 auto 0.4rem auto"}}),
+          (0,L.jsx)("div",{children:"Memuat status rekod pelayan..."})
+        ]}):servers.length===0?(0,L.jsxs)("div",{className:"glass-panel",style:{padding:"1.25rem",textAlign:"center",color:"var(--text-muted)",fontSize:"0.85rem"},children:[
+          (0,L.jsx)("span",{children:"Tiada pelayan didaftarkan lagi."}),
+          (0,L.jsx)("button",{className:"btn btn-primary",onClick:()=>nav("servers"),style:{marginLeft:"0.75rem",fontSize:"0.78rem",padding:"0.25rem 0.65rem"},children:"+ Daftar Pelayan Baharu"})
         ]}):(0,L.jsx)("div",{
-          style:{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(260px, 1fr))",gap:"1rem"},
+          style:{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(220px, 1fr))",gap:"0.65rem"},
           children:servers.map(s=>{
             let isOnline=s.status==="online";
             return (0,L.jsxs)("div",{
               key:s.id,
               className:"glass-panel",
               style:{
-                padding:"1.1rem 1.25rem",
-                borderRadius:"14px",
-                border:isOnline?"1px solid rgba(16, 185, 129, 0.25)":"1px solid rgba(239, 68, 68, 0.25)",
-                background:isOnline?"linear-gradient(135deg, rgba(16, 185, 129, 0.06), rgba(15, 23, 42, 0.6))":"linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(15, 23, 42, 0.6))",
+                padding:"0.65rem 0.95rem",
+                borderRadius:"12px",
+                border:isOnline?"1px solid rgba(16, 185, 129, 0.22)":"1px solid rgba(239, 68, 68, 0.22)",
+                background:isOnline?"rgba(16, 185, 129, 0.05)":"rgba(239, 68, 68, 0.05)",
                 display:"flex",
-                flexDirection:"column",
+                alignItems:"center",
                 justifyContent:"space-between",
-                gap:"0.75rem"
+                gap:"0.6rem"
               },
               children:[
-                (0,L.jsxs)("div",{children:[
-                  (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.45rem"},children:[
-                    /* Pulsing Dot Status */
-                    (0,L.jsxs)("div",{style:{display:"flex",alignItems:"center",gap:"0.45rem"},children:[
-                      (0,L.jsx)("span",{style:{width:"10px",height:"10px",borderRadius:"50%",background:isOnline?"#10b981":"#ef4444",boxShadow:isOnline?"0 0 10px #10b981":"0 0 10px #ef4444",flexShrink:0}}),
-                      (0,L.jsx)("span",{style:{fontSize:"0.78rem",fontWeight:800,color:isOnline?"#10b981":"#ef4444"},children:isOnline?"ONLINE":"OFFLINE"})
-                    ]}),
-                    isOnline&&s.latency_ms&&(0,L.jsxs)("span",{style:{fontSize:"0.72rem",color:"#34d399",background:"rgba(16, 185, 129, 0.15)",padding:"0.12rem 0.45rem",borderRadius:"6px",fontWeight:700},children:[s.latency_ms," ms"]})
-                  ]}),
-                  (0,L.jsx)("div",{style:{fontWeight:800,fontSize:"1.02rem",color:"#f8fafc",marginBottom:"0.25rem"},children:s.name}),
-                  (0,L.jsx)("div",{style:{fontFamily:"monospace",fontSize:"0.82rem",color:"#38bdf8",background:"rgba(0,0,0,0.3)",padding:"0.2rem 0.5rem",borderRadius:"6px",display:"inline-block"},children:s.ip_address+(s.port?":"+s.port:"")})
-                ]}),
-                (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:"0.72rem",color:"var(--text-muted)",borderTop:"1px solid rgba(255,255,255,0.06)",paddingTop:"0.5rem"},children:[
-                  (0,L.jsx)("span",{children:s.service_type||"Klinikal"}),
-                  (0,L.jsx)("span",{style:{opacity:0.75},children:s.last_checked_at?new Date(s.last_checked_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"-"})
-                ]})
+                /* Hanya Nama Server */
+                (0,L.jsx)("div",{
+                  style:{fontWeight:700,fontSize:"0.88rem",color:"#f8fafc",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"},
+                  title:s.name,
+                  children:s.name
+                }),
+                /* Hanya Status Dot (Online/Offline) */
+                (0,L.jsxs)("div",{
+                  style:{display:"inline-flex",alignItems:"center",gap:"0.35rem",flexShrink:0},
+                  children:[
+                    (0,L.jsx)("span",{style:{width:"8px",height:"8px",borderRadius:"50%",background:isOnline?"#10b981":"#ef4444",boxShadow:isOnline?"0 0 8px #10b981":"0 0 8px #ef4444"}}),
+                    (0,L.jsx)("span",{style:{fontSize:"0.75rem",fontWeight:700,color:isOnline?"#34d399":"#f87171",letterSpacing:"0.2px"},children:isOnline?"Online":"Offline"})
+                  ]
+                })
               ]
             });
           })
         })
       ]
     }),
-
     /* Mode 1: Search Results Active */
     isSearching?(0,L.jsxs)("div",{children:[
       (0,L.jsxs)("div",{

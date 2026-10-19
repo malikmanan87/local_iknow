@@ -64,11 +64,7 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
   };
 
   useEffect(() => {
-    fetchServers();
-    const timer = setInterval(() => {
-      fetchServers();
-    }, 120000);
-    return () => clearInterval(timer);
+    fetchServers(); // Hanya memuat status dari pangkalan data; tidak menghantar ping ke pelayan
   }, []);
 
   // Debounced search querying the 3 modules: modules, notes, and procurement
@@ -260,25 +256,25 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
         )}
       </div>
 
-      {/* ── Pemantauan Status Pelayan & IP (Live Server Pulse) ── */}
+      {/* ── Pemantauan Status Pelayan Hospital (Ringkas: Nama & Status Sahaja) ── */}
       {!isSearching && (
         <div style={{ marginTop: '0.5rem', marginBottom: '2.5rem' }}>
           <div style={{ 
             display: 'flex', 
             justifyContent: 'space-between', 
             alignItems: 'center', 
-            marginBottom: '1rem',
+            marginBottom: '0.85rem',
             flexWrap: 'wrap',
-            gap: '0.75rem'
+            gap: '0.6rem'
           }}>
-            <div>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+              <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{ color: '#38bdf8' }}>📡</span>
-                <span>Status Pelayan & Rangkaian Hospital</span>
+                <span>Status Pelayan Hospital</span>
                 <span style={{ 
-                  fontSize: '0.75rem', 
+                  fontSize: '0.72rem', 
                   fontWeight: 700, 
-                  padding: '0.15rem 0.6rem', 
+                  padding: '0.12rem 0.55rem', 
                   borderRadius: '999px',
                   background: 'rgba(16, 185, 129, 0.15)',
                   color: '#34d399',
@@ -287,9 +283,9 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
                   {servers.filter(s => s.status === 'online').length} / {servers.length} Online
                 </span>
               </h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: '0.25rem 0 0 0' }}>
-                Pemantauan masa-nyata ketersediaan hos pelayan RIS, PACS, LIS, dan pintu laluan HL7 hospital.
-              </p>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                (Status rekod terkini. Semak hanya bila perlu untuk lindungi kestabilan pelayan)
+              </span>
             </div>
 
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -297,25 +293,25 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
                 className="btn btn-secondary" 
                 onClick={handlePingAllServers}
                 disabled={pingingAll}
-                style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
-                title="Semak talian semua pelayan sekarang"
+                style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                title="Hantar ping ujian ke semua pelayan hanya bila perlu"
               >
-                <RefreshCw size={14} className={pingingAll ? 'spin' : ''} />
-                <span>{pingingAll ? 'Menyemak...' : 'Semak Live'}</span>
+                <RefreshCw size={13} className={pingingAll ? 'spin' : ''} />
+                <span>{pingingAll ? 'Sedang Menguji...' : 'Uji Sambungan (Ping)'}</span>
               </button>
 
               <button 
                 className="btn btn-secondary" 
                 onClick={() => onNavigate('servers')}
                 style={{ 
-                  padding: '0.35rem 0.85rem', 
-                  fontSize: '0.8rem', 
+                  padding: '0.3rem 0.75rem', 
+                  fontSize: '0.78rem', 
                   borderColor: 'rgba(56, 189, 248, 0.35)',
                   color: '#38bdf8',
                   background: 'rgba(56, 189, 248, 0.1)',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '0.4rem'
+                  gap: '0.35rem'
                 }}
               >
                 <span>⚙️ Urus Pelayan</span>
@@ -323,24 +319,24 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
             </div>
           </div>
 
-          {/* Kad Status Pelayan Grid */}
+          {/* Senarai Ringkas Pelayan (Hanya Nama Pelayan & Status Online/Offline) */}
           {loadingServers && servers.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-              <RefreshCw size={20} className="spin" style={{ margin: '0 auto 0.5rem auto' }} />
-              <div>Menyemak status sambungan pelayan...</div>
+            <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+              <RefreshCw size={18} className="spin" style={{ margin: '0 auto 0.4rem auto' }} />
+              <div>Memuat status rekod pelayan...</div>
             </div>
           ) : servers.length === 0 ? (
-            <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-              <div>Tiada pelayan didaftarkan lagi.</div>
-              <button className="btn btn-primary" onClick={() => onNavigate('servers')} style={{ marginTop: '0.75rem', fontSize: '0.85rem' }}>
+            <div className="glass-panel" style={{ padding: '1.25rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+              <span>Tiada pelayan didaftarkan lagi.</span>
+              <button className="btn btn-primary" onClick={() => onNavigate('servers')} style={{ marginLeft: '0.75rem', fontSize: '0.78rem', padding: '0.25rem 0.65rem' }}>
                 + Daftar Pelayan Baharu
               </button>
             </div>
           ) : (
             <div style={{ 
               display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', 
-              gap: '1rem' 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', 
+              gap: '0.65rem' 
             }}>
               {servers.map((s) => {
                 const isOnline = s.status === 'online';
@@ -349,83 +345,44 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
                     key={s.id} 
                     className="glass-panel"
                     style={{ 
-                      padding: '1.1rem 1.25rem', 
-                      borderRadius: '14px',
-                      border: isOnline ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)',
-                      background: isOnline ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.06), rgba(15, 23, 42, 0.6))' : 'linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(15, 23, 42, 0.6))',
+                      padding: '0.65rem 0.95rem', 
+                      borderRadius: '12px',
+                      border: isOnline ? '1px solid rgba(16, 185, 129, 0.22)' : '1px solid rgba(239, 68, 68, 0.22)',
+                      background: isOnline ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)',
                       display: 'flex',
-                      flexDirection: 'column',
+                      alignItems: 'center',
                       justifyContent: 'space-between',
-                      gap: '0.75rem',
-                      transition: 'transform 0.15s ease'
+                      gap: '0.6rem'
                     }}
                   >
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
-                        {/* Pulsing Dot Status */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                          <span style={{ 
-                            width: '10px', 
-                            height: '10px', 
-                            borderRadius: '50%', 
-                            background: isOnline ? '#10b981' : '#ef4444',
-                            boxShadow: isOnline ? '0 0 10px #10b981' : '0 0 10px #ef4444',
-                            flexShrink: 0
-                          }} />
-                          <span style={{ 
-                            fontSize: '0.78rem', 
-                            fontWeight: 800, 
-                            color: isOnline ? '#10b981' : '#ef4444',
-                            letterSpacing: '0.2px'
-                          }}>
-                            {isOnline ? 'ONLINE' : 'OFFLINE'}
-                          </span>
-                        </div>
-
-                        {/* Latency Pill */}
-                        {isOnline && s.latency_ms && (
-                          <span style={{ 
-                            fontSize: '0.72rem', 
-                            color: '#34d399', 
-                            background: 'rgba(16, 185, 129, 0.15)', 
-                            padding: '0.12rem 0.45rem', 
-                            borderRadius: '6px',
-                            fontWeight: 700 
-                          }}>
-                            {s.latency_ms} ms
-                          </span>
-                        )}
-                      </div>
-
-                      <div style={{ fontWeight: 800, fontSize: '1.02rem', color: '#f8fafc', marginBottom: '0.25rem' }}>
-                        {s.name}
-                      </div>
-
-                      <div style={{ 
-                        fontFamily: 'monospace', 
-                        fontSize: '0.82rem', 
-                        color: '#38bdf8', 
-                        background: 'rgba(0,0,0,0.3)', 
-                        padding: '0.2rem 0.5rem', 
-                        borderRadius: '6px', 
-                        display: 'inline-block' 
-                      }}>
-                        {s.ip_address}{s.port ? `:${s.port}` : ''}
-                      </div>
+                    {/* Hanya Nama Server */}
+                    <div style={{ 
+                      fontWeight: 700, 
+                      fontSize: '0.88rem', 
+                      color: '#f8fafc',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }} title={s.name}>
+                      {s.name}
                     </div>
 
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center', 
-                      fontSize: '0.72rem', 
-                      color: 'var(--text-muted)',
-                      borderTop: '1px solid rgba(255,255,255,0.06)',
-                      paddingTop: '0.5rem'
-                    }}>
-                      <span>{s.service_type || 'Klinikal'}</span>
-                      <span style={{ opacity: 0.75 }}>
-                        {s.last_checked_at ? new Date(s.last_checked_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                    {/* Hanya Status Dot (Online/Offline) */}
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                      <span style={{ 
+                        width: '8px', 
+                        height: '8px', 
+                        borderRadius: '50%', 
+                        background: isOnline ? '#10b981' : '#ef4444',
+                        boxShadow: isOnline ? '0 0 8px #10b981' : '0 0 8px #ef4444'
+                      }} />
+                      <span style={{ 
+                        fontSize: '0.75rem', 
+                        fontWeight: 700, 
+                        color: isOnline ? '#34d399' : '#f87171',
+                        letterSpacing: '0.2px'
+                      }}>
+                        {isOnline ? 'Online' : 'Offline'}
                       </span>
                     </div>
                   </div>
