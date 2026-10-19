@@ -7,7 +7,6 @@ import NotesManager from './pages/NotesManager';
 import StaffDirectory from './pages/StaffDirectory';
 import FinanceProcurement from './pages/FinanceProcurement';
 import AddModuleModal from './components/AddModuleModal';
-import GlobalSearchModal from './components/GlobalSearchModal';
 import { getBackupStatus, runManualBackup } from './services/api';
 import { showError } from './utils/swal';
 
@@ -18,7 +17,6 @@ export default function App() {
   const [editModuleData, setEditModuleData] = useState(null);
   const [showAddModule, setShowAddModule] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   // Backup status state
   const [backupInfo, setBackupInfo] = useState(null);
@@ -54,19 +52,7 @@ export default function App() {
     const interval = setInterval(() => {
       checkAndBackup(true); // Semak kitaran setiap minit (cth: apabila melepasi jam 8:00 AM)
     }, 60000);
-
-    const handleGlobalKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setIsSearchOpen(prev => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleGlobalKeyDown);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('keydown', handleGlobalKeyDown);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   const handleSelectModule = (id, tab = 'flows') => {
@@ -88,7 +74,6 @@ export default function App() {
         onOpenAddModule={() => { setEditModuleData(null); setShowAddModule(true); }}
         activeTab={activeTab}
         setActiveTab={handleSetTab}
-        onOpenSearch={() => setIsSearchOpen(true)}
       />
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem', paddingBottom: '3rem' }}>
@@ -129,14 +114,6 @@ export default function App() {
           }}
         />
       )}
-
-      {/* Omnichannel Command Palette Modal (Ctrl + K) */}
-      <GlobalSearchModal
-        isOpen={isSearchOpen}
-        onClose={() => setIsSearchOpen(false)}
-        onSelectTab={handleSetTab}
-        onSelectModule={handleSelectModule}
-      />
     </div>
   );
 }
