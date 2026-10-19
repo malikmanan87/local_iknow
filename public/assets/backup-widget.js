@@ -138,8 +138,10 @@
 
     if (!backupData) return;
     
-    const glassPanel = document.querySelector('.glass-panel');
-    if (!glassPanel) {
+    // HANYA pasang pada Home Page search banner (#iknow-home-search-panel).
+    // Jangan sekali-kali papar di modul kewangan, direktori staf, atau modul lain.
+    const homePanel = document.getElementById('iknow-home-search-panel') || document.querySelector('.iknow-home-search-panel');
+    if (!homePanel) {
       const existing = document.getElementById('iknow-dashboard-backup-card');
       if (existing) existing.remove();
       return;
@@ -151,7 +153,7 @@
     if (!card) {
       card = document.createElement('div');
       card.id = 'iknow-dashboard-backup-card';
-      glassPanel.appendChild(card);
+      homePanel.appendChild(card);
     }
 
     if (card.dataset.stateKey === stateKey) {

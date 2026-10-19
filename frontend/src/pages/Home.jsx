@@ -71,7 +71,8 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
     <div style={{ padding: '1.25rem 0' }}>
       {/* ── Single Central Glass Panel: Search & Daily DB Backup ── */}
       <div 
-        className="glass-panel" 
+        id="iknow-home-search-panel"
+        className="glass-panel iknow-home-search-panel" 
         style={{ 
           padding: '2rem 1.5rem', 
           marginBottom: '2rem', 
