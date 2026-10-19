@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import { createModule, updateModule } from '../services/api';
+import { showError } from '../utils/swal';
 
 export default function AddModuleModal({ initialData = null, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -24,7 +25,7 @@ export default function AddModuleModal({ initialData = null, onClose, onSuccess 
       onSuccess();
       onClose();
     } catch (err) {
-      alert('Gagal menyimpan modul: ' + (err.response?.data?.message || err.message));
+      showError('Gagal menyimpan modul: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }

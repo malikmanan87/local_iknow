@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GitFork, Trash2, Link2, Download, Save, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { getFlowchart, saveFlowchart, API_BASE_URL } from '../services/api';
+import { showAlert, showError, showConfirm } from '../utils/swal';
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
 const CANVAS_W = 2400;
@@ -372,15 +373,20 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
       setLastSavedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
       setTimeout(() => setSavedFlash(false), 2500);
     } catch (err) {
-      alert('Gagal menyimpan ke database: ' + (err.response?.data?.message || err.message));
+      showError('Gagal menyimpan ke database: ' + (err.response?.data?.message || err.message));
       setAutoSaveStatus('error');
     } finally {
       setSaving(false);
     }
   };
 
-  const clearAll = () => {
-    if (!window.confirm('Kosongkan seluruh canvas? Data belum disimpan akan hilang.')) return;
+  const clearAll = async () => {
+    const ok = await showConfirm(
+      'Kosongkan seluruh canvas? Data belum disimpan akan hilang.',
+      'Kosongkan Canvas',
+      'Ya, Kosongkan'
+    );
+    if (!ok) return;
     pushHistory();
     setShapes([]);
     setConnections([]);
@@ -727,7 +733,10 @@ export default function FlowchartEditor({ moduleId, contextKey }) {
 
   /* ── Export PNG ── */
   const exportPNG = () => {
-    if (shapes.length === 0) { alert('Tiada shapes untuk di-export.'); return; }
+    if (shapes.length === 0) {
+      showAlert('Tiada shapes untuk dieksport.', 'Makluman', 'info');
+      return;
+    }
     const padding = 60;
     const minX = Math.min(...shapes.map(s => s.x)) - padding;
     const minY = Math.min(...shapes.map(s => s.y)) - padding;

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, GitCommit, AlertTriangle, Phone, Plus, Trash2, Image as ImageIcon, MessageCircle, Mail, Layers, CornerDownRight, Pencil, FileText, GitFork } from 'lucide-react';
 import { getModuleDetail, deleteFlow, deleteIssue, deleteContact, deleteSubmodule } from '../services/api';
+import { showConfirm, showError, showSuccess } from '../utils/swal';
 import AddFlowModal from '../components/AddFlowModal';
 import AddIssueModal from '../components/AddIssueModal';
 import AddContactModal from '../components/AddContactModal';
@@ -29,7 +30,7 @@ export default function ModuleDetail({ moduleId, initialTab = 'flows', onBack })
       const res = await getModuleDetail(moduleId);
       setData(res.data);
     } catch (err) {
-      alert('Gagal mengambil maklumat modul');
+      showError('Gagal mengambil maklumat modul');
     } finally {
       setLoading(false);
     }
@@ -46,28 +47,35 @@ export default function ModuleDetail({ moduleId, initialTab = 'flows', onBack })
   const getSubTab = (key) => tabState[key] || initialTab || 'flows';
 
   const handleDeleteSubmodule = async (id, title) => {
-    if (window.confirm('Adakah anda pasti mahu memadam submodul "' + title + '"? Semua sub-modul, flow, isu & PIC di dalamnya akan dipadam.')) {
+    const confirmed = await showConfirm(
+      `Adakah anda pasti mahu memadam submodul "<strong>${title}</strong>"?<br><span style="color:#f87171;font-size:0.85rem">Semua sub-modul, flow, isu & PIC di dalamnya akan dipadam.</span>`,
+      'Padam Submodul'
+    );
+    if (confirmed) {
       await deleteSubmodule(id);
       fetchDetail();
     }
   };
 
   const handleDeleteFlow = async (id) => {
-    if (window.confirm('Padam langkah flow ini?')) {
+    const confirmed = await showConfirm('Adakah anda pasti mahu memadam langkah flow ini?', 'Padam Langkah Flow');
+    if (confirmed) {
       await deleteFlow(id);
       fetchDetail();
     }
   };
 
   const handleDeleteIssue = async (id) => {
-    if (window.confirm('Padam isu ini beserta langkah penyelesaiannya?')) {
+    const confirmed = await showConfirm('Adakah anda pasti mahu memadam isu ini beserta langkah penyelesaiannya?', 'Padam Isu');
+    if (confirmed) {
       await deleteIssue(id);
       fetchDetail();
     }
   };
 
   const handleDeleteContact = async (id) => {
-    if (window.confirm('Padam maklumat PIC ini?')) {
+    const confirmed = await showConfirm('Adakah anda pasti mahu memadam maklumat PIC ini?', 'Padam PIC');
+    if (confirmed) {
       await deleteContact(id);
       fetchDetail();
     }

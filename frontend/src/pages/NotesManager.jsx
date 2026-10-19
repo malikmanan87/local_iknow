@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { getNotes, deleteNote, toggleNoteLock } from '../services/api';
 import NoteModal from '../components/NoteModal';
+import { showAlert, showError, showConfirm } from '../utils/swal';
 
 export default function NotesManager() {
   const [notes, setNotes] = useState([]);
@@ -101,18 +102,26 @@ export default function NotesManager() {
   // Delete note with Lock protection
   const handleDelete = async (note) => {
     if (note.is_locked == 1) {
-      alert(`⚠️ NOTA DIKUNCI!\n\nNota "${note.title}" sedang dikunci (Lock) dan tidak boleh dipadam.\n\nSila buka kunci (klik ikon mangga) terlebih dahulu jika anda benar-benar ingin memadamkannya.`);
+      showAlert(
+        `Nota "<strong>${note.title}</strong>" sedang dikunci (Lock) dan tidak boleh dipadam.<br><br><span style="font-size:0.85rem;color:var(--text-muted)">Sila buka kunci (klik ikon mangga) terlebih dahulu jika anda benar-benar ingin memadamkannya.</span>`,
+        'Nota Dikunci!',
+        'warning'
+      );
       return;
     }
 
-    if (window.confirm(`Adakah anda pasti mahu memadam nota "${note.title}"?`)) {
+    const confirmed = await showConfirm(
+      `Adakah anda pasti mahu memadam nota "<strong>${note.title}</strong>"?`,
+      'Padam Nota'
+    );
+    if (confirmed) {
       try {
         await deleteNote(note.id);
         showNotification('Nota berjaya dipadam', 'success');
         fetchNotes();
       } catch (err) {
         const errorMsg = err.response?.data?.messages?.error || err.response?.data?.message || 'Gagal memadam nota';
-        alert(errorMsg);
+        showError(errorMsg);
       }
     }
   };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Save } from 'lucide-react';
 import { createSubmodule, updateSubmodule } from '../services/api';
+import { showError } from '../utils/swal';
 
 export default function AddSubmoduleModal({ moduleId, parentId = null, parentTitle = '', initialData = null, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -23,7 +24,7 @@ export default function AddSubmoduleModal({ moduleId, parentId = null, parentTit
       onSuccess();
       onClose();
     } catch (err) {
-      alert('Gagal menyimpan submodul: ' + (err.response?.data?.message || err.message));
+      showError('Gagal menyimpan submodul: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }

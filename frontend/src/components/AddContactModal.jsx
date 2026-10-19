@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Save } from 'lucide-react';
 import { createContact, updateContact } from '../services/api';
+import { showError } from '../utils/swal';
 
 export default function AddContactModal({ moduleId, submodules = [], defaultSubmoduleId = null, initialData = null, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -30,7 +31,7 @@ export default function AddContactModal({ moduleId, submodules = [], defaultSubm
       onSuccess();
       onClose();
     } catch (err) {
-      alert('Gagal menyimpan PIC: ' + (err.response?.data?.message || err.message));
+      showError('Gagal menyimpan PIC: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }

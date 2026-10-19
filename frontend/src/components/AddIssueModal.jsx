@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Plus, Trash2, Save } from 'lucide-react';
 import { createIssue, updateIssue, uploadImage } from '../services/api';
+import { showError } from '../utils/swal';
 
 export default function AddIssueModal({ moduleId, submodules = [], defaultSubmoduleId = null, initialData = null, onClose, onSuccess }) {
   const [issueData, setIssueData] = useState({
@@ -45,7 +46,7 @@ export default function AddIssueModal({ moduleId, submodules = [], defaultSubmod
       const res = await uploadImage(data);
       handleSolutionChange(index, 'image_path', res.data.image_path);
     } catch (err) {
-      alert('Gagal muat naik imej penyelesaian: ' + (err.response?.data?.message || err.message));
+      showError('Gagal muat naik imej penyelesaian: ' + (err.response?.data?.message || err.message));
     } finally {
       setUploadingIndex(null);
     }
@@ -70,7 +71,7 @@ export default function AddIssueModal({ moduleId, submodules = [], defaultSubmod
       onSuccess();
       onClose();
     } catch (err) {
-      alert('Gagal menyimpan isu: ' + (err.response?.data?.message || err.message));
+      showError('Gagal menyimpan isu: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }

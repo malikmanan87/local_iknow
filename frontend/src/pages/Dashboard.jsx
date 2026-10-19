@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Layers, AlertCircle, ArrowRight, Trash2, RefreshCw, Pencil, GitCommit, AlertTriangle, Phone, FileText, CheckCircle, Database } from 'lucide-react';
 import { getModules, deleteModule, searchSystem } from '../services/api';
+import { showConfirm, showSuccess, showError } from '../utils/swal';
 
 export default function Dashboard({ onSelectModule, onEditModule, backupInfo, backingUp, onManualBackup }) {
   const [modules, setModules] = useState([]);
@@ -49,12 +50,14 @@ export default function Dashboard({ onSelectModule, onEditModule, backupInfo, ba
 
   const handleDeleteModule = async (e, id, title) => {
     e.stopPropagation();
-    if (window.confirm('Adakah anda pasti mahu memadam modul "' + title + '"?')) {
+    const confirmed = await showConfirm(`Adakah anda pasti mahu memadam modul "${title}"?`, 'Padam Modul?', 'Ya, Padam', true);
+    if (confirmed) {
       try {
         await deleteModule(id);
+        showSuccess('Modul berjaya dipadam');
         fetchModules();
       } catch (err) {
-        alert('Gagal memadam modul');
+        showError('Gagal memadam modul: ' + (err.response?.data?.message || err.message));
       }
     }
   };

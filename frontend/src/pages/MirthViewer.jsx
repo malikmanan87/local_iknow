@@ -6,6 +6,7 @@ import {
   Hash, User, Calendar, ShieldCheck, ShieldAlert
 } from 'lucide-react';
 import api from '../services/api';
+import { showAlert, showError } from '../utils/swal';
 
 const MSG_TYPES  = ['Semua', 'ORM', 'ORR', 'ORU', 'P03'];
 const STATUSES   = ['Semua', 'SENT', 'ERROR', 'QUEUED', 'FILTERED'];
@@ -428,7 +429,7 @@ export default function MirthViewer() {
       });
       const raw = res.data?.raw_hl7;
       if (!raw) {
-        alert('Kandungan HL7 tidak ditemui untuk mesej ini.');
+        showAlert('Kandungan HL7 tidak ditemui untuk mesej ini.', 'Makluman HL7', 'warning');
         return;
       }
       if (targetModal === 'report') {
@@ -437,7 +438,7 @@ export default function MirthViewer() {
         setInspectMsg(raw);
       }
     } catch {
-      alert('Gagal memuatkan perincian mesej HL7 daripada Mirth.');
+      showError('Gagal memuatkan perincian mesej HL7 daripada Mirth.');
     } finally {
       setFetchingHl7Id(null);
     }

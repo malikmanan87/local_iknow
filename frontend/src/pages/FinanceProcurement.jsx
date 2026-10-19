@@ -28,6 +28,7 @@ import {
   deleteProcurementDocument,
   UPLOAD_BASE_URL 
 } from '../services/api';
+import { showConfirm } from '../utils/swal';
 
 export default function FinanceProcurement() {
   const [documents, setDocuments] = useState([]);
@@ -173,7 +174,11 @@ export default function FinanceProcurement() {
   };
 
   const handleDelete = async (doc) => {
-    if (window.confirm(`Adakah anda pasti mahu memadam dokumen "${doc.title}"?`)) {
+    const confirmed = await showConfirm(
+      `Adakah anda pasti mahu memadam dokumen "<strong>${doc.title}</strong>"?`,
+      'Padam Dokumen'
+    );
+    if (confirmed) {
       try {
         await deleteProcurementDocument(doc.id);
         showToast('Dokumen berjaya dipadam', 'success');

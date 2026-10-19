@@ -8,6 +8,7 @@ import StaffDirectory from './pages/StaffDirectory';
 import FinanceProcurement from './pages/FinanceProcurement';
 import AddModuleModal from './components/AddModuleModal';
 import { getBackupStatus, runManualBackup } from './services/api';
+import { showError } from './utils/swal';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -40,7 +41,7 @@ export default function App() {
       }
     } catch (err) {
       console.error('Ralat manual backup:', err);
-      alert('Gagal menghasilkan sandaran pangkalan data.');
+      showError('Gagal menghasilkan sandaran pangkalan data.');
     } finally {
       setBackingUp(false);
     }

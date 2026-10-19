@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import { createFlow, updateFlow, uploadImage } from '../services/api';
+import { showError } from '../utils/swal';
 
 export default function AddFlowModal({ moduleId, submodules = [], allFlows = [], defaultSubmoduleId = null, initialData = null, nextStepNumber = 1, onClose, onSuccess }) {
   const computeStepNumber = (targetSubId) => {
@@ -57,7 +58,7 @@ export default function AddFlowModal({ moduleId, submodules = [], allFlows = [],
       const res = await uploadImage(data);
       setFormData((prev) => ({ ...prev, image_path: res.data.image_path }));
     } catch (err) {
-      alert('Gagal muat naik imej: ' + (err.response?.data?.message || err.message));
+      showError('Gagal muat naik imej: ' + (err.response?.data?.message || err.message));
     } finally {
       setUploading(false);
     }
@@ -79,7 +80,7 @@ export default function AddFlowModal({ moduleId, submodules = [], allFlows = [],
       onSuccess();
       onClose();
     } catch (err) {
-      alert('Gagal menyimpan flow: ' + (err.response?.data?.message || err.message));
+      showError('Gagal menyimpan flow: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
