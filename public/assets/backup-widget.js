@@ -25,15 +25,15 @@
     styleEl.id = 'iknow-backup-style';
     styleEl.innerHTML = `
       .iknow-simple-backup-strip {
-        margin-top: 1.15rem;
-        padding: 0.35rem 0.85rem;
+        margin-top: 0.75rem;
+        padding: 0.25rem 0.75rem;
         background: rgba(15, 23, 42, 0.5);
         border: 1px solid rgba(255, 255, 255, 0.09);
         border-radius: 999px;
         display: inline-flex;
         align-items: center;
-        gap: 0.6rem;
-        font-size: 0.78rem;
+        gap: 0.5rem;
+        font-size: 0.75rem;
         color: var(--text-muted, #94a3b8);
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         transition: all 0.2s ease;

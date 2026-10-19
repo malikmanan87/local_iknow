@@ -62,31 +62,31 @@ export default function Dashboard({ onSelectModule, onEditModule, backupInfo, ba
   const isSearchActive = search && search.trim().length >= 2;
 
   return (
-    <div style={{ padding: '2rem 0' }}>
-      {/* Header Banner */}
-      <div className="glass-panel" style={{ padding: '2.5rem', marginBottom: '2rem', textAlign: 'center', background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(6,182,212,0.1))' }}>
-        <h1 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '-0.5px' }}>
+    <div style={{ padding: '1.25rem 0' }}>
+      {/* Header Banner - Compact Design */}
+      <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', marginBottom: '1.25rem', textAlign: 'center', background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(6,182,212,0.1))' }}>
+        <h1 style={{ fontSize: '1.45rem', fontWeight: 800, marginBottom: '0.3rem', letterSpacing: '-0.3px' }}>
           Pusat Dokumentasi & Troubleshooting System Modul
         </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', maxWidth: '650px', margin: '0 auto 1.5rem auto' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '650px', margin: '0 auto 0.85rem auto', lineHeight: '1.4' }}>
           Cari modul, alur kerja (flow), penyelesaian isu umum, serta hubungan pegawai bertugas (PIC) seluruh sistem.
         </p>
 
         {/* Global Search Bar */}
-        <div style={{ maxWidth: '600px', margin: '0 auto', position: 'relative' }}>
-          <Search style={{ position: 'absolute', left: '1.2rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={20} />
+        <div style={{ maxWidth: '560px', margin: '0 auto', position: 'relative' }}>
+          <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={18} />
           <input 
             type="text" 
             className="form-input" 
             placeholder="Cari kata kunci isu, error code, langkah flow, PIC, atau modul..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ paddingLeft: '3.2rem', paddingRight: search ? '3rem' : '1rem', py: '0.9rem', fontSize: '1rem', borderRadius: '12px' }}
+            style={{ paddingLeft: '2.75rem', paddingRight: search ? '2.5rem' : '0.85rem', padding: '0.55rem 0.85rem 0.55rem 2.75rem', fontSize: '0.88rem', borderRadius: '10px' }}
           />
           {search && (
             <button 
               onClick={() => setSearch('')}
-              style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}
+              style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.1rem' }}
             >
               ✕
             </button>
@@ -96,15 +96,15 @@ export default function Dashboard({ onSelectModule, onEditModule, backupInfo, ba
         {/* Simple Database Backup Status Strip */}
         {backupInfo && (
           <div style={{
-            marginTop: '1.15rem',
-            padding: '0.35rem 0.85rem',
+            marginTop: '0.75rem',
+            padding: '0.25rem 0.75rem',
             background: 'rgba(15, 23, 42, 0.5)',
             border: '1px solid rgba(255, 255, 255, 0.09)',
             borderRadius: '999px',
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '0.6rem',
-            fontSize: '0.78rem',
+            gap: '0.5rem',
+            fontSize: '0.75rem',
             color: 'var(--text-muted)'
           }}
           title={`Sandaran Pangkalan Data Harian (iknow_db_backup):\nKitaran: Setiap 24 Jam (8:00 AM)\nFail: iknow_db_backup/${backupInfo.file_name}\nSeterusnya: ${backupInfo.next_cycle_formatted || '-'}`}>
@@ -129,12 +129,12 @@ export default function Dashboard({ onSelectModule, onEditModule, backupInfo, ba
                 border: 'none',
                 color: '#38bdf8',
                 cursor: backingUp ? 'not-allowed' : 'pointer',
-                fontSize: '0.78rem',
+                fontSize: '0.75rem',
                 fontWeight: 600,
-                padding: '0.15rem 0.4rem',
+                padding: '0.1rem 0.35rem',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.35rem',
+                gap: '0.3rem',
                 borderRadius: '6px'
               }}
               title="Klik untuk sandar sekarang"
@@ -369,7 +369,7 @@ export default function Dashboard({ onSelectModule, onEditModule, backupInfo, ba
               <p style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>Tekan "Daftar Modul Baru" untuk menambah modul pertama anda.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '0.85rem' }}>
               {modules.map((m) => {
                 const badgeClass = m.status === 'Active' ? 'badge-active' : m.status === 'Maintenance' ? 'badge-maintenance' : 'badge-deprecated';
                 return (
@@ -377,41 +377,47 @@ export default function Dashboard({ onSelectModule, onEditModule, backupInfo, ba
                     key={m.id} 
                     className="glass-card" 
                     onClick={() => onSelectModule(m.id, 'flows')}
-                    style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', cursor: 'pointer' }}
+                    style={{ padding: '1rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', cursor: 'pointer' }}
                   >
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-                        <span className={'badge ' + badgeClass}>{m.status}</span>
+                      {/* Top Header: Status & Category */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <span className={'badge ' + badgeClass} style={{ fontSize: '0.7rem', padding: '0.2rem 0.55rem' }}>
+                          {m.status}
+                        </span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                          Kategori: {m.category || 'General'}
+                        </span>
                       </div>
 
-                      <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem', color: '#fff' }}>
+                      {/* Title */}
+                      <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.35rem', color: '#fff', lineHeight: '1.3' }}>
                         {m.title}
                       </h3>
 
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '1rem', lineHeight: '1.5' }}>
+                      {/* Description */}
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '0.75rem', lineHeight: '1.45' }}>
                         {m.description || 'Tiada penerangan tambahan.'}
                       </p>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', marginTop: '0.5rem' }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                        Kategori: {m.category || 'General'}
-                      </span>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button className="btn btn-secondary" onClick={(e) => { e.stopPropagation(); onEditModule(m); }} style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} title="Kemaskini Modul">
-                          <Pencil size={14} />
+                    {/* Bottom Actions Row */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.65rem', borderTop: '1px solid var(--border-color)', marginTop: 'auto' }}>
+                      <div style={{ display: 'flex', gap: '0.35rem' }}>
+                        <button className="btn btn-secondary" onClick={(e) => { e.stopPropagation(); onEditModule(m); }} style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }} title="Kemaskini Modul">
+                          <Pencil size={13} />
                         </button>
                         <button className="btn btn-danger" 
                           onClick={(e) => handleDeleteModule(e, m.id, m.title)}
-                          style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
                           title="Padam Modul"
                         >
-                          <Trash2 size={14} />
-                        </button>
-                        <button className="btn btn-primary" style={{ padding: '0.3rem 0.75rem', fontSize: '0.8rem' }}>
-                          Lihat Flow & Isu <ArrowRight size={14} />
+                          <Trash2 size={13} />
                         </button>
                       </div>
+                      <button className="btn btn-primary" style={{ padding: '0.25rem 0.65rem', fontSize: '0.76rem' }}>
+                        Lihat Flow & Isu <ArrowRight size={13} />
+                      </button>
                     </div>
                   </div>
                 );
