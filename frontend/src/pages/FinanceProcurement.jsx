@@ -214,7 +214,7 @@ export default function FinanceProcurement() {
   const sopCount = documents.filter(d => d.category === 'Tatacara & Garis Panduan').length;
 
   return (
-    <div style={{ padding: '2rem 0' }}>
+    <div style={{ padding: '1.25rem 0' }}>
       {/* Toast Notification */}
       {notification && (
         <div style={{
@@ -241,47 +241,54 @@ export default function FinanceProcurement() {
 
       {/* Header Banner */}
       <div className="glass-panel" style={{ 
-        padding: '2.5rem', 
-        marginBottom: '2rem', 
+        padding: '1.25rem 1.5rem', 
+        marginBottom: '1.25rem', 
         textAlign: 'center', 
         background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(59, 130, 246, 0.12))' 
       }}>
         <div style={{ 
           display: 'inline-flex', 
           alignItems: 'center', 
-          gap: '0.5rem', 
+          gap: '0.45rem', 
           background: 'rgba(168, 85, 247, 0.2)', 
           color: '#c084fc', 
-          padding: '0.35rem 1rem', 
-          borderRadius: '20px', 
-          fontSize: '0.85rem', 
+          padding: '0.25rem 0.75rem', 
+          borderRadius: '9999px', 
+          fontSize: '0.75rem', 
           fontWeight: 600, 
-          marginBottom: '0.75rem' 
+          marginBottom: '0.45rem' 
         }}>
-          <FileCheck size={16} /> Modul Pengurusan & Tatakelola
+          <FileCheck size={13} /> Modul Pengurusan & Tatakelola
         </div>
-        <h1 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '-0.5px' }}>
+        <h1 style={{ fontSize: '1.45rem', fontWeight: 800, marginBottom: '0.3rem', letterSpacing: '-0.3px' }}>
           Kewangan & Perolehan
         </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', maxWidth: '700px', margin: '0 auto 1.5rem auto' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '700px', margin: '0 auto 0.85rem auto', lineHeight: '1.4' }}>
           Pusat rujukan tatacara penyediaan laporan penilaian perolehan, garis panduan tender & sebut harga, SOP perolehan ICT, serta templat dokumen rasmi.
         </p>
 
         {/* Global Search Bar */}
-        <div style={{ maxWidth: '600px', margin: '0 auto', position: 'relative' }}>
-          <Search style={{ position: 'absolute', left: '1.2rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={20} />
+        <div style={{ maxWidth: '560px', margin: '0 auto', position: 'relative' }}>
+          <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={18} />
           <input 
             type="text" 
             className="form-input" 
             placeholder="Cari tatacara, no. rujukan (PK), kata kunci, atau tajuk dokumen..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ paddingLeft: '3.2rem', paddingRight: search ? '3rem' : '1rem', paddingY: '0.9rem', fontSize: '1rem', borderRadius: '12px' }}
+            style={{ 
+              paddingLeft: '2.75rem', 
+              paddingRight: search ? '2.5rem' : '0.85rem', 
+              paddingTop: '0.55rem', 
+              paddingBottom: '0.55rem', 
+              fontSize: '0.88rem', 
+              borderRadius: '10px' 
+            }}
           />
           {search && (
             <button 
               onClick={() => setSearch('')}
-              style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}
+              style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.1rem' }}
             >
               ✕
             </button>

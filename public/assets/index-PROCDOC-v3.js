@@ -122,23 +122,23 @@ Error generating stack: `+e.message+`
 
   let cats=["Semua","Penilaian Perolehan","Tatacara & Garis Panduan","Kewangan & Bajet","Templat & Borang"];
 
-  return(0,L.jsxs)("div",{style:{padding:"2rem 0"},children:[
+  return(0,L.jsxs)("div",{style:{padding:"1.25rem 0"},children:[
     y&&(0,L.jsxs)("div",{style:{position:"fixed",bottom:"2rem",right:"2rem",zIndex:9999,background:y.type==="success"?"#065f46":y.type==="error"?"#991b1b":"#1e293b",color:"#fff",padding:"0.85rem 1.4rem",borderRadius:"10px",boxShadow:"0 8px 24px rgba(0,0,0,0.3)",display:"flex",alignItems:"center",gap:"0.6rem",fontSize:"0.95rem",fontWeight:500,border:"1px solid rgba(255,255,255,0.1)"},children:[
       y.type==="success"?(0,L.jsx)(F,{size:18}):(0,L.jsx)(P,{size:18}),
       (0,L.jsx)("span",{children:y.msg})
     ]}),
 
-    (0,L.jsxs)("div",{className:"glass-panel",style:{padding:"2.5rem",marginBottom:"2rem",textAlign:"center",background:"linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(59, 130, 246, 0.12))"},children:[
-      (0,L.jsxs)("div",{style:{display:"inline-flex",alignItems:"center",gap:"0.5rem",background:"rgba(168, 85, 247, 0.2)",color:"#c084fc",padding:"0.35rem 1rem",borderRadius:"20px",fontSize:"0.85rem",fontWeight:600,marginBottom:"0.75rem"},children:[
-        (0,L.jsx)(Be,{size:16}),
+    (0,L.jsxs)("div",{className:"glass-panel",style:{padding:"1.25rem 1.5rem",marginBottom:"1.25rem",textAlign:"center",background:"linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(59, 130, 246, 0.12))"},children:[
+      (0,L.jsxs)("div",{style:{display:"inline-flex",alignItems:"center",gap:"0.45rem",background:"rgba(168, 85, 247, 0.2)",color:"#c084fc",padding:"0.25rem 0.75rem",borderRadius:"9999px",fontSize:"0.75rem",fontWeight:600,marginBottom:"0.45rem"},children:[
+        (0,L.jsx)(Be,{size:13}),
         " Modul Pengurusan & Tatakelola"
       ]}),
-      (0,L.jsx)("h1",{style:{fontSize:"2.2rem",fontWeight:800,marginBottom:"0.5rem",letterSpacing:"-0.5px"},children:"Kewangan & Perolehan"}),
-      (0,L.jsx)("p",{style:{color:"var(--text-muted)",fontSize:"1.05rem",maxWidth:"700px",margin:"0 auto 1.5rem auto"},children:"Pusat rujukan tatacara penyediaan laporan penilaian perolehan, garis panduan tender & sebut harga, SOP perolehan ICT, serta templat dokumen rasmi."}),
-      (0,L.jsxs)("div",{style:{maxWidth:"600px",margin:"0 auto",position:"relative"},children:[
-        (0,L.jsx)(Re,{style:{position:"absolute",left:"1.2rem",top:"50%",transform:"translateY(-50%)",color:"var(--text-muted)"},size:20}),
-        (0,L.jsx)("input",{type:"text",className:"form-input",placeholder:"Cari tatacara, no. rujukan (PK), kata kunci, atau tajuk dokumen...",value:i,onChange:ev=>a(ev.target.value),style:{paddingLeft:"3.2rem",paddingRight:i?"3rem":"1rem",paddingTop:"0.9rem",paddingBottom:"0.9rem",fontSize:"1rem",borderRadius:"12px"}}),
-        i&&(0,L.jsx)("button",{onClick:()=>a(""),style:{position:"absolute",right:"1rem",top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"var(--text-muted)",cursor:"pointer",fontSize:"1.2rem"},children:"✕"})
+      (0,L.jsx)("h1",{style:{fontSize:"1.45rem",fontWeight:800,marginBottom:"0.3rem",letterSpacing:"-0.3px"},children:"Kewangan & Perolehan"}),
+      (0,L.jsx)("p",{style:{color:"var(--text-muted)",fontSize:"0.85rem",maxWidth:"700px",margin:"0 auto 0.85rem auto",lineHeight:"1.4"},children:"Pusat rujukan tatacara penyediaan laporan penilaian perolehan, garis panduan tender & sebut harga, SOP perolehan ICT, serta templat dokumen rasmi."}),
+      (0,L.jsxs)("div",{style:{maxWidth:"560px",margin:"0 auto",position:"relative"},children:[
+        (0,L.jsx)(Re,{style:{position:"absolute",left:"1rem",top:"50%",transform:"translateY(-50%)",color:"var(--text-muted)"},size:18}),
+        (0,L.jsx)("input",{type:"text",className:"form-input",placeholder:"Cari tatacara, no. rujukan (PK), kata kunci, atau tajuk dokumen...",value:i,onChange:ev=>a(ev.target.value),style:{paddingLeft:"2.75rem",paddingRight:i?"2.5rem":"0.85rem",paddingTop:"0.55rem",paddingBottom:"0.55rem",fontSize:"0.88rem",borderRadius:"10px"}}),
+        i&&(0,L.jsx)("button",{onClick:()=>a(""),style:{position:"absolute",right:"0.75rem",top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"var(--text-muted)",cursor:"pointer",fontSize:"1.1rem"},children:"✕"})
       ]})
     ]}),
 
