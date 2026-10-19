@@ -5,8 +5,25 @@
 (function() {
   'use strict';
 
+  const originalAlert = typeof window !== 'undefined' ? window.alert.bind(window) : function(){};
+
+  // Helper to resolve Swal from various global attachments
+  function getGlobalSwal() {
+    if (typeof window !== 'undefined') {
+      const s = window.Swal || window.Sweetalert2 || window.SweetAlert || window.swal || 
+                (typeof globalThis !== 'undefined' ? (globalThis.Swal || globalThis.Sweetalert2) : null);
+      if (s) {
+        window.Swal = s;
+        window.Sweetalert2 = s;
+        return s;
+      }
+    }
+    return null;
+  }
+
   // Inject Custom CSS for SweetAlert2 Dark Glassmorphism Theme
   function injectSwalStyles() {
+    if (typeof document === 'undefined') return;
     if (document.getElementById('iknow-swal-custom-css')) return;
     const style = document.createElement('style');
     style.id = 'iknow-swal-custom-css';
@@ -93,7 +110,11 @@
         color: #ffffff !important;
       }
     `;
-    document.head.appendChild(style);
+    if (document.head) {
+      document.head.appendChild(style);
+    } else {
+      document.addEventListener('DOMContentLoaded', () => document.head.appendChild(style));
+    }
   }
 
   // Helper function to detect alert type
@@ -111,21 +132,53 @@
     return { icon: 'info', title: 'Makluman', confirmColor: '#6366f1', btnClass: '' };
   }
 
-  // Global override for window.alert
+  // Global override for window.alert and custom confirmation dialog
   function installAlertInterceptor() {
-    if (!window.Swal) return;
+    // Reusable custom confirm dialog for SweetAlert2
+    window.iknowConfirm = async function(title, text, confirmBtnText = 'Ya, Teruskan', isDanger = true) {
+      const activeSwal = getGlobalSwal();
+      if (!activeSwal) {
+        console.warn('SweetAlert2 not ready, falling back to window.confirm');
+        return window.confirm((title ? title + '\n\n' : '') + (text || ''));
+      }
+      const res = await activeSwal.fire({
+        title: title || 'Pengesahan',
+        html: typeof text === 'string' ? text.replace(/\n/g, '<br>') : text,
+        icon: isDanger ? 'warning' : 'question',
+        showCancelButton: true,
+        confirmButtonText: confirmBtnText || 'Ya, Teruskan',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: isDanger ? '#f43f5e' : '#6366f1',
+        cancelButtonColor: 'rgba(255, 255, 255, 0.15)',
+        customClass: {
+          popup: 'iknow-swal-popup',
+          confirmButton: isDanger ? 'btn-danger-confirm' : ''
+        },
+        buttonsStyling: true,
+        reverseButtons: true,
+        focusCancel: true
+      });
+      return res.isConfirmed;
+    };
 
+    // Global override for window.alert
     window.alert = function(message) {
+      const activeSwal = getGlobalSwal();
+      if (!activeSwal) {
+        console.warn('SweetAlert2 not ready, falling back to native alert:', message);
+        return originalAlert(message);
+      }
       const typeInfo = detectAlertType(message);
       const htmlContent = typeof message === 'string' 
         ? message.replace(/\n/g, '<br>') 
         : (message ? String(message) : '');
 
-      return window.Swal.fire({
+      return activeSwal.fire({
         title: typeInfo.title,
         html: htmlContent,
         icon: typeInfo.icon,
         confirmButtonText: 'Tutup',
+        confirmButtonColor: typeInfo.confirmColor,
         customClass: {
           popup: 'iknow-swal-popup',
           confirmButton: typeInfo.btnClass
@@ -138,33 +191,11 @@
       });
     };
 
-    // Reusable custom confirm dialog for SweetAlert2
-    window.iknowConfirm = async function(title, text, confirmBtnText = 'Ya, Teruskan', isDanger = true) {
-      if (!window.Swal) {
-        return window.confirm(text || title);
-      }
-      const res = await window.Swal.fire({
-        title: title,
-        html: typeof text === 'string' ? text.replace(/\n/g, '<br>') : text,
-        icon: isDanger ? 'warning' : 'question',
-        showCancelButton: true,
-        confirmButtonText: confirmBtnText,
-        cancelButtonText: 'Batal',
-        customClass: {
-          popup: 'iknow-swal-popup',
-          confirmButton: isDanger ? 'btn-danger-confirm' : ''
-        },
-        buttonsStyling: true,
-        reverseButtons: true,
-        focusCancel: true
-      });
-      return res.isConfirmed;
-    };
-
     // Quick Toast notification
     window.iknowToast = function(title, icon = 'success', timer = 2500) {
-      if (!window.Swal) return;
-      return window.Swal.fire({
+      const activeSwal = getGlobalSwal();
+      if (!activeSwal) return;
+      return activeSwal.fire({
         toast: true,
         position: 'top-end',
         icon: icon,
@@ -179,14 +210,14 @@
     };
   }
 
-  // Initialize
+  // Initialize immediately AND on DOMContentLoaded
   injectSwalStyles();
-  if (document.readyState === 'loading') {
+  installAlertInterceptor();
+
+  if (typeof document !== 'undefined' && document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       injectSwalStyles();
       installAlertInterceptor();
     });
-  } else {
-    installAlertInterceptor();
   }
 })();

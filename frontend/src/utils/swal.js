@@ -3,8 +3,14 @@
  */
 
 const getSwal = () => {
-  if (typeof window !== 'undefined' && window.Swal) {
-    return window.Swal;
+  if (typeof window !== 'undefined') {
+    const s = window.Swal || window.Sweetalert2 || window.SweetAlert || window.swal ||
+              (typeof globalThis !== 'undefined' ? (globalThis.Swal || globalThis.Sweetalert2) : null);
+    if (s) {
+      window.Swal = s;
+      window.Sweetalert2 = s;
+      return s;
+    }
   }
   return null;
 };
