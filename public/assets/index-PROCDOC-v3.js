@@ -350,6 +350,24 @@ function HomePage({onNavigate:nav,onSelectModule:selMod}){
     }catch(err){console.error(err)}finally{setPingingAll(!1)}
   };
 
+  let formatPingTime=(dt)=>{
+    if(!dt)return"Belum disemak";
+    try{
+      let d=new Date(dt.includes("T")?dt:dt.replace(" ","T"));
+      if(isNaN(d.getTime()))return dt;
+      return d.toLocaleDateString("ms-MY",{day:"2-digit",month:"short",year:"numeric"})+", "+d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",hour12:!0});
+    }catch(e){return dt}
+  };
+
+  let getLatestPing=()=>{
+    if(!servers||servers.length===0)return null;
+    let latest="";
+    servers.forEach(s=>{
+      if(s.last_checked_at&&(!latest||s.last_checked_at>latest))latest=s.last_checked_at;
+    });
+    return latest?formatPingTime(latest):null;
+  };
+
   (0,v.useEffect)(()=>{ fetchServers(); },[]);
 
   (0,v.useEffect)(()=>{
@@ -473,7 +491,15 @@ function HomePage({onNavigate:nav,onSelectModule:selMod}){
                     children:[servers.filter(s=>s.status==="online").length," / ",servers.length," Online"]
                   })
                 ]}),
-                (0,L.jsx)("span",{style:{color:"var(--text-muted)",fontSize:"0.75rem"},children:"(Status rekod terkini. Semak hanya bila perlu untuk lindungi kestabilan pelayan)"})
+                getLatestPing()&&(0,L.jsxs)("span",{
+                  style:{fontSize:"0.74rem",color:"#cbd5e1",background:"rgba(15, 23, 42, 0.75)",padding:"0.18rem 0.65rem",borderRadius:"8px",border:"1px solid rgba(56, 189, 248, 0.25)",display:"inline-flex",alignItems:"center",gap:"0.35rem"},
+                  title:"Masa semakan ping terakhir dijalankan",
+                  children:[
+                    (0,L.jsx)("span",{style:{color:"#38bdf8"},children:"🕒"}),
+                    (0,L.jsxs)("span",{children:["Last Ping: ",(0,L.jsx)("strong",{style:{color:"#f8fafc"},children:getLatestPing()})]})
+                  ]
+                }),
+                (0,L.jsx)("span",{style:{color:"var(--text-muted)",fontSize:"0.75rem"},children:"(Semakan berkala 1 jam sekali)"})
               ]
             }),
 
@@ -500,22 +526,22 @@ function HomePage({onNavigate:nav,onSelectModule:selMod}){
           ]
         }),
 
-        /* Server Compact List (Hanya Nama Pelayan & Status Online/Offline) */
+        /* Server Compact List (Nama Pelayan, Last Ping Datetime & Status Online/Offline) */
         loadingServers&&servers.length===0?(0,L.jsxs)("div",{style:{textAlign:"center",padding:"1.5rem",color:"var(--text-muted)",fontSize:"0.82rem"},children:[
-          (0,L.jsx)(k,{size:18,className:"spin",style:{margin:"0 auto 0.4rem auto"}}),
+          (0,L.jsx)(k,{size:18,className:"spin",style:"margin:0 auto 0.4rem auto"}),
           (0,L.jsx)("div",{children:"Memuat status rekod pelayan..."})
         ]}):servers.length===0?(0,L.jsxs)("div",{className:"glass-panel",style:{padding:"1.25rem",textAlign:"center",color:"var(--text-muted)",fontSize:"0.85rem"},children:[
           (0,L.jsx)("span",{children:"Tiada pelayan didaftarkan lagi."}),
           (0,L.jsx)("button",{className:"btn btn-primary",onClick:()=>nav("servers"),style:{marginLeft:"0.75rem",fontSize:"0.78rem",padding:"0.25rem 0.65rem"},children:"+ Daftar Pelayan Baharu"})
         ]}):(0,L.jsx)("div",{
-          style:{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(220px, 1fr))",gap:"0.65rem"},
+          style:{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(250px, 1fr))",gap:"0.65rem"},
           children:servers.map(s=>{
             let isOnline=s.status==="online";
             return (0,L.jsxs)("div",{
               key:s.id,
               className:"glass-panel",
               style:{
-                padding:"0.65rem 0.95rem",
+                padding:"0.7rem 0.95rem",
                 borderRadius:"12px",
                 border:isOnline?"1px solid rgba(16, 185, 129, 0.22)":"1px solid rgba(239, 68, 68, 0.22)",
                 background:isOnline?"rgba(16, 185, 129, 0.05)":"rgba(239, 68, 68, 0.05)",
@@ -525,11 +551,20 @@ function HomePage({onNavigate:nav,onSelectModule:selMod}){
                 gap:"0.6rem"
               },
               children:[
-                /* Hanya Nama Server */
-                (0,L.jsx)("div",{
-                  style:{fontWeight:700,fontSize:"0.88rem",color:"#f8fafc",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"},
-                  title:s.name,
-                  children:s.name
+                /* Nama Server & Last Ping Datetime */
+                (0,L.jsxs)("div",{
+                  style:{minWidth:0},
+                  children:[
+                    (0,L.jsx)("div",{
+                      style:{fontWeight:700,fontSize:"0.88rem",color:"#f8fafc",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"},
+                      title:s.name,
+                      children:s.name
+                    }),
+                    (0,L.jsxs)("div",{
+                      style:{fontSize:"0.72rem",color:"var(--text-muted)",marginTop:"0.15rem"},
+                      children:["Last Ping: ",formatPingTime(s.last_checked_at)]
+                    })
+                  ]
                 }),
                 /* Hanya Status Dot (Online/Offline) */
                 (0,L.jsxs)("div",{

@@ -47,6 +47,36 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
     }
   };
 
+  const formatPingDateTime = (dt) => {
+    if (!dt) return 'Belum disemak';
+    try {
+      const d = new Date(dt.includes('T') ? dt : dt.replace(' ', 'T'));
+      if (isNaN(d.getTime())) return dt;
+      return d.toLocaleDateString('ms-MY', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      }) + ', ' + d.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch {
+      return dt;
+    }
+  };
+
+  const getLatestPing = () => {
+    if (!servers || servers.length === 0) return null;
+    let latest = '';
+    servers.forEach(s => {
+      if (s.last_checked_at && (!latest || s.last_checked_at > latest)) {
+        latest = s.last_checked_at;
+      }
+    });
+    return latest ? formatPingDateTime(latest) : null;
+  };
+
   const handlePingAllServers = async () => {
     setPingingAll(true);
     try {
@@ -283,8 +313,26 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
                   {servers.filter(s => s.status === 'online').length} / {servers.length} Online
                 </span>
               </h2>
+
+              {getLatestPing() && (
+                <span style={{ 
+                  fontSize: '0.74rem', 
+                  color: '#cbd5e1', 
+                  background: 'rgba(15, 23, 42, 0.75)', 
+                  padding: '0.18rem 0.65rem', 
+                  borderRadius: '8px',
+                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem'
+                }} title="Masa semakan ping terakhir dijalankan">
+                  <span style={{ color: '#38bdf8' }}>🕒</span>
+                  <span>Last Ping: <strong style={{ color: '#f8fafc' }}>{getLatestPing()}</strong></span>
+                </span>
+              )}
+
               <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                (Status rekod terkini. Semak hanya bila perlu untuk lindungi kestabilan pelayan)
+                (Semakan berkala 1 jam sekali)
               </span>
             </div>
 
@@ -319,7 +367,7 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
             </div>
           </div>
 
-          {/* Senarai Ringkas Pelayan (Hanya Nama Pelayan & Status Online/Offline) */}
+          {/* Senarai Ringkas Pelayan (Nama Pelayan, Last Ping Datetime & Status Online/Offline) */}
           {loadingServers && servers.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
               <RefreshCw size={18} className="spin" style={{ margin: '0 auto 0.4rem auto' }} />
@@ -335,7 +383,7 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
           ) : (
             <div style={{ 
               display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', 
               gap: '0.65rem' 
             }}>
               {servers.map((s) => {
@@ -345,7 +393,7 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
                     key={s.id} 
                     className="glass-panel"
                     style={{ 
-                      padding: '0.65rem 0.95rem', 
+                      padding: '0.7rem 0.95rem', 
                       borderRadius: '12px',
                       border: isOnline ? '1px solid rgba(16, 185, 129, 0.22)' : '1px solid rgba(239, 68, 68, 0.22)',
                       background: isOnline ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)',
@@ -355,19 +403,24 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
                       gap: '0.6rem'
                     }}
                   >
-                    {/* Hanya Nama Server */}
-                    <div style={{ 
-                      fontWeight: 700, 
-                      fontSize: '0.88rem', 
-                      color: '#f8fafc',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }} title={s.name}>
-                      {s.name}
+                    {/* Nama Server & Last Ping Datetime */}
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ 
+                        fontWeight: 700, 
+                        fontSize: '0.88rem', 
+                        color: '#f8fafc',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }} title={s.name}>
+                        {s.name}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                        Last Ping: {formatPingDateTime(s.last_checked_at)}
+                      </div>
                     </div>
 
-                    {/* Hanya Status Dot (Online/Offline) */}
+                    {/* Status Dot (Online/Offline) */}
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
                       <span style={{ 
                         width: '8px', 
