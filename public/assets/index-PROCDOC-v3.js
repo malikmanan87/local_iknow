@@ -528,7 +528,7 @@ function HomePage({onNavigate:nav,onSelectModule:selMod}){
 
         /* Server Compact List (Nama Pelayan, Last Ping Datetime & Status Online/Offline) */
         loadingServers&&servers.length===0?(0,L.jsxs)("div",{style:{textAlign:"center",padding:"1.5rem",color:"var(--text-muted)",fontSize:"0.82rem"},children:[
-          (0,L.jsx)(k,{size:18,className:"spin",style:"margin:0 auto 0.4rem auto"}),
+          (0,L.jsx)(k,{size:18,className:"spin",style:{margin:"0 auto 0.4rem auto"}}),
           (0,L.jsx)("div",{children:"Memuat status rekod pelayan..."})
         ]}):servers.length===0?(0,L.jsxs)("div",{className:"glass-panel",style:{padding:"1.25rem",textAlign:"center",color:"var(--text-muted)",fontSize:"0.85rem"},children:[
           (0,L.jsx)("span",{children:"Tiada pelayan didaftarkan lagi."}),
