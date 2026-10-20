@@ -347,23 +347,6 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
                 <RefreshCw size={13} className={pingingAll ? 'spin' : ''} />
                 <span>{pingingAll ? 'Sedang Menguji...' : 'Uji Sambungan (Ping)'}</span>
               </button>
-
-              <button 
-                className="btn btn-secondary" 
-                onClick={() => onNavigate('servers')}
-                style={{ 
-                  padding: '0.3rem 0.75rem', 
-                  fontSize: '0.78rem', 
-                  borderColor: 'rgba(56, 189, 248, 0.35)',
-                  color: '#38bdf8',
-                  background: 'rgba(56, 189, 248, 0.1)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem'
-                }}
-              >
-                <span>⚙️ Urus Pelayan</span>
-              </button>
             </div>
           </div>
 

@@ -503,7 +503,7 @@ function HomePage({onNavigate:nav,onSelectModule:selMod}){
               ]
             }),
 
-            (0,L.jsxs)("div",{style:{display:"flex",gap:"0.5rem",alignItems:"center"},children:[
+            (0,L.jsx)("div",{style:{display:"flex",gap:"0.5rem",alignItems:"center"},children:
               (0,L.jsxs)("button",{
                 className:"btn btn-secondary",
                 onClick:pingAllServers,
@@ -514,15 +514,8 @@ function HomePage({onNavigate:nav,onSelectModule:selMod}){
                   (0,L.jsx)(k,{size:13,className:pingingAll?"spin":""}),
                   pingingAll?"Sedang Menguji...":"Uji Sambungan (Ping)"
                 ]
-              }),
-
-              (0,L.jsx)("button",{
-                className:"btn btn-secondary",
-                onClick:()=>nav("servers"),
-                style:{padding:"0.3rem 0.75rem",fontSize:"0.78rem",borderColor:"rgba(56, 189, 248, 0.35)",color:"#38bdf8",background:"rgba(56, 189, 248, 0.1)",display:"inline-flex",alignItems:"center",gap:"0.35rem"},
-                children:"⚙️ Urus Pelayan"
               })
-            ]})
+            })
           ]
         }),
 
