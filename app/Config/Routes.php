@@ -111,6 +111,7 @@ $routes->group('api', function($routes) {
     $routes->post('servers', 'Api\ServerController::create');
     $routes->match(['put', 'post'], 'servers/(:num)', 'Api\ServerController::update/$1');
     $routes->delete('servers/(:num)', 'Api\ServerController::delete/$1');
+    $routes->get('servers/check-hourly', 'Api\ServerController::checkHourly');
     $routes->post('servers/ping/(:any)', 'Api\ServerController::ping/$1');
     $routes->get('servers/ping-all', 'Api\ServerController::pingAll');
 });

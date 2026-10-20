@@ -181,31 +181,120 @@ class ServerController extends ResourceController {
 
         $onlineCount = 0;
         $offlineCount = 0;
+        $offlineServers = [];
         foreach ($servers as $s) {
-            if ($s['status'] === 'online') $onlineCount++;
-            else $offlineCount++;
+            if ($s['status'] === 'online') {
+                $onlineCount++;
+            } else {
+                $offlineCount++;
+                $offlineServers[] = $s;
+            }
         }
 
         return $this->respond([
             'status' => 'success',
+            'pinged' => true,
             'message' => 'Semua pelayan berjaya disemak.',
             'total' => count($servers),
             'online_count' => $onlineCount,
             'offline_count' => $offlineCount,
+            'offline_servers' => $offlineServers,
             'data' => $servers
         ]);
     }
 
     /**
-     * Internal Health Check: Socket check or ICMP ping
+     * Semakan Kitaran 1 Jam Sekali (3600 saat)
+     * Hanya melakukan pingAll sekiranya telah melepasi 1 jam dari semakan terakhir.
+     * Jika belum, memulangkan status sedia ada dalam pangkalan data.
+     */
+    public function checkHourly() {
+        $model = $this->getModelInstance();
+        $servers = $model->orderBy('id', 'ASC')->findAll();
+        
+        $now = time();
+        $needsPing = false;
+
+        if (empty($servers)) {
+            return $this->respond([
+                'status' => 'success',
+                'pinged' => false,
+                'offline_count' => 0,
+                'offline_servers' => [],
+                'data' => []
+            ]);
+        }
+
+        $latestCheckTime = 0;
+        foreach ($servers as $s) {
+            if (empty($s['last_checked_at'])) {
+                $needsPing = true;
+                break;
+            }
+            $t = strtotime($s['last_checked_at']);
+            if ($t > $latestCheckTime) {
+                $latestCheckTime = $t;
+            }
+        }
+
+        // Jika melepasi 1 jam (3600 saat) atau belum pernah disemak
+        if ($needsPing || ($now - $latestCheckTime) >= 3600) {
+            return $this->pingAll();
+        }
+
+        $onlineCount = 0;
+        $offlineCount = 0;
+        $offlineServers = [];
+        foreach ($servers as $s) {
+            if ($s['status'] === 'online') {
+                $onlineCount++;
+            } else {
+                $offlineCount++;
+                $offlineServers[] = $s;
+            }
+        }
+
+        return $this->respond([
+            'status' => 'success',
+            'pinged' => false,
+            'message' => 'Status daripada pangkalan data (kitaran 1 jam belum tamat).',
+            'total' => count($servers),
+            'online_count' => $onlineCount,
+            'offline_count' => $offlineCount,
+            'offline_servers' => $offlineServers,
+            'last_checked_at' => $latestCheckTime > 0 ? date('Y-m-d H:i:s', $latestCheckTime) : null,
+            'next_check_in_seconds' => max(0, 3600 - ($now - $latestCheckTime)),
+            'data' => $servers
+        ]);
+    }
+
+    /**
+     * Internal Health Check: Socket check or ICMP ping with Double-Check retry
      */
     private function checkServerHealth($ip, $port = null) {
+        $result = $this->doSingleHealthCheck($ip, $port);
+        // Double-check: sekiranya semakan pertama gagal, tunggu 1.5 saat dan cuba sekali lagi
+        // untuk mengelakkan amaran palsu (false alarm) akibat gangguan rangkaian sesaat.
+        if ($result['status'] === 'offline') {
+            usleep(1500000); // 1.5 saat
+            $retry = $this->doSingleHealthCheck($ip, $port);
+            if ($retry['status'] === 'online') {
+                return $retry;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Pelaksanaan semakan tunggal (Socket TCP atau ICMP Windows ping)
+     */
+    private function doSingleHealthCheck($ip, $port = null) {
         $ip = trim($ip);
         if (empty($ip)) {
             return ['status' => 'offline', 'latency_ms' => null];
         }
 
-        // 1. Try Socket connection if port provided
+        // 1. Cuba Socket connection jika port dibekalkan
         if (!empty($port) && (int)$port > 0) {
             $start = microtime(true);
             $errno = 0;
@@ -222,7 +311,7 @@ class ServerController extends ResourceController {
             }
         }
 
-        // 2. Fallback to ICMP ping (Windows format)
+        // 2. Fallback kepada ICMP ping (format Windows)
         $output = [];
         $resultCode = -1;
         $cmd = "ping -n 1 -w 1000 " . escapeshellarg($ip);
@@ -230,7 +319,7 @@ class ServerController extends ResourceController {
 
         if ($resultCode === 0) {
             $outputText = implode(' ', $output);
-            // Parse: time=12ms or time<1ms
+            // Parse: time=12ms atau time<1ms
             if (preg_match('/time[=<](\d+)ms/i', $outputText, $matches)) {
                 $lat = (int)$matches[1];
                 return [
