@@ -114,5 +114,16 @@ $routes->group('api', function($routes) {
     $routes->get('servers/check-hourly', 'Api\ServerController::checkHourly');
     $routes->post('servers/ping/(:any)', 'Api\ServerController::ping/$1');
     $routes->get('servers/ping-all', 'Api\ServerController::pingAll');
+
+    // Reminders & Task Alerts
+    $routes->get('reminders', 'Api\ReminderController::index');
+    $routes->get('reminders/alerts-count', 'Api\ReminderController::getAlertsCount');
+    $routes->get('reminders/(:num)', 'Api\ReminderController::show/$1');
+    $routes->post('reminders', 'Api\ReminderController::create');
+    $routes->match(['put', 'post'], 'reminders/(:num)', 'Api\ReminderController::update/$1');
+    $routes->delete('reminders/(:num)', 'Api\ReminderController::delete/$1');
+    $routes->post('reminders/(:num)/toggle-complete', 'Api\ReminderController::toggleComplete/$1');
+    $routes->post('reminders/(:num)/send-email', 'Api\ReminderController::sendEmail/$1');
 });
+
 

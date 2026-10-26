@@ -9,6 +9,7 @@ import NotesManager from './pages/NotesManager';
 import StaffDirectory from './pages/StaffDirectory';
 import FinanceProcurement from './pages/FinanceProcurement';
 import ServerManager from './pages/ServerManager';
+import Reminder from './pages/Reminder';
 import AddModuleModal from './components/AddModuleModal';
 import { getBackupStatus, runManualBackup } from './services/api';
 import { showError } from './utils/swal';
@@ -21,6 +22,9 @@ export default function App() {
   const [showAddModule, setShowAddModule] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  // Reminder alerts state
+  const [reminderAlerts, setReminderAlerts] = useState(0);
+
   // Backup status state
   const [backupInfo, setBackupInfo] = useState(null);
   const [backingUp, setBackingUp] = useState(false);
@@ -28,6 +32,19 @@ export default function App() {
   // Server monitoring state (Kitaran 1 jam sekali & Top Alert Banner)
   const [offlineServers, setOfflineServers] = useState([]);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  const fetchReminderAlerts = async () => {
+    try {
+      const origin = window.location.origin;
+      const path = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+      const res = await axios.get(`${origin}${path}api/reminders/alerts-count`);
+      if (res.data?.total_alerts !== undefined) {
+        setReminderAlerts(res.data.total_alerts);
+      }
+    } catch (e) {
+      console.error('Ralat alerts count:', e);
+    }
+  };
 
   const checkServerStatus = async () => {
     try {
@@ -74,6 +91,7 @@ export default function App() {
   useEffect(() => {
     checkAndBackup(true); // Auto backup semasa buka sistem (atau jika terlepas waktu 8:00 AM)
     checkServerStatus();  // Semak status pelayan (hanya ping jika sudah melepasi 1 jam dari semakan lalu)
+    fetchReminderAlerts(); // Semak bilangan amaran peringatan (loceng navbar)
 
     // Semak kitaran backup setiap minit
     const backupInterval = setInterval(() => {
@@ -85,9 +103,15 @@ export default function App() {
       checkServerStatus();
     }, 300000);
 
+    // Semak amaran reminder setiap 2 minit
+    const reminderInterval = setInterval(() => {
+      fetchReminderAlerts();
+    }, 120000);
+
     return () => {
       clearInterval(backupInterval);
       clearInterval(serverInterval);
+      clearInterval(reminderInterval);
     };
   }, []);
 
@@ -192,6 +216,7 @@ export default function App() {
       <Navbar
         activeTab={activeTab}
         setActiveTab={handleSetTab}
+        alertsCount={reminderAlerts}
       />
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem', paddingBottom: '3rem' }}>
@@ -213,6 +238,8 @@ export default function App() {
           <MirthViewer />
         ) : activeTab === 'servers' ? (
           <ServerManager />
+        ) : activeTab === 'reminders' ? (
+          <Reminder onAlertsChanged={fetchReminderAlerts} />
         ) : activeTab === 'dashboard' ? (
           <Dashboard
             key={refreshTrigger}
