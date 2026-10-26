@@ -1451,7 +1451,14 @@ function ReminderManager(){
                       style:{fontSize:"0.74rem",color:"#94a3b8",display:"flex",alignItems:"center",gap:"0.25rem",marginTop:"0.15rem"},
                       children:[
                         "✉️ ",
-                        (0,L.jsx)("span",{style:{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"140px"},title:it.assigned_email,children:it.assigned_email})
+                        (0,L.jsx)("span",{
+                          style:{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"160px"},
+                          title:it.assigned_email,
+                          children:(()=>{
+                            let ems=it.assigned_email.split(/[\s,;]+/).filter(Boolean);
+                            return ems.length>1?ems[0]+" (+"+(ems.length-1)+" lagi)":ems[0];
+                          })()
+                        })
                       ]
                     }):(0,L.jsx)("span",{style:{fontSize:"0.72rem",color:"var(--text-muted)"},children:"Tiada emel"})
                   ]}),
@@ -1629,8 +1636,11 @@ function ReminderManager(){
               (0,L.jsx)("input",{type:"text",className:"form-input",placeholder:"e.g. En. Malik Manan",value:form.assigned_to,onChange:e=>setForm({...form,assigned_to:e.target.value})})
             ]}),
             (0,L.jsxs)("div",{className:"form-group",children:[
-              (0,L.jsx)("label",{className:"form-label",children:"Alamat Emel Pegawai"}),
-              (0,L.jsx)("input",{type:"email",className:"form-input",placeholder:"e.g. malikmanan@hosza.my",value:form.assigned_email,onChange:e=>setForm({...form,assigned_email:e.target.value})})
+              (0,L.jsxs)("label",{className:"form-label",children:[
+                "Alamat Emel Pegawai ",
+                (0,L.jsx)("span",{style:{fontSize:"0.72rem",color:"var(--text-muted)",fontWeight:400},children:"(boleh berbilang, pisah koma ,)"})
+              ]}),
+              (0,L.jsx)("input",{type:"text",className:"form-input",placeholder:"Contoh: staf1@unisza.edu.my, staf2@unisza.edu.my",value:form.assigned_email,onChange:e=>setForm({...form,assigned_email:e.target.value})})
             ]})
           ]}),
           (0,L.jsxs)("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1rem",background:"rgba(255,255,255,0.02)",padding:"0.75rem",borderRadius:"8px",marginBottom:"1rem",border:"1px solid rgba(255,255,255,0.06)"},children:[

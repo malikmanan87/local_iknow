@@ -577,8 +577,11 @@ export default function Reminder({ onAlertsChanged }) {
                         {item.assigned_email ? (
                           <div style={{ fontSize: '0.74rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.15rem' }}>
                             <Mail size={11} style={{ color: '#38bdf8' }} />
-                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }} title={item.assigned_email}>
-                              {item.assigned_email}
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }} title={item.assigned_email}>
+                              {(() => {
+                                const ems = item.assigned_email.split(/[\s,;]+/).filter(Boolean);
+                                return ems.length > 1 ? `${ems[0]} (+${ems.length - 1} lagi)` : ems[0];
+                              })()}
                             </span>
                           </div>
                         ) : (
@@ -858,11 +861,13 @@ export default function Reminder({ onAlertsChanged }) {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Alamat Emel Pegawai (Notifikasi)</label>
+                  <label className="form-label">
+                    Alamat Emel Pegawai <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 400 }}>(boleh berbilang, pisah koma ,)</span>
+                  </label>
                   <input 
-                    type="email" 
+                    type="text" 
                     className="form-input" 
-                    placeholder="Contoh: malikmanan@hosza.my"
+                    placeholder="Contoh: staf1@unisza.edu.my, staf2@unisza.edu.my"
                     value={formData.assigned_email}
                     onChange={(e) => setFormData({ ...formData, assigned_email: e.target.value })}
                   />

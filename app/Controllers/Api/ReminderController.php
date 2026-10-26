@@ -306,9 +306,24 @@ class ReminderController extends ResourceController
             return $this->failNotFound('Peringatan tidak dijumpai.');
         }
 
-        $emailAddress = trim($reminder['assigned_email'] ?? '');
-        if (empty($emailAddress) || !filter_var($emailAddress, FILTER_VALIDATE_EMAIL)) {
-            return $this->failValidationErrors('Tiada alamat emel yang sah ditetapkan bagi tugasan ini.');
+        $rawEmails = trim($reminder['assigned_email'] ?? '');
+        if (empty($rawEmails)) {
+            return $this->failValidationErrors('Tiada alamat emel ditetapkan bagi tugasan ini.');
+        }
+
+        // Pisahkan berbilang alamat emel mengikut koma, semikolon atau ruang
+        $emailParts = preg_split('/[\s,;]+/', $rawEmails);
+        $validEmails = [];
+        foreach ($emailParts as $part) {
+            $cleaned = trim($part);
+            if (!empty($cleaned) && filter_var($cleaned, FILTER_VALIDATE_EMAIL)) {
+                $validEmails[] = strtolower($cleaned);
+            }
+        }
+        $validEmails = array_values(array_unique($validEmails));
+
+        if (empty($validEmails)) {
+            return $this->failValidationErrors('Tiada alamat emel yang sah dijumpai. Sila masukkan emel sah (contoh: staf1@unisza.edu.my, staf2@unisza.edu.my).');
         }
 
         $db = Database::connect();
@@ -385,6 +400,10 @@ class ReminderController extends ResourceController
                 <td style='padding:8px 12px; border:1px solid #d1d5db; font-weight:bold; background:#f9fafb;'>Pegawai Bertugas</td>
                 <td style='padding:8px 12px; border:1px solid #d1d5db;'>{$assignedName}</td>
               </tr>
+              <tr>
+                <td style='padding:8px 12px; border:1px solid #d1d5db; font-weight:bold; background:#f9fafb;'>Penerima Emel</td>
+                <td style='padding:8px 12px; border:1px solid #d1d5db;'>" . htmlspecialchars(implode(', ', $validEmails)) . "</td>
+              </tr>
               " . (!empty($reminder['description']) ? "
               <tr>
                 <td style='padding:8px 12px; border:1px solid #d1d5db; font-weight:bold; vertical-align:top; background:#f9fafb;'>Arahan / Catatan</td>
@@ -417,27 +436,31 @@ class ReminderController extends ResourceController
             $fromName  = !empty($settings['app_name']) ? $settings['app_name'] : config('Email')->fromName;
 
             $email->setFrom($fromEmail ?: 'noreply@unisza.edu.my', $fromName ?: 'iKNOW Knowledge Hub');
-            $email->setTo($emailAddress);
+            $email->setTo($validEmails);
             $email->setSubject("🔔 Peringatan Tugasan: {$reminder['title']} [{$priorityLabel}]");
             $email->setMessage($htmlMessage);
             $email->setMailType('html');
 
             $sent = $email->send(false);
+            $emailsStr = implode(', ', $validEmails);
             if (!$sent) {
                 $debugMsg = strip_tags($email->printDebugger(['headers']));
                 log_message('error', "Ralat hantar emel: {$debugMsg}");
                 return $this->fail([
                     'status'  => 'error',
-                    'message' => 'Gagal menghantar emel kepada ' . $emailAddress . '. ' . ($debugMsg ?: 'Sila semak tetapan SMTP di app/Config/Email.php.')
+                    'message' => 'Gagal menghantar emel kepada ' . $emailsStr . '. ' . ($debugMsg ?: 'Sila semak tetapan SMTP di app/Config/Email.php.')
                 ]);
             }
 
             $model->update($id, ['last_email_sent_at' => date('Y-m-d H:i:s')]);
 
+            $totalCount = count($validEmails);
+            $recipientText = $totalCount > 1 ? " ({$totalCount} penerima)" : "";
+
             return $this->respond([
                 'status'  => 'success',
                 'sent'    => true,
-                'message' => "Emel peringatan berjaya dihantar ke {$emailAddress}."
+                'message' => "Emel peringatan berjaya dihantar ke {$emailsStr}{$recipientText}."
             ]);
         } catch (\Throwable $e) {
             log_message('error', "Pengecualian emel: " . $e->getMessage());

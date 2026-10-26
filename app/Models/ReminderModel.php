@@ -42,7 +42,7 @@ class ReminderModel extends Model
             due_date DATETIME NOT NULL,
             reminder_before_days INT DEFAULT 3,
             assigned_to VARCHAR(150) NULL,
-            assigned_email VARCHAR(150) NULL,
+            assigned_email TEXT NULL,
             send_email_notification TINYINT(1) DEFAULT 1,
             last_email_sent_at DATETIME NULL,
             is_recurring TINYINT(1) DEFAULT 0,
