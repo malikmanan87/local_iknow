@@ -1031,69 +1031,94 @@ function ReminderManager(){
      [summary,setSummary]=(0,v.useState)({total:0,overdue:0,due_today:0,upcoming_7d:0,completed:0}),
      [loading,setLoading]=(0,v.useState)(!0),
      [search,setSearch]=(0,v.useState)(""),
-     [catFilter,setCatFilter]=(0,v.useState)("all"),
-     [prioFilter,setPrioFilter]=(0,v.useState)("all"),
-     [bucketFilter,setBucketFilter]=(0,v.useState)("all"),
+     [cat,setCat]=(0,v.useState)("all"),
+     [pri,setPri]=(0,v.useState)("all"),
+     [bucket,setBucket]=(0,v.useState)("all"),
+     [page,setPage]=(0,v.useState)(1),
+     [pageSize,setPageSize]=(0,v.useState)(10),
      [showModal,setShowModal]=(0,v.useState)(!1),
      [editingId,setEditingId]=(0,v.useState)(null),
      [submitting,setSubmitting]=(0,v.useState)(!1),
      [sendingEmailId,setSendingEmailId]=(0,v.useState)(null),
-     [form,setForm]=(0,v.useState)({title:"",description:"",category:"system",priority:"medium",due_date:"",reminder_before_days:3,assigned_to:"",assigned_email:"",send_email_notification:1,is_recurring:0,recurrence_cycle:"monthly"});
+     [form,setForm]=(0,v.useState)({
+       title:"",
+       description:"",
+       category:"system",
+       priority:"medium",
+       due_date:"",
+       reminder_before_days:3,
+       assigned_to:"",
+       assigned_email:"",
+       send_email_notification:1,
+       is_recurring:0,
+       recurrence_cycle:"monthly"
+     });
 
   let loadData=async()=>{
-    setLoading(!0);
     try{
-      let params=new URLSearchParams();
-      if(search.trim())params.append("search",search.trim());
-      if(catFilter!=="all")params.append("category",catFilter);
-      if(prioFilter!=="all")params.append("priority",prioFilter);
-      if(bucketFilter!=="all")params.append("time_bucket",bucketFilter);
-
-      let res=await fetch("api/reminders?"+params.toString()).then(r=>r.json());
-      if(res&&res.status==="success"){
-        setItems(res.data||[]);
-        if(res.summary)setSummary(res.summary);
+      setLoading(!0);
+      let p=new URLSearchParams();
+      if(search.trim())p.append("search",search.trim());
+      if(cat!=="all")p.append("category",cat);
+      if(pri!=="all")p.append("priority",pri);
+      if(bucket!=="all")p.append("time_bucket",bucket);
+      let r=await fetch("api/reminders?"+p.toString()).then(x=>x.json());
+      if(r&&r.status==="success"){
+        setItems(r.data||[]);
+        if(r.summary)setSummary(r.summary);
       }
-    }catch(err){console.error(err)}finally{setLoading(!1)}
+    }catch(e){console.error(e)}finally{setLoading(!1)}
   };
 
-  (0,v.useEffect)(()=>{loadData()},[catFilter,prioFilter,bucketFilter]);
+  (0,v.useEffect)(()=>{setPage(1);loadData();},[cat,pri,bucket]);
 
   (0,v.useEffect)(()=>{
-    let timer=setTimeout(loadData,300);
-    return()=>clearTimeout(timer);
+    let t=setTimeout(()=>{setPage(1);loadData();},300);
+    return()=>clearTimeout(t);
   },[search]);
 
   let openAdd=()=>{
     let now=new Date();
     now.setHours(now.getHours()+24);
     let pad=n=>String(n).padStart(2,"0");
-    let defDate=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:00`;
+    let defDate=now.getFullYear()+"-"+pad(now.getMonth()+1)+"-"+pad(now.getDate())+"T"+pad(now.getHours())+":00";
     setEditingId(null);
-    setForm({title:"",description:"",category:"system",priority:"medium",due_date:defDate,reminder_before_days:3,assigned_to:"",assigned_email:"",send_email_notification:1,is_recurring:0,recurrence_cycle:"monthly"});
+    setForm({
+      title:"",
+      description:"",
+      category:"system",
+      priority:"medium",
+      due_date:defDate,
+      reminder_before_days:3,
+      assigned_to:"",
+      assigned_email:"",
+      send_email_notification:1,
+      is_recurring:0,
+      recurrence_cycle:"monthly"
+    });
     setShowModal(!0);
   };
 
-  let openEdit=(item)=>{
-    setEditingId(item.id);
-    let dateVal="";
-    if(item.due_date){
-      let d=new Date(item.due_date.replace(" ","T"));
+  let openEdit=(it)=>{
+    setEditingId(it.id);
+    let dVal="";
+    if(it.due_date){
+      let d=new Date(it.due_date.replace(" ","T"));
       let pad=n=>String(n).padStart(2,"0");
-      dateVal=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      dVal=d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());
     }
     setForm({
-      title:item.title||"",
-      description:item.description||"",
-      category:item.category||"general",
-      priority:item.priority||"medium",
-      due_date:dateVal,
-      reminder_before_days:item.reminder_before_days||3,
-      assigned_to:item.assigned_to||"",
-      assigned_email:item.assigned_email||"",
-      send_email_notification:Number(item.send_email_notification)?1:0,
-      is_recurring:Number(item.is_recurring)?1:0,
-      recurrence_cycle:item.recurrence_cycle||"monthly"
+      title:it.title||"",
+      description:it.description||"",
+      category:it.category||"general",
+      priority:it.priority||"medium",
+      due_date:dVal,
+      reminder_before_days:it.reminder_before_days||3,
+      assigned_to:it.assigned_to||"",
+      assigned_email:it.assigned_email||"",
+      send_email_notification:Number(it.send_email_notification)?1:0,
+      is_recurring:Number(it.is_recurring)?1:0,
+      recurrence_cycle:it.recurrence_cycle||"monthly"
     });
     setShowModal(!0);
   };
@@ -1101,7 +1126,7 @@ function ReminderManager(){
   let saveReminder=async(e)=>{
     e.preventDefault();
     if(!form.title.trim()||!form.due_date){
-      if(window.iknowAlert)window.iknowAlert("Ralat","Sila lengkapkan tajuk dan tarikh matang!","error");
+      if(window.Swal)window.Swal.fire({icon:"error",title:"Ralat",text:"Sila lengkapkan tajuk dan tarikh matang."});
       return;
     }
     setSubmitting(!0);
@@ -1112,323 +1137,446 @@ function ReminderManager(){
         method:method,
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify(form)
-      }).then(r=>r.json());
-
+      }).then(x=>x.json());
       if(res&&res.status==="success"){
-        if(window.iknowAlert)window.iknowAlert("Berjaya",editingId?"Peringatan dikemaskini.":"Peringatan baharu dicipta.","success");
+        if(window.Swal)window.Swal.fire({icon:"success",title:"Berjaya",text:res.message||"Peringatan berjaya disimpan.",timer:1500,showConfirmButton:!1});
         setShowModal(!1);
         loadData();
       }else{
-        if(window.iknowAlert)window.iknowAlert("Ralat",res.messages?.error||"Gagal menyimpan.","error");
+        if(window.Swal)window.Swal.fire({icon:"error",title:"Ralat",text:res.messages?.error||"Gagal menyimpan rekod."});
       }
     }catch(err){console.error(err)}finally{setSubmitting(!1)}
   };
 
-  let toggleComplete=async(item)=>{
+  let toggleComplete=async(it)=>{
     try{
-      let res=await fetch("api/reminders/"+item.id+"/toggle-complete",{method:"POST"}).then(r=>r.json());
+      let res=await fetch("api/reminders/"+it.id+"/toggle-complete",{method:"POST"}).then(x=>x.json());
       if(res&&res.status==="success"){
-        if(window.iknowAlert)window.iknowAlert("Status Dikemaskini",res.message||"Status tugasan berjaya diubah.","success");
+        if(window.Swal)window.Swal.fire({icon:"success",title:"Dikemaskini",text:res.message||"Status selesai dikemaskini.",timer:1200,showConfirmButton:!1});
         loadData();
       }
     }catch(err){console.error(err)}
   };
 
-  let sendEmail=async(item)=>{
-    if(!item.assigned_email){
-      if(window.iknowAlert)window.iknowAlert("Tiada Emel","Sila masukkan emel pegawai terlebih dahulu.","warning");
+  let sendEmail=async(it)=>{
+    if(!it.assigned_email){
+      if(window.Swal)window.Swal.fire({icon:"warning",title:"Tiada Emel",text:"Sila kemaskini tugasan dan tetapkan emel pegawai terlebih dahulu."});
       return;
     }
-    setSendingEmailId(item.id);
+    setSendingEmailId(it.id);
     try{
-      let res=await fetch("api/reminders/"+item.id+"/send-email",{method:"POST"}).then(r=>r.json());
+      let res=await fetch("api/reminders/"+it.id+"/send-email",{method:"POST"}).then(x=>x.json());
       if(res&&res.status==="success"){
-        if(window.iknowAlert)window.iknowAlert("Emel Diproses",res.message||"Notifikasi emel telah diproses.","success");
+        if(window.Swal)window.Swal.fire({icon:"success",title:"Emel Dihantar",text:res.message||"Emel peringatan berjaya diproses.",timer:1600,showConfirmButton:!1});
         loadData();
       }else{
-        if(window.iknowAlert)window.iknowAlert("Ralat",res.messages?.error||"Gagal menghantar emel.","error");
+        if(window.Swal)window.Swal.fire({icon:"error",title:"Ralat Emel",text:res.messages?.error||"Gagal menghantar notifikasi emel."});
       }
     }catch(err){console.error(err)}finally{setSendingEmailId(null)}
   };
 
-  let deleteItem=async(item)=>{
-    let ok=!1;
-    if(window.iknowConfirm){
-      ok=await window.iknowConfirm("Padam Peringatan",`Adakah anda pasti mahu memadam "${item.title}"?`);
+  let deleteReminder=async(id)=>{
+    let conf=!0;
+    if(window.Swal){
+      let c=await window.Swal.fire({
+        title:"Padam Peringatan Ini?",
+        text:"Rekod ini akan dipadam daripada pangkalan data secara kekal.",
+        icon:"warning",
+        showCancelButton:!0,
+        confirmButtonColor:"#f43f5e",
+        confirmButtonText:"Ya, Padam",
+        cancelButtonText:"Batal"
+      });
+      conf=c.isConfirmed;
     }else{
-      ok=confirm(`Padam "${item.title}"?`);
+      conf=confirm("Padam peringatan ini secara kekal?");
     }
-    if(!ok)return;
-
+    if(!conf)return;
     try{
-      let res=await fetch("api/reminders/"+item.id,{method:"DELETE"}).then(r=>r.json());
+      let res=await fetch("api/reminders/"+id,{method:"DELETE"}).then(x=>x.json());
       if(res&&res.status==="success"){
-        if(window.iknowAlert)window.iknowAlert("Dipadam","Peringatan berjaya dipadam.","success");
+        if(window.Swal)window.Swal.fire({icon:"success",title:"Dipadam",text:"Peringatan berjaya dipadam.",timer:1200,showConfirmButton:!1});
         loadData();
       }
     }catch(err){console.error(err)}
   };
 
-  let formatDue=dt=>{
-    if(!dt)return"-";
+  let fmtDate=(s)=>{
+    if(!s)return "-";
     try{
-      let d=new Date(dt.replace(" ","T"));
+      let d=new Date(s.replace(" ","T"));
       return d.toLocaleDateString("ms-MY",{day:"2-digit",month:"short",year:"numeric"})+", "+d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",hour12:!0});
-    }catch{return dt}
+    }catch{return s}
   };
 
-  return (0,L.jsxs)("div",{style:{padding:"1.5rem 0",maxWidth:"1200px",margin:"0 auto"},children:[
+  let getCatLabel=(c)=>{
+    switch(c){
+      case "system":return "Sistem & Pelayan";
+      case "procurement":return "Perolehan & Dokumen";
+      case "issue":return "Isu & Troubleshooting";
+      case "staff_admin":return "Rutin Harian / Staf";
+      default:return "Umum";
+    }
+  };
+
+  let getPriBadge=(p)=>{
+    switch(p){
+      case "critical":
+        return(0,L.jsx)("span",{className:"badge",style:{background:"rgba(239, 68, 68, 0.15)",color:"#f87171",border:"1px solid rgba(239, 68, 68, 0.35)",fontSize:"0.7rem",padding:"0.12rem 0.5rem"},children:"● KRITIKAL"});
+      case "high":
+        return(0,L.jsx)("span",{className:"badge",style:{background:"rgba(249, 115, 22, 0.15)",color:"#fb923c",border:"1px solid rgba(249, 115, 22, 0.35)",fontSize:"0.7rem",padding:"0.12rem 0.5rem"},children:"● TINGGI"});
+      case "medium":
+        return(0,L.jsx)("span",{className:"badge",style:{background:"rgba(245, 158, 11, 0.15)",color:"#fbbf24",border:"1px solid rgba(245, 158, 11, 0.35)",fontSize:"0.7rem",padding:"0.12rem 0.5rem"},children:"● SEDERHANA"});
+      default:
+        return(0,L.jsx)("span",{className:"badge",style:{background:"rgba(16, 185, 129, 0.15)",color:"#34d399",border:"1px solid rgba(16, 185, 129, 0.35)",fontSize:"0.7rem",padding:"0.12rem 0.5rem"},children:"● RENDAH"});
+    }
+  };
+
+  let totalItems=items.length;
+  let totalPages=Math.max(1,Math.ceil(totalItems/pageSize));
+  let curPage=Math.min(page,totalPages);
+  let startIndex=(curPage-1)*pageSize;
+  let endIndex=Math.min(startIndex+pageSize,totalItems);
+  let currentItems=items.slice(startIndex,endIndex);
+
+  return(0,L.jsxs)("div",{style:{padding:"1.5rem 0",maxWidth:"1200px",margin:"0 auto"},children:[
     /* Header */
-    (0,L.jsxs)("div",{
-      className:"glass-panel",
-      style:{padding:"1.75rem 2rem",marginBottom:"1.75rem",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"1rem",background:"linear-gradient(135deg, rgba(244,63,94,0.12), rgba(99,102,241,0.12))",border:"1px solid rgba(244,63,94,0.25)"},
-      children:[
-        (0,L.jsxs)("div",{children:[
-          (0,L.jsxs)("div",{style:{display:"inline-flex",alignItems:"center",gap:"0.45rem",background:"rgba(244,63,94,0.18)",color:"#fda4af",padding:"0.25rem 0.85rem",borderRadius:"999px",fontSize:"0.78rem",fontWeight:700,marginBottom:"0.6rem",border:"1px solid rgba(244,63,94,0.3)"},children:[
-            (0,L.jsxs)("svg",{xmlns:"http://www.w3.org/2000/svg",width:13,height:13,viewBox:"0 0 24 24",fill:"none",stroke:"#fb7185",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round",children:[(0,L.jsx)("path",{d:"M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"}),(0,L.jsx)("path",{d:"M10.3 21a1.94 1.94 0 0 0 3.4 0"})]}),
-            "IKNOW KNOWLEDGE HUB • PUSAT PERINGATAN OPERASI"
-          ]}),
-          (0,L.jsx)("h1",{style:{fontSize:"1.85rem",fontWeight:800,margin:"0 0 0.35rem 0",letterSpacing:"-0.5px",color:"#f8fafc"},children:"Reminder & Pengurusan Tugasan"}),
-          (0,L.jsx)("p",{style:{margin:0,color:"var(--text-muted)",fontSize:"0.92rem"},children:"Pantau tarikh matang, semakan berkala, dan notifikasi emel bagi sebarang tugasan sistem."})
+    (0,L.jsxs)("div",{className:"glass-panel",style:{padding:"1.75rem 2rem",marginBottom:"1.75rem",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"1rem",background:"linear-gradient(135deg, rgba(244,63,94,0.12), rgba(99,102,241,0.12))",border:"1px solid rgba(244,63,94,0.25)"},children:[
+      (0,L.jsxs)("div",{children:[
+        (0,L.jsxs)("div",{style:{display:"inline-flex",alignItems:"center",gap:"0.45rem",background:"rgba(244,63,94,0.18)",color:"#fda4af",padding:"0.25rem 0.85rem",borderRadius:"999px",fontSize:"0.78rem",fontWeight:700,marginBottom:"0.6rem",border:"1px solid rgba(244,63,94,0.3)"},children:[
+          "🔔 IKNOW KNOWLEDGE HUB • PUSAT PERINGATAN OPERASI"
         ]}),
-        (0,L.jsxs)("button",{
-          className:"btn btn-primary",
-          onClick:openAdd,
-          style:{background:"linear-gradient(135deg, #f43f5e, #e11d48)",boxShadow:"0 4px 15px rgba(244, 63, 94, 0.4)",padding:"0.75rem 1.4rem"},
-          children:[
-            (0,L.jsxs)("svg",{xmlns:"http://www.w3.org/2000/svg",width:17,height:17,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round",children:[(0,L.jsx)("path",{d:"M5 12h14"}),(0,L.jsx)("path",{d:"M12 5v14"})]}),
-            " Tambah Reminder"
-          ]
-        })
-      ]
-    }),
+        (0,L.jsx)("h1",{style:{fontSize:"1.85rem",fontWeight:800,margin:"0 0 0.35rem 0",letterSpacing:"-0.5px",color:"#f8fafc"},children:"Reminder & Pengurusan Tugasan"}),
+        (0,L.jsx)("p",{style:{margin:0,color:"var(--text-muted)",fontSize:"0.92rem"},children:"Pantau tarikh matang, jadual penyelenggaraan berkala, dan notifikasi emel bagi sebarang tugasan sistem."})
+      ]}),
+      (0,L.jsxs)("button",{className:"btn btn-primary",onClick:openAdd,style:{background:"linear-gradient(135deg, #f43f5e, #e11d48)",boxShadow:"0 4px 15px rgba(244, 63, 94, 0.4)",padding:"0.75rem 1.4rem"},children:[
+        "+ Tambah Reminder"
+      ]})
+    ]}),
 
     /* KPI Summary Cards */
     (0,L.jsxs)("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))",gap:"1rem",marginBottom:"1.75rem"},children:[
-      (0,L.jsxs)("div",{
-        className:"glass-card",
-        onClick:()=>setBucketFilter(bucketFilter==="overdue"?"all":"overdue"),
-        style:{padding:"1.15rem 1.25rem",cursor:"pointer",border:bucketFilter==="overdue"?"2px solid #ef4444":"1px solid rgba(239, 68, 68, 0.25)",background:"linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(15, 23, 42, 0.5))"},
-        children:[
-          (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.4rem"},children:[
-            (0,L.jsx)("span",{style:{fontSize:"0.8rem",fontWeight:700,color:"#f87171",textTransform:"uppercase"},children:"Melepasi Tempoh"}),
-            "🚨"
-          ]}),
-          (0,L.jsx)("div",{style:{fontSize:"1.9rem",fontWeight:800,color:"#f8fafc"},children:summary.overdue}),
-          (0,L.jsx)("div",{style:{fontSize:"0.74rem",color:"#fca5a5"},children:"Perlu tindakan segera"})
-        ]
+      (0,L.jsxs)("div",{className:"glass-card",onClick:()=>setBucket(bucket==="overdue"?"all":"overdue"),style:{padding:"1.15rem 1.25rem",cursor:"pointer",border:bucket==="overdue"?"2px solid #ef4444":"1px solid rgba(239, 68, 68, 0.25)",background:"linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(15, 23, 42, 0.5))"},children:[
+        (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.4rem"},children:[
+          (0,L.jsx)("span",{style:{fontSize:"0.8rem",fontWeight:700,color:"#f87171",textTransform:"uppercase"},children:"Melepasi Tempoh"}),
+          "🚨"
+        ]}),
+        (0,L.jsx)("div",{style:{fontSize:"1.9rem",fontWeight:800,color:"#f8fafc"},children:summary.overdue}),
+        (0,L.jsx)("div",{style:{fontSize:"0.74rem",color:"#fca5a5"},children:"Perlu tindakan segera"})
+      ]}),
+      (0,L.jsxs)("div",{className:"glass-card",onClick:()=>setBucket(bucket==="due_today"?"all":"due_today"),style:{padding:"1.15rem 1.25rem",cursor:"pointer",border:bucket==="due_today"?"2px solid #f59e0b":"1px solid rgba(245, 158, 11, 0.25)",background:"linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(15, 23, 42, 0.5))"},children:[
+        (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.4rem"},children:[
+          (0,L.jsx)("span",{style:{fontSize:"0.8rem",fontWeight:700,color:"#fbbf24",textTransform:"uppercase"},children:"Hari Ini / Esok"}),
+          "⏳"
+        ]}),
+        (0,L.jsx)("div",{style:{fontSize:"1.9rem",fontWeight:800,color:"#f8fafc"},children:summary.due_today}),
+        (0,L.jsx)("div",{style:{fontSize:"0.74rem",color:"#fde68a"},children:"Baki dalam 48 jam"})
+      ]}),
+      (0,L.jsxs)("div",{className:"glass-card",onClick:()=>setBucket(bucket==="upcoming_7d"?"all":"upcoming_7d"),style:{padding:"1.15rem 1.25rem",cursor:"pointer",border:bucket==="upcoming_7d"?"2px solid #38bdf8":"1px solid rgba(56, 189, 248, 0.25)",background:"linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(15, 23, 42, 0.5))"},children:[
+        (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.4rem"},children:[
+          (0,L.jsx)("span",{style:{fontSize:"0.8rem",fontWeight:700,color:"#7dd3fc",textTransform:"uppercase"},children:"Dalam 7 Hari"}),
+          "📅"
+        ]}),
+        (0,L.jsx)("div",{style:{fontSize:"1.9rem",fontWeight:800,color:"#f8fafc"},children:summary.upcoming_7d}),
+        (0,L.jsx)("div",{style:{fontSize:"0.74rem",color:"#bae6fd"},children:"Jadual minggu semasa"})
+      ]}),
+      (0,L.jsxs)("div",{className:"glass-card",onClick:()=>setBucket(bucket==="completed"?"all":"completed"),style:{padding:"1.15rem 1.25rem",cursor:"pointer",border:bucket==="completed"?"2px solid #10b981":"1px solid rgba(16, 185, 129, 0.25)",background:"linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(15, 23, 42, 0.5))"},children:[
+        (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.4rem"},children:[
+          (0,L.jsx)("span",{style:{fontSize:"0.8rem",fontWeight:700,color:"#34d399",textTransform:"uppercase"},children:"Telah Selesai"}),
+          "✅"
+        ]}),
+        (0,L.jsx)("div",{style:{fontSize:"1.9rem",fontWeight:800,color:"#f8fafc"},children:summary.completed}),
+        (0,L.jsx)("div",{style:{fontSize:"0.74rem",color:"#a7f3d0"},children:"Rekod tugasan selesai"})
+      ]})
+    ]}),
+
+    /* Search & Filter */
+    (0,L.jsxs)("div",{className:"glass-panel",style:{padding:"1.1rem 1.5rem",marginBottom:"1.75rem",display:"flex",gap:"0.85rem",alignItems:"center",flexWrap:"wrap"},children:[
+      (0,L.jsx)("div",{style:{position:"relative",flex:"1 1 260px"},children:
+        (0,L.jsx)("input",{
+          type:"text",
+          className:"form-input",
+          placeholder:"Cari tajuk peringatan, pegawai, emel, atau catatan...",
+          value:search,
+          onChange:e=>setSearch(e.target.value),
+          style:{paddingLeft:"1rem",paddingRight:"1rem",paddingTop:"0.55rem",paddingBottom:"0.55rem",fontSize:"0.88rem"}
+        })
       }),
-      (0,L.jsxs)("div",{
-        className:"glass-card",
-        onClick:()=>setBucketFilter(bucketFilter==="due_today"?"all":"due_today"),
-        style:{padding:"1.15rem 1.25rem",cursor:"pointer",border:bucketFilter==="due_today"?"2px solid #f59e0b":"1px solid rgba(245, 158, 11, 0.25)",background:"linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(15, 23, 42, 0.5))"},
-        children:[
-          (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.4rem"},children:[
-            (0,L.jsx)("span",{style:{fontSize:"0.8rem",fontWeight:700,color:"#fbbf24",textTransform:"uppercase"},children:"Hari Ini / Esok"}),
-            "⏳"
-          ]}),
-          (0,L.jsx)("div",{style:{fontSize:"1.9rem",fontWeight:800,color:"#f8fafc"},children:summary.due_today}),
-          (0,L.jsx)("div",{style:{fontSize:"0.74rem",color:"#fde68a"},children:"Baki dalam 48 jam"})
-        ]
+      (0,L.jsx)("div",{style:{minWidth:"170px"},children:
+        (0,L.jsxs)("select",{
+          className:"form-select",
+          value:cat,
+          onChange:e=>setCat(e.target.value),
+          style:{paddingTop:"0.55rem",paddingBottom:"0.55rem",fontSize:"0.85rem"},
+          children:[
+            (0,L.jsx)("option",{value:"all",children:"📁 Semua Kategori"}),
+            (0,L.jsx)("option",{value:"system",children:"🖥️ Sistem & Pelayan"}),
+            (0,L.jsx)("option",{value:"procurement",children:"📑 Perolehan & Dokumen"}),
+            (0,L.jsx)("option",{value:"issue",children:"🔧 Isu & Troubleshooting"}),
+            (0,L.jsx)("option",{value:"staff_admin",children:"👥 Rutin Harian / Staf"}),
+            (0,L.jsx)("option",{value:"general",children:"📌 Umum"})
+          ]
+        })
       }),
-      (0,L.jsxs)("div",{
-        className:"glass-card",
-        onClick:()=>setBucketFilter(bucketFilter==="upcoming_7d"?"all":"upcoming_7d"),
-        style:{padding:"1.15rem 1.25rem",cursor:"pointer",border:bucketFilter==="upcoming_7d"?"2px solid #38bdf8":"1px solid rgba(56, 189, 248, 0.25)",background:"linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(15, 23, 42, 0.5))"},
-        children:[
-          (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.4rem"},children:[
-            (0,L.jsx)("span",{style:{fontSize:"0.8rem",fontWeight:700,color:"#7dd3fc",textTransform:"uppercase"},children:"Dalam 7 Hari"}),
-            "📅"
-          ]}),
-          (0,L.jsx)("div",{style:{fontSize:"1.9rem",fontWeight:800,color:"#f8fafc"},children:summary.upcoming_7d}),
-          (0,L.jsx)("div",{style:{fontSize:"0.74rem",color:"#bae6fd"},children:"Jadual minggu semasa"})
-        ]
+      (0,L.jsx)("div",{style:{minWidth:"150px"},children:
+        (0,L.jsxs)("select",{
+          className:"form-select",
+          value:pri,
+          onChange:e=>setPri(e.target.value),
+          style:{paddingTop:"0.55rem",paddingBottom:"0.55rem",fontSize:"0.85rem"},
+          children:[
+            (0,L.jsx)("option",{value:"all",children:"⚡ Semua Keutamaan"}),
+            (0,L.jsx)("option",{value:"critical",children:"🔴 Kritikal"}),
+            (0,L.jsx)("option",{value:"high",children:"🟠 Tinggi"}),
+            (0,L.jsx)("option",{value:"medium",children:"🟡 Sederhana"}),
+            (0,L.jsx)("option",{value:"low",children:"🟢 Rendah"})
+          ]
+        })
       }),
-      (0,L.jsxs)("div",{
-        className:"glass-card",
-        onClick:()=>setBucketFilter(bucketFilter==="completed"?"all":"completed"),
-        style:{padding:"1.15rem 1.25rem",cursor:"pointer",border:bucketFilter==="completed"?"2px solid #10b981":"1px solid rgba(16, 185, 129, 0.25)",background:"linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(15, 23, 42, 0.5))"},
-        children:[
-          (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.4rem"},children:[
-            (0,L.jsx)("span",{style:{fontSize:"0.8rem",fontWeight:700,color:"#34d399",textTransform:"uppercase"},children:"Telah Selesai"}),
-            "✅"
-          ]}),
-          (0,L.jsx)("div",{style:{fontSize:"1.9rem",fontWeight:800,color:"#f8fafc"},children:summary.completed}),
-          (0,L.jsx)("div",{style:{fontSize:"0.74rem",color:"#a7f3d0"},children:"Rekod tugasan selesai"})
-        ]
+      (bucket!=="all"||cat!=="all"||pri!=="all"||search)&&(0,L.jsx)("button",{
+        className:"btn btn-secondary",
+        onClick:()=>{setBucket("all");setCat("all");setPri("all");setSearch("");},
+        style:{fontSize:"0.8rem",padding:"0.55rem 0.85rem"},
+        children:"↺ Reset"
       })
     ]}),
 
-    /* Search & Filter Controls */
-    (0,L.jsxs)("div",{
-      className:"glass-panel",
-      style:{padding:"1.1rem 1.5rem",marginBottom:"1.75rem",display:"flex",gap:"0.85rem",alignItems:"center",flexWrap:"wrap"},
-      children:[
-        (0,L.jsx)("div",{style:{position:"relative",flex:"1 1 260px"},children:
-          (0,L.jsx)("input",{
-            type:"text",
-            className:"form-input",
-            placeholder:"Cari tajuk peringatan, pegawai, emel, atau catatan...",
-            value:search,
-            onChange:e=>setSearch(e.target.value),
-            style:{padding:"0.55rem 1rem",fontSize:"0.88rem"}
-          })
-        }),
-        (0,L.jsx)("div",{style:{minWidth:"170px"},children:
-          (0,L.jsxs)("select",{
-            className:"form-select",
-            value:catFilter,
-            onChange:e=>setCatFilter(e.target.value),
-            style:{paddingTop:"0.55rem",paddingBottom:"0.55rem",fontSize:"0.85rem"},
-            children:[
-              (0,L.jsx)("option",{value:"all",children:"📁 Semua Kategori"}),
-              (0,L.jsx)("option",{value:"system",children:"🖥️ Sistem & Pelayan"}),
-              (0,L.jsx)("option",{value:"procurement",children:"📑 Perolehan & Dokumen"}),
-              (0,L.jsx)("option",{value:"issue",children:"🔧 Isu & Troubleshooting"}),
-              (0,L.jsx)("option",{value:"staff_admin",children:"👥 Rutin Harian / Staf"}),
-              (0,L.jsx)("option",{value:"general",children:"📌 Umum"})
-            ]
-          })
-        }),
-        (0,L.jsx)("div",{style:{minWidth:"150px"},children:
-          (0,L.jsxs)("select",{
-            className:"form-select",
-            value:prioFilter,
-            onChange:e=>setPrioFilter(e.target.value),
-            style:{paddingTop:"0.55rem",paddingBottom:"0.55rem",fontSize:"0.85rem"},
-            children:[
-              (0,L.jsx)("option",{value:"all",children:"⚡ Semua Keutamaan"}),
-              (0,L.jsx)("option",{value:"critical",children:"🔴 Kritikal"}),
-              (0,L.jsx)("option",{value:"high",children:"🟠 Tinggi"}),
-              (0,L.jsx)("option",{value:"medium",children:"🟡 Sederhana"}),
-              (0,L.jsx)("option",{value:"low",children:"🟢 Rendah"})
-            ]
-          })
-        }),
-        (bucketFilter!=="all"||catFilter!=="all"||prioFilter!=="all"||search)&&(0,L.jsx)("button",{
-          className:"btn btn-secondary",
-          onClick:()=>{setBucketFilter("all");setCatFilter("all");setPrioFilter("all");setSearch("");},
-          style:{fontSize:"0.8rem",padding:"0.55rem 0.85rem"},
-          children:"🔄 Reset"
-        })
-      ]
-    }),
-
-    /* Reminders List */
-    loading?(0,L.jsx)("div",{style:{textAlign:"center",padding:"3rem 0",color:"var(--text-muted)"},children:"Memuatkan senarai peringatan..."}):
-    items.length===0?(0,L.jsxs)("div",{className:"glass-panel",style:{textAlign:"center",padding:"3.5rem 1.5rem"},children:[
-      (0,L.jsx)("div",{style:{fontSize:"2.5rem",marginBottom:"0.5rem"},children:"🔔"}),
+    /* Reminders List Table */
+    loading?(0,L.jsxs)("div",{style:{textAlign:"center",padding:"3.5rem 0",color:"var(--text-muted)"},children:[
+      (0,L.jsx)("div",{style:{marginBottom:"0.75rem",fontSize:"1.5rem"},children:"⏳"}),
+      (0,L.jsx)("div",{children:"Memuatkan senarai peringatan..."})
+    ]}):items.length===0?(0,L.jsxs)("div",{className:"glass-panel",style:{textAlign:"center",padding:"3.5rem 1.5rem"},children:[
+      (0,L.jsx)("div",{style:{fontSize:"2.5rem",opacity:0.4,marginBottom:"0.85rem"},children:"🔔"}),
       (0,L.jsx)("h3",{style:{fontSize:"1.15rem",color:"#e2e8f0",marginBottom:"0.4rem"},children:"Tiada Peringatan Dijumpai"}),
-      (0,L.jsx)("p",{style:{color:"var(--text-muted)",fontSize:"0.88rem",maxWidth:"420px",margin:"0 auto 1.25rem auto"},children:"Belum ada sebarang peringatan menepati penapis atau didaftarkan."}),
-      (0,L.jsx)("button",{className:"btn btn-primary",onClick:openAdd,children:"+ Tambah Reminder"})
-    ]}):
-    (0,L.jsx)("div",{style:{display:"flex",flexDirection:"column",gap:"1rem"},children:
-      items.map(item=>{
-        let isDone=item.status==="completed",
-            isOver=item.time_badge_type==="overdue",
-            isUrg=item.time_badge_type==="urgent";
-
-        return (0,L.jsxs)("div",{
-          key:item.id,
-          className:"glass-card",
-          style:{
-            padding:"1.35rem 1.6rem",
-            opacity:isDone?0.72:1,
-            borderLeft:isOver?"4px solid #ef4444":isUrg?"4px solid #f59e0b":isDone?"4px solid #10b981":"4px solid #6366f1"
-          },
-          children:[
-            /* Top Meta Row */
-            (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"0.5rem",marginBottom:"0.75rem"},children:[
-              (0,L.jsxs)("div",{style:{display:"flex",alignItems:"center",gap:"0.5rem",flexWrap:"wrap"},children:[
-                (0,L.jsxs)("span",{
-                  className:"badge",
-                  style:{
-                    background:item.priority==="critical"?"rgba(239,68,68,0.15)":item.priority==="high"?"rgba(249,115,22,0.15)":item.priority==="medium"?"rgba(245,158,11,0.15)":"rgba(16,185,129,0.15)",
-                    color:item.priority==="critical"?"#f87171":item.priority==="high"?"#fb923c":item.priority==="medium"?"#fbbf24":"#34d399",
-                    border:"1px solid "+(item.priority==="critical"?"rgba(239,68,68,0.35)":item.priority==="high"?"rgba(249,115,22,0.35)":item.priority==="medium"?"rgba(245,158,11,0.35)":"rgba(16,185,129,0.35)")
-                  },
-                  children:["● ",item.priority.toUpperCase()]
-                }),
-                (0,L.jsxs)("span",{style:{fontSize:"0.75rem",color:"#94a3b8",background:"rgba(255,255,255,0.05)",padding:"0.2rem 0.55rem",borderRadius:"6px"},children:["📁 ",item.category]}),
-                Number(item.is_recurring)===1&&(0,L.jsxs)("span",{style:{fontSize:"0.72rem",color:"#38bdf8",background:"rgba(56,189,248,0.1)",padding:"0.15rem 0.5rem",borderRadius:"6px",border:"1px solid rgba(56,189,248,0.25)"},children:["🔄 ",(item.recurrence_cycle||"BERULANG").toUpperCase()]})
-              ]}),
-              (0,L.jsxs)("span",{
-                style:{
-                  fontSize:"0.78rem",
-                  fontWeight:700,
-                  padding:"0.22rem 0.65rem",
-                  borderRadius:"999px",
-                  background:isOver?"rgba(239, 68, 68, 0.2)":isUrg?"rgba(245, 158, 11, 0.2)":isDone?"rgba(16, 185, 129, 0.15)":"rgba(56, 189, 248, 0.15)",
-                  color:isOver?"#f87171":isUrg?"#fbbf24":isDone?"#34d399":"#7dd3fc",
-                  border:`1px solid ${isOver?"rgba(239,68,68,0.4)":isUrg?"rgba(245,158,11,0.4)":isDone?"rgba(16,185,129,0.3)":"rgba(56,189,248,0.3)"}`
-                },
-                children:[isOver?"🚨 ":isUrg?"⏳ ":"",item.time_badge]
-              })
-            ]}),
-
-            /* Title */
-            (0,L.jsx)("h3",{
-              style:{fontSize:"1.15rem",fontWeight:700,margin:"0 0 0.45rem 0",color:isDone?"#94a3b8":"#f8fafc",textDecoration:isDone?"line-through":"none"},
-              children:item.title
-            }),
-
-            /* Description */
-            item.description&&(0,L.jsx)("p",{style:{fontSize:"0.88rem",color:"var(--text-muted)",margin:"0 0 0.85rem 0",lineHeight:"1.5",whiteSpace:"pre-line"},children:item.description}),
-
-            /* Meta Details Strip */
-            (0,L.jsxs)("div",{
-              style:{display:"flex",gap:"1.25rem",flexWrap:"wrap",fontSize:"0.8rem",color:"#cbd5e1",marginBottom:"1.1rem",background:"rgba(15, 23, 42, 0.55)",padding:"0.5rem 0.85rem",borderRadius:"8px",border:"1px solid rgba(255,255,255,0.05)"},
-              children:[
-                (0,L.jsxs)("div",{children:["📅 ",(0,L.jsx)("strong",{children:"Tarikh Matang: "}),(0,L.jsx)("span",{style:{color:"#38bdf8"},children:formatDue(item.due_date)})]}),
-                item.assigned_to&&(0,L.jsxs)("div",{children:["👤 ",(0,L.jsx)("strong",{children:"Pegawai: "}),item.assigned_to]}),
-                item.assigned_email&&(0,L.jsxs)("div",{children:[
-                  "✉️ ",(0,L.jsx)("strong",{children:"Emel: "}),item.assigned_email,
-                  item.last_email_sent_at&&(0,L.jsxs)("span",{style:{fontSize:"0.72rem",color:"#94a3b8",marginLeft:"0.35rem"},children:["(Dihantar: ",formatDue(item.last_email_sent_at),")"]})
-                ]})
-              ]
-            }),
-
-            /* Action Buttons */
-            (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"0.65rem"},children:[
-              (0,L.jsxs)("button",{
-                className:"btn",
-                onClick:()=>toggleComplete(item),
-                style:{
-                  background:isDone?"rgba(16, 185, 129, 0.15)":"rgba(99, 102, 241, 0.15)",
-                  color:isDone?"#34d399":"#a5b4fc",
-                  border:`1px solid ${isDone?"rgba(16, 185, 129, 0.35)":"rgba(99, 102, 241, 0.35)"}`,
-                  fontSize:"0.82rem",
-                  padding:"0.4rem 0.85rem"
-                },
-                children:[isDone?"🔄 Tandakan Belum Siap":"✅ Tandakan Selesai"]
-              }),
-              (0,L.jsxs)("div",{style:{display:"flex",gap:"0.5rem",alignItems:"center"},children:[
-                item.assigned_email&&(0,L.jsxs)("button",{
-                  className:"btn btn-secondary",
-                  onClick:()=>sendEmail(item),
-                  disabled:sendingEmailId===item.id,
-                  style:{fontSize:"0.8rem",padding:"0.4rem 0.75rem",borderColor:"rgba(56, 189, 248, 0.35)",color:"#38bdf8"},
-                  title:"Hantar peringatan emel serta-merta kepada pegawai",
-                  children:[sendingEmailId===item.id?"Menghantar...":"✉️ Hantar Emel"]
-                }),
-                (0,L.jsxs)("button",{
-                  className:"btn btn-secondary",
-                  onClick:()=>openEdit(item),
-                  style:{fontSize:"0.8rem",padding:"0.4rem 0.75rem"},
-                  children:["✏️ Kemaskini"]
-                }),
-                (0,L.jsx)("button",{
-                  className:"btn btn-danger",
-                  onClick:()=>deleteItem(item),
-                  style:{fontSize:"0.8rem",padding:"0.4rem 0.65rem"},
-                  children:"🗑️"
-                })
-              ]})
+      (0,L.jsx)("p",{style:{color:"var(--text-muted)",fontSize:"0.88rem",maxWidth:"420px",margin:"0 auto 1.25rem auto"},children:search||cat!=="all"||bucket!=="all"?"Tiada rekod menepati tapisan. Sila cuba kata kunci lain.":"Belum ada sebarang peringatan didaftarkan."}),
+      (0,L.jsx)("button",{className:"btn btn-primary",onClick:openAdd,children:"+ Tambah Reminder Sekarang"})
+    ]}):(0,L.jsxs)("div",{className:"glass-panel",style:{overflow:"hidden",padding:0,borderRadius:"16px",border:"1px solid rgba(255, 255, 255, 0.08)"},children:[
+      (0,L.jsx)("div",{style:{overflowX:"auto"},children:
+        (0,L.jsxs)("table",{style:{width:"100%",borderCollapse:"collapse",textAlign:"left",minWidth:"850px"},children:[
+          (0,L.jsx)("thead",{children:
+            (0,L.jsxs)("tr",{style:{background:"rgba(255, 255, 255, 0.03)",borderBottom:"1px solid rgba(255, 255, 255, 0.08)",color:"var(--text-muted)",fontSize:"0.76rem",textTransform:"uppercase",letterSpacing:"0.75px"},children:[
+              (0,L.jsx)("th",{style:{padding:"0.85rem 1rem",width:"48px",textAlign:"center"},children:"Status"}),
+              (0,L.jsx)("th",{style:{padding:"0.85rem 1rem"},children:"Tugasan & Perincian"}),
+              (0,L.jsx)("th",{style:{padding:"0.85rem 1rem",width:"190px"},children:"Tarikh Matang"}),
+              (0,L.jsx)("th",{style:{padding:"0.85rem 1rem",width:"120px",textAlign:"center"},children:"Keutamaan"}),
+              (0,L.jsx)("th",{style:{padding:"0.85rem 1rem",width:"190px"},children:"Pegawai / Emel"}),
+              (0,L.jsx)("th",{style:{padding:"0.85rem 1rem",width:"130px",textAlign:"right"},children:"Tindakan"})
             ]})
-          ]
-        });
+          }),
+          (0,L.jsx)("tbody",{children:
+            currentItems.map((it)=>{
+              let isCompleted=it.status==="completed",
+                  isOverdue=it.time_badge_type==="overdue",
+                  isUrgent=it.time_badge_type==="urgent";
+
+              return(0,L.jsxs)("tr",{
+                key:it.id,
+                style:{
+                  borderBottom:"1px solid rgba(255, 255, 255, 0.05)",
+                  background:isOverdue?"rgba(239, 68, 68, 0.04)":isCompleted?"rgba(16, 185, 129, 0.02)":"transparent",
+                  transition:"background 0.15s ease",
+                  opacity:isCompleted?0.65:1
+                },
+                children:[
+                  /* Status Checkbox Button */
+                  (0,L.jsx)("td",{style:{padding:"0.75rem 0.5rem",textAlign:"center",verticalAlign:"middle"},children:
+                    (0,L.jsx)("button",{
+                      type:"button",
+                      onClick:()=>toggleComplete(it),
+                      title:isCompleted?"Tandakan belum siap":"Tandakan selesai",
+                      style:{
+                        background:isCompleted?"rgba(16, 185, 129, 0.2)":"rgba(255, 255, 255, 0.05)",
+                        border:"1px solid "+(isCompleted?"#10b981":"rgba(255, 255, 255, 0.2)"),
+                        borderRadius:"50%",
+                        width:"26px",
+                        height:"26px",
+                        display:"inline-flex",
+                        alignItems:"center",
+                        justifyContent:"center",
+                        cursor:"pointer",
+                        color:isCompleted?"#34d399":"transparent",
+                        fontWeight:800,
+                        fontSize:"0.82rem",
+                        transition:"all 0.15s ease"
+                      },
+                      children:isCompleted?"✓":""
+                    })
+                  }),
+
+                  /* Tugasan & Perincian */
+                  (0,L.jsxs)("td",{style:{padding:"0.75rem 1rem",verticalAlign:"middle"},children:[
+                    (0,L.jsxs)("div",{style:{display:"flex",alignItems:"center",gap:"0.5rem",flexWrap:"wrap",marginBottom:"0.2rem"},children:[
+                      (0,L.jsx)("span",{
+                        style:{
+                          fontSize:"0.92rem",
+                          fontWeight:700,
+                          color:isCompleted?"#94a3b8":"#f8fafc",
+                          textDecoration:isCompleted?"line-through":"none"
+                        },
+                        children:it.title
+                      }),
+                      Number(it.is_recurring)===1&&(0,L.jsxs)("span",{
+                        style:{fontSize:"0.68rem",color:"#38bdf8",background:"rgba(56, 189, 248, 0.1)",padding:"0.1rem 0.4rem",borderRadius:"4px",border:"1px solid rgba(56, 189, 248, 0.25)"},
+                        children:["🔄 ",(it.recurrence_cycle?it.recurrence_cycle.toUpperCase():"BERULANG")]
+                      })
+                    ]}),
+                    (0,L.jsxs)("div",{style:{display:"flex",alignItems:"center",gap:"0.5rem",fontSize:"0.75rem",color:"var(--text-muted)"},children:[
+                      (0,L.jsxs)("span",{style:{background:"rgba(255,255,255,0.05)",padding:"0.1rem 0.45rem",borderRadius:"4px",border:"1px solid rgba(255,255,255,0.06)"},children:["📁 ",getCatLabel(it.category)]}),
+                      it.description&&(0,L.jsxs)("span",{style:{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"340px",opacity:0.8},title:it.description,children:["• ",it.description]})
+                    ]})
+                  ]}),
+
+                  /* Tarikh Matang & Baki */
+                  (0,L.jsxs)("td",{style:{padding:"0.75rem 1rem",verticalAlign:"middle",whiteSpace:"nowrap"},children:[
+                    (0,L.jsx)("div",{style:{fontSize:"0.82rem",fontWeight:600,color:"#e2e8f0",marginBottom:"0.2rem"},children:fmtDate(it.due_date)}),
+                    (0,L.jsxs)("span",{
+                      style:{
+                        fontSize:"0.7rem",
+                        fontWeight:700,
+                        padding:"0.12rem 0.5rem",
+                        borderRadius:"999px",
+                        display:"inline-block",
+                        background:isOverdue?"rgba(239, 68, 68, 0.2)":isUrgent?"rgba(245, 158, 11, 0.2)":isCompleted?"rgba(16, 185, 129, 0.15)":"rgba(56, 189, 248, 0.15)",
+                        color:isOverdue?"#f87171":isUrgent?"#fbbf24":isCompleted?"#34d399":"#7dd3fc",
+                        border:"1px solid "+(isOverdue?"rgba(239,68,68,0.35)":isUrgent?"rgba(245,158,11,0.35)":isCompleted?"rgba(16,185,129,0.3)":"rgba(56,189,248,0.25)")
+                      },
+                      children:[isOverdue&&"🚨 ",isUrgent&&"⏳ ",it.time_badge]
+                    })
+                  ]}),
+
+                  /* Keutamaan */
+                  (0,L.jsx)("td",{style:{padding:"0.75rem 1rem",textAlign:"center",verticalAlign:"middle"},children:getPriBadge(it.priority)}),
+
+                  /* Pegawai / Emel */
+                  (0,L.jsxs)("td",{style:{padding:"0.75rem 1rem",verticalAlign:"middle"},children:[
+                    (0,L.jsx)("div",{style:{fontSize:"0.82rem",fontWeight:600,color:"#f1f5f9"},children:it.assigned_to||"-"}),
+                    it.assigned_email?(0,L.jsxs)("div",{
+                      style:{fontSize:"0.74rem",color:"#94a3b8",display:"flex",alignItems:"center",gap:"0.25rem",marginTop:"0.15rem"},
+                      children:[
+                        "✉️ ",
+                        (0,L.jsx)("span",{style:{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"140px"},title:it.assigned_email,children:it.assigned_email})
+                      ]
+                    }):(0,L.jsx)("span",{style:{fontSize:"0.72rem",color:"var(--text-muted)"},children:"Tiada emel"})
+                  ]}),
+
+                  /* Tindakan Buttons */
+                  (0,L.jsx)("td",{style:{padding:"0.75rem 1rem",textAlign:"right",verticalAlign:"middle",whiteSpace:"nowrap"},children:
+                    (0,L.jsxs)("div",{style:{display:"inline-flex",gap:"0.35rem",alignItems:"center"},children:[
+                      it.assigned_email&&(0,L.jsx)("button",{
+                        type:"button",
+                        onClick:()=>sendEmail(it),
+                        disabled:sendingEmailId===it.id,
+                        style:{background:"rgba(56, 189, 248, 0.1)",border:"1px solid rgba(56, 189, 248, 0.3)",color:"#38bdf8",padding:"0.32rem 0.55rem",borderRadius:"6px",cursor:"pointer",fontSize:"0.75rem"},
+                        title:"Hantar Notifikasi Emel Sekarang",
+                        children:sendingEmailId===it.id?"...":"📧"
+                      }),
+                      (0,L.jsx)("button",{
+                        type:"button",
+                        onClick:()=>openEdit(it),
+                        style:{background:"rgba(255, 255, 255, 0.05)",border:"1px solid rgba(255, 255, 255, 0.12)",color:"#e2e8f0",padding:"0.32rem 0.55rem",borderRadius:"6px",cursor:"pointer",fontSize:"0.75rem"},
+                        title:"Kemaskini Peringatan",
+                        children:"✏️"
+                      }),
+                      (0,L.jsx)("button",{
+                        type:"button",
+                        onClick:()=>deleteReminder(it.id),
+                        style:{background:"rgba(239, 68, 68, 0.1)",border:"1px solid rgba(239, 68, 68, 0.3)",color:"#f87171",padding:"0.32rem 0.55rem",borderRadius:"6px",cursor:"pointer",fontSize:"0.75rem"},
+                        title:"Padam Peringatan",
+                        children:"🗑️"
+                      })
+                    ]})
+                  })
+                ]
+              });
+            })
+          })
+        ]})
+      }),
+
+      /* Paging Footer */
+      totalItems>0&&(0,L.jsxs)("div",{
+        style:{
+          display:"flex",
+          justifyContent:"space-between",
+          alignItems:"center",
+          padding:"0.85rem 1.25rem",
+          borderTop:"1px solid rgba(255, 255, 255, 0.08)",
+          background:"rgba(255, 255, 255, 0.02)",
+          flexWrap:"wrap",
+          gap:"0.75rem"
+        },
+        children:[
+          (0,L.jsxs)("div",{
+            style:{display:"flex",alignItems:"center",gap:"0.85rem",color:"var(--text-muted)",fontSize:"0.82rem"},
+            children:[
+              (0,L.jsxs)("span",{
+                children:[
+                  "Memaparkan ",
+                  (0,L.jsxs)("strong",{style:{color:"#f1f5f9"},children:[totalItems===0?0:startIndex+1," - ",endIndex]}),
+                  " daripada ",
+                  (0,L.jsx)("strong",{style:{color:"#f1f5f9"},children:totalItems}),
+                  " tugasan"
+                ]
+              }),
+              (0,L.jsxs)("select",{
+                value:pageSize,
+                onChange:e=>{setPageSize(Number(e.target.value));setPage(1);},
+                style:{background:"rgba(15, 23, 42, 0.7)",border:"1px solid rgba(255, 255, 255, 0.12)",color:"#cbd5e1",borderRadius:"6px",padding:"0.2rem 0.5rem",fontSize:"0.78rem"},
+                children:[
+                  (0,L.jsx)("option",{value:5,children:"5 baris"}),
+                  (0,L.jsx)("option",{value:10,children:"10 baris"}),
+                  (0,L.jsx)("option",{value:20,children:"20 baris"}),
+                  (0,L.jsx)("option",{value:50,children:"50 baris"})
+                ]
+              })
+            ]
+          }),
+          (0,L.jsxs)("div",{
+            style:{display:"flex",alignItems:"center",gap:"0.35rem"},
+            children:[
+              (0,L.jsx)("button",{
+                type:"button",
+                className:"btn btn-secondary",
+                disabled:curPage<=1,
+                onClick:()=>setPage(p=>Math.max(1,p-1)),
+                style:{padding:"0.35rem 0.65rem",fontSize:"0.8rem",opacity:curPage<=1?0.4:1},
+                children:"Sebelumnya"
+              }),
+              ...Array.from({length:totalPages},(_,i)=>i+1)
+                .filter(p=>p===1||p===totalPages||Math.abs(p-curPage)<=1)
+                .map(p=>(0,L.jsx)("button",{
+                  key:p,
+                  type:"button",
+                  onClick:()=>setPage(p),
+                  style:{
+                    background:curPage===p?"linear-gradient(135deg, #f43f5e, #e11d48)":"rgba(255, 255, 255, 0.05)",
+                    color:curPage===p?"#ffffff":"#cbd5e1",
+                    border:"1px solid "+(curPage===p?"#f43f5e":"rgba(255, 255, 255, 0.1)"),
+                    borderRadius:"6px",
+                    minWidth:"28px",
+                    height:"28px",
+                    fontSize:"0.78rem",
+                    fontWeight:700,
+                    cursor:"pointer",
+                    display:"inline-flex",
+                    alignItems:"center",
+                    justifyContent:"center"
+                  },
+                  children:p
+                })),
+              (0,L.jsx)("button",{
+                type:"button",
+                className:"btn btn-secondary",
+                disabled:curPage>=totalPages,
+                onClick:()=>setPage(p=>Math.min(totalPages,p+1)),
+                style:{padding:"0.35rem 0.65rem",fontSize:"0.8rem",opacity:curPage>=totalPages?0.4:1},
+                children:"Seterusnya"
+              })
+            ]
+          })
+        ]
       })
-    }),
+    ]}),
 
     /* Modal Add / Edit */
     showModal&&(0,L.jsx)("div",{className:"modal-backdrop",children:
@@ -1519,6 +1667,5 @@ function ReminderManager(){
     })
   ]});
 }
-
 
 function Ya(){let[e,t]=(0,v.useState)(`home`),[n,r]=(0,v.useState)(null),[i,a]=(0,v.useState)(`flows`),[o,s]=(0,v.useState)(null),[c,l]=(0,v.useState)(!1),[u,d]=(0,v.useState)(0),[offServers,setOffServers]=(0,v.useState)([]),[dismissed,setDismissed]=(0,v.useState)(!1),f=(e,n=`flows`)=>{r(e),a(n||`flows`),t(`detail`)},p=e=>{(e===`dashboard`||e===`home`||e===`servers`||e===`reminders`)&&r(null),t(e)};let checkHourly=async()=>{try{let res=await fetch("api/servers/check-hourly").then(x=>x.json());if(res&&res.data){let off=res.offline_servers||res.data.filter(s=>s.status!=="online");setOffServers(off);if(off.length>0)setDismissed(!1);}}catch(err){console.error(err)}};(0,v.useEffect)(()=>{checkHourly();let timer=setInterval(checkHourly,300000);return()=>clearInterval(timer);},[]);return(0,L.jsxs)(`div`,{children:[offServers.length>0&&!dismissed&&(0,L.jsxs)(`div`,{style:{background:`linear-gradient(90deg, #991b1b 0%, #dc2626 50%, #991b1b 100%)`,color:`#ffffff`,padding:`0.65rem 1.25rem`,boxShadow:`0 4px 20px rgba(220, 38, 38, 0.45)`,borderBottom:`1px solid rgba(255, 255, 255, 0.25)`,position:`sticky`,top:0,zIndex:9999,display:`flex`,alignItems:`center`,justifyContent:`space-between`,gap:`1rem`,flexWrap:`wrap`},children:[(0,L.jsxs)(`div`,{style:{display:`flex`,alignItems:`center`,gap:`0.75rem`,flexWrap:`wrap`},children:[(0,L.jsx)(`span`,{style:{background:`rgba(255, 255, 255, 0.2)`,borderRadius:`50%`,width:`28px`,height:`28px`,display:`inline-flex`,alignItems:`center`,justifyContent:`center`,fontSize:`1rem`,fontWeight:800,boxShadow:`0 0 10px rgba(255, 255, 255, 0.5)`},children:`🚨`}),(0,L.jsxs)(`div`,{style:{fontSize:`0.88rem`,lineHeight:`1.4`},children:[(0,L.jsx)(`strong`,{children:`AMARAN KECEMASAN: `}),offServers.length===1?`Pelayan "${offServers[0].name}" (${offServers[0].ip_address}) dikesan OFFLINE!`:`${offServers.length} Pelayan Hospital dikesan OFFLINE! (${offServers.map(s=>s.name).join(", ")})`,(0,L.jsx)(`span`,{style:{opacity:0.85,fontSize:`0.78rem`,marginLeft:`0.5rem`},children:`(Semakan automatik berkala 1 jam sekali)`})]})]}),(0,L.jsxs)(`div`,{style:{display:`flex`,alignItems:`center`,gap:`0.65rem`},children:[(0,L.jsxs)(`button`,{onClick:()=>p(`servers`),style:{background:`#ffffff`,color:`#b91c1c`,border:`none`,padding:`0.3rem 0.85rem`,borderRadius:`6px`,fontWeight:700,fontSize:`0.8rem`,cursor:`pointer`,display:`inline-flex`,alignItems:`center`,gap:`0.35rem`,boxShadow:`0 2px 6px rgba(0,0,0,0.25)`},children:[`Urus / Semak Pelayan`,` →`]}),(0,L.jsx)(`button`,{onClick:()=>setDismissed(!0),style:{background:`rgba(0,0,0,0.15)`,border:`none`,color:`#ffffff`,borderRadius:`6px`,padding:`0.2rem 0.55rem`,cursor:`pointer`,fontSize:`1rem`,lineHeight:1},title:`Tutup amaran sementara`,children:`✕`})]})]}),(0,L.jsx)(Qe,{activeTab:e,setActiveTab:p}),(0,L.jsx)(`div`,{style:{maxWidth:`1200px`,margin:`0 auto`,padding:`0 1.5rem`,paddingBottom:`3rem`},children:e===`home`?(0,L.jsx)(HomePage,{onNavigate:p,onSelectModule:f}):e===`servers`?(0,L.jsx)(ServerManager,{}):e===`reminders`?(0,L.jsx)(ReminderManager,{}):e===`staff`?(0,L.jsx)(qa,{}):e===`notes`?(0,L.jsx)(Ka,{}):e===`procurement`?(0,L.jsx)(ProcManager,{}):e===`mirth`?(0,L.jsx)(Wa,{}):e===`dashboard`?(0,L.jsx)(pa,{onSelectModule:f,onEditModule:e=>{s(e),l(!0)},onOpenAddModule:()=>{s(null),l(!0)}},u):(0,L.jsx)(Pa,{moduleId:n,initialTab:i,onBack:()=>p(`dashboard`)})}),c&&(0,L.jsx)(Ja,{initialData:o,onClose:()=>{l(!1),s(null)},onSuccess:()=>{d(e=>e+1),t(`dashboard`)}})]})}(0,y.createRoot)(document.getElementById(`root`)).render((0,L.jsx)(v.StrictMode,{children:(0,L.jsx)(Ya,{})}));

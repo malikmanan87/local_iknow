@@ -16,7 +16,9 @@ import {
   Sparkles,
   Filter,
   Check,
-  Send
+  Send,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { showSuccess, showError, showConfirm } from '../utils/swal';
 
@@ -28,6 +30,10 @@ export default function Reminder({ onAlertsChanged }) {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [timeBucketFilter, setTimeBucketFilter] = useState('all');
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -81,6 +87,7 @@ export default function Reminder({ onAlertsChanged }) {
   };
 
   useEffect(() => {
+    setCurrentPage(1);
     fetchReminders();
     if (onAlertsChanged) {
       onAlertsChanged();
@@ -90,6 +97,7 @@ export default function Reminder({ onAlertsChanged }) {
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
+      setCurrentPage(1);
       fetchReminders();
     }, 300);
     return () => clearTimeout(timer);
@@ -98,7 +106,6 @@ export default function Reminder({ onAlertsChanged }) {
   const openAddModal = () => {
     const now = new Date();
     now.setHours(now.getHours() + 24);
-    // Format YYYY-MM-DDTHH:mm for datetime-local
     const pad = (n) => String(n).padStart(2, '0');
     const defaultDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:00`;
 
@@ -238,13 +245,13 @@ export default function Reminder({ onAlertsChanged }) {
   const getPriorityBadge = (priority) => {
     switch (priority) {
       case 'critical':
-        return <span className="badge" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.35)' }}>● KRITIKAL</span>;
+        return <span className="badge" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.35)', fontSize: '0.7rem', padding: '0.12rem 0.5rem' }}>● KRITIKAL</span>;
       case 'high':
-        return <span className="badge" style={{ background: 'rgba(249, 115, 22, 0.15)', color: '#fb923c', border: '1px solid rgba(249, 115, 22, 0.35)' }}>● TINGGI</span>;
+        return <span className="badge" style={{ background: 'rgba(249, 115, 22, 0.15)', color: '#fb923c', border: '1px solid rgba(249, 115, 22, 0.35)', fontSize: '0.7rem', padding: '0.12rem 0.5rem' }}>● TINGGI</span>;
       case 'medium':
-        return <span className="badge" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.35)' }}>● SEDERHANA</span>;
+        return <span className="badge" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.35)', fontSize: '0.7rem', padding: '0.12rem 0.5rem' }}>● SEDERHANA</span>;
       default:
-        return <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.35)' }}>● RENDAH</span>;
+        return <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.35)', fontSize: '0.7rem', padding: '0.12rem 0.5rem' }}>● RENDAH</span>;
     }
   };
 
@@ -257,6 +264,14 @@ export default function Reminder({ onAlertsChanged }) {
       default: return 'Umum';
     }
   };
+
+  // Pagination Math
+  const totalItems = reminders.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const validCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (validCurrentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalItems);
+  const currentReminders = reminders.slice(startIndex, endIndex);
 
   return (
     <div style={{ padding: '1.5rem 0', maxWidth: '1200px', margin: '0 auto' }}>
@@ -427,7 +442,7 @@ export default function Reminder({ onAlertsChanged }) {
         )}
       </div>
 
-      {/* ── Reminders List ── */}
+      {/* ── Reminders List Table ── */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '3.5rem 0', color: 'var(--text-muted)' }}>
           <div className="spin-animation" style={{ display: 'inline-block', marginBottom: '0.75rem', fontSize: '1.5rem' }}>⏳</div>
@@ -447,155 +462,300 @@ export default function Reminder({ onAlertsChanged }) {
           </button>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {reminders.map((item) => {
-            const isCompleted = item.status === 'completed';
-            const isOverdue = item.time_badge_type === 'overdue';
-            const isUrgent = item.time_badge_type === 'urgent';
-
-            return (
-              <div 
-                key={item.id} 
-                className="glass-card" 
-                style={{ 
-                  padding: '1.35rem 1.6rem',
-                  opacity: isCompleted ? 0.72 : 1,
-                  borderLeft: isOverdue 
-                    ? '4px solid #ef4444' 
-                    : isUrgent 
-                      ? '4px solid #f59e0b' 
-                      : isCompleted 
-                        ? '4px solid #10b981' 
-                        : '4px solid #6366f1',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {/* Top Meta Line: Badges & Countdown */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    {getPriorityBadge(item.priority)}
-                    <span style={{ fontSize: '0.75rem', color: '#94a3b8', background: 'rgba(255,255,255,0.05)', padding: '0.2rem 0.55rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                      📁 {getCategoryLabel(item.category)}
-                    </span>
-                    {Number(item.is_recurring) === 1 && (
-                      <span style={{ fontSize: '0.72rem', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', padding: '0.15rem 0.5rem', borderRadius: '6px', border: '1px solid rgba(56, 189, 248, 0.25)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <Repeat size={12} /> {item.recurrence_cycle ? item.recurrence_cycle.toUpperCase() : 'BERULANG'}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Dynamic Time Countdown Badge */}
-                  <span style={{
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    padding: '0.22rem 0.65rem',
-                    borderRadius: '999px',
-                    background: isOverdue ? 'rgba(239, 68, 68, 0.2)' : isUrgent ? 'rgba(245, 158, 11, 0.2)' : isCompleted ? 'rgba(16, 185, 129, 0.15)' : 'rgba(56, 189, 248, 0.15)',
-                    color: isOverdue ? '#f87171' : isUrgent ? '#fbbf24' : isCompleted ? '#34d399' : '#7dd3fc',
-                    border: `1px solid ${isOverdue ? 'rgba(239,68,68,0.4)' : isUrgent ? 'rgba(245,158,11,0.4)' : isCompleted ? 'rgba(16,185,129,0.3)' : 'rgba(56,189,248,0.3)'}`
-                  }}>
-                    {isOverdue && '🚨 '}
-                    {isUrgent && '⏳ '}
-                    {item.time_badge}
-                  </span>
-                </div>
-
-                {/* Title */}
-                <h3 style={{ 
-                  fontSize: '1.15rem', 
-                  fontWeight: 700, 
-                  margin: '0 0 0.45rem 0', 
-                  color: isCompleted ? '#94a3b8' : '#f8fafc',
-                  textDecoration: isCompleted ? 'line-through' : 'none'
+        <div className="glass-panel" style={{ overflow: 'hidden', padding: 0, borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '850px' }}>
+              <thead>
+                <tr style={{
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                  color: 'var(--text-muted)',
+                  fontSize: '0.76rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.75px'
                 }}>
-                  {item.title}
-                </h3>
+                  <th style={{ padding: '0.85rem 1rem', width: '48px', textAlign: 'center' }}>Status</th>
+                  <th style={{ padding: '0.85rem 1rem' }}>Tugasan & Perincian</th>
+                  <th style={{ padding: '0.85rem 1rem', width: '190px' }}>Tarikh Matang</th>
+                  <th style={{ padding: '0.85rem 1rem', width: '120px', textAlign: 'center' }}>Keutamaan</th>
+                  <th style={{ padding: '0.85rem 1rem', width: '190px' }}>Pegawai / Emel</th>
+                  <th style={{ padding: '0.85rem 1rem', width: '130px', textAlign: 'right' }}>Tindakan</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentReminders.map((item) => {
+                  const isCompleted = item.status === 'completed';
+                  const isOverdue = item.time_badge_type === 'overdue';
+                  const isUrgent = item.time_badge_type === 'urgent';
 
-                {/* Description */}
-                {item.description && (
-                  <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', margin: '0 0 0.85rem 0', lineHeight: '1.5', whiteSpace: 'pre-line' }}>
-                    {item.description}
-                  </p>
-                )}
+                  return (
+                    <tr 
+                      key={item.id}
+                      style={{
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                        background: isOverdue ? 'rgba(239, 68, 68, 0.04)' : isCompleted ? 'rgba(16, 185, 129, 0.02)' : 'transparent',
+                        transition: 'background 0.15s ease',
+                        opacity: isCompleted ? 0.65 : 1
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = isOverdue ? 'rgba(239, 68, 68, 0.04)' : isCompleted ? 'rgba(16, 185, 129, 0.02)' : 'transparent'}
+                    >
+                      {/* Checkbox / Complete Toggle */}
+                      <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', verticalAlign: 'middle' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleComplete(item)}
+                          title={isCompleted ? "Tandakan belum siap" : "Tandakan selesai"}
+                          style={{
+                            background: isCompleted ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                            border: `1px solid ${isCompleted ? '#10b981' : 'rgba(255, 255, 255, 0.2)'}`,
+                            borderRadius: '50%',
+                            width: '26px',
+                            height: '26px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: isCompleted ? '#34d399' : 'transparent',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <Check size={13} style={{ strokeWidth: 3 }} />
+                        </button>
+                      </td>
 
-                {/* Meta Details Strip */}
-                <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '1.1rem', background: 'rgba(15, 23, 42, 0.55)', padding: '0.5rem 0.85rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div>
-                    📅 <strong>Tarikh Matang:</strong> <span style={{ color: '#38bdf8' }}>{formatDueDate(item.due_date)}</span>
-                  </div>
-                  {item.assigned_to && (
-                    <div>
-                      👤 <strong>Pegawai:</strong> {item.assigned_to}
-                    </div>
-                  )}
-                  {item.assigned_email && (
-                    <div>
-                      ✉️ <strong>Emel:</strong> {item.assigned_email}
-                      {item.last_email_sent_at && (
-                        <span style={{ fontSize: '0.72rem', color: '#94a3b8', marginLeft: '0.35rem' }}>
-                          (Dihantar: {formatDueDate(item.last_email_sent_at)})
+                      {/* Tugasan & Perincian */}
+                      <td style={{ padding: '0.75rem 1rem', verticalAlign: 'middle' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.2rem' }}>
+                          <span style={{ 
+                            fontSize: '0.92rem', 
+                            fontWeight: 700, 
+                            color: isCompleted ? '#94a3b8' : '#f8fafc',
+                            textDecoration: isCompleted ? 'line-through' : 'none'
+                          }}>
+                            {item.title}
+                          </span>
+                          {Number(item.is_recurring) === 1 && (
+                            <span style={{ fontSize: '0.68rem', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', padding: '0.1rem 0.4rem', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.25)', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+                              <Repeat size={10} /> {item.recurrence_cycle ? item.recurrence_cycle.toUpperCase() : 'BERULANG'}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          <span style={{ background: 'rgba(255,255,255,0.05)', padding: '0.1rem 0.45rem', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                            📁 {getCategoryLabel(item.category)}
+                          </span>
+                          {item.description && (
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '340px', opacity: 0.8 }} title={item.description}>
+                              • {item.description}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Tarikh Matang & Baki */}
+                      <td style={{ padding: '0.75rem 1rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#e2e8f0', marginBottom: '0.2rem' }}>
+                          {formatDueDate(item.due_date)}
+                        </div>
+                        <span style={{
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          padding: '0.12rem 0.5rem',
+                          borderRadius: '999px',
+                          display: 'inline-block',
+                          background: isOverdue ? 'rgba(239, 68, 68, 0.2)' : isUrgent ? 'rgba(245, 158, 11, 0.2)' : isCompleted ? 'rgba(16, 185, 129, 0.15)' : 'rgba(56, 189, 248, 0.15)',
+                          color: isOverdue ? '#f87171' : isUrgent ? '#fbbf24' : isCompleted ? '#34d399' : '#7dd3fc',
+                          border: `1px solid ${isOverdue ? 'rgba(239,68,68,0.35)' : isUrgent ? 'rgba(245,158,11,0.35)' : isCompleted ? 'rgba(16,185,129,0.3)' : 'rgba(56,189,248,0.25)'}`
+                        }}>
+                          {isOverdue && '🚨 '}{isUrgent && '⏳ '}{item.time_badge}
                         </span>
-                      )}
-                    </div>
-                  )}
-                </div>
+                      </td>
 
-                {/* Action Buttons */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.65rem' }}>
-                  {/* Left: Complete Toggle Button */}
-                  <button 
-                    className="btn" 
-                    onClick={() => handleToggleComplete(item)}
-                    style={{
-                      background: isCompleted ? 'rgba(16, 185, 129, 0.15)' : 'rgba(99, 102, 241, 0.15)',
-                      color: isCompleted ? '#34d399' : '#a5b4fc',
-                      border: `1px solid ${isCompleted ? 'rgba(16, 185, 129, 0.35)' : 'rgba(99, 102, 241, 0.35)'}`,
-                      fontSize: '0.82rem',
-                      padding: '0.4rem 0.85rem'
-                    }}
-                  >
-                    {isCompleted ? <RotateCcw size={14} /> : <Check size={14} />}
-                    {isCompleted ? 'Tandakan Belum Siap' : 'Tandakan Selesai'}
-                  </button>
+                      {/* Keutamaan */}
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center', verticalAlign: 'middle' }}>
+                        {getPriorityBadge(item.priority)}
+                      </td>
 
-                  {/* Right: Email, Edit, Delete */}
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    {/* On-Demand Send Email */}
-                    {item.assigned_email && (
-                      <button 
-                        className="btn btn-secondary" 
-                        onClick={() => handleSendEmail(item)}
-                        disabled={sendingEmailId === item.id}
-                        style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem', borderColor: 'rgba(56, 189, 248, 0.35)', color: '#38bdf8' }}
-                        title="Hantar peringatan emel serta-merta kepada pegawai"
-                      >
-                        <Mail size={14} className={sendingEmailId === item.id ? 'spin' : ''} />
-                        {sendingEmailId === item.id ? 'Menghantar...' : 'Hantar Emel'}
-                      </button>
-                    )}
+                      {/* Pegawai / Emel */}
+                      <td style={{ padding: '0.75rem 1rem', verticalAlign: 'middle' }}>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#f1f5f9' }}>
+                          {item.assigned_to || '-'}
+                        </div>
+                        {item.assigned_email ? (
+                          <div style={{ fontSize: '0.74rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.15rem' }}>
+                            <Mail size={11} style={{ color: '#38bdf8' }} />
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }} title={item.assigned_email}>
+                              {item.assigned_email}
+                            </span>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Tiada emel</span>
+                        )}
+                      </td>
 
-                    <button 
-                      className="btn btn-secondary" 
-                      onClick={() => openEditModal(item)}
-                      style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem' }}
-                      title="Kemaskini tugasan"
-                    >
-                      <Edit3 size={14} /> Kemaskini
-                    </button>
+                      {/* Tindakan */}
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'right', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'inline-flex', gap: '0.35rem', alignItems: 'center' }}>
+                          {item.assigned_email && (
+                            <button
+                              type="button"
+                              onClick={() => handleSendEmail(item)}
+                              disabled={sendingEmailId === item.id}
+                              style={{
+                                background: 'rgba(56, 189, 248, 0.1)',
+                                border: '1px solid rgba(56, 189, 248, 0.3)',
+                                color: '#38bdf8',
+                                padding: '0.32rem 0.55rem',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontSize: '0.75rem',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.25rem'
+                              }}
+                              title="Hantar Notifikasi Emel Sekarang"
+                            >
+                              <Send size={12} className={sendingEmailId === item.id ? 'iknow-spin' : ''} />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(item)}
+                            style={{
+                              background: 'rgba(255, 255, 255, 0.05)',
+                              border: '1px solid rgba(255, 255, 255, 0.12)',
+                              color: '#e2e8f0',
+                              padding: '0.32rem 0.55rem',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '0.75rem',
+                              display: 'inline-flex',
+                              alignItems: 'center'
+                            }}
+                            title="Kemaskini Peringatan"
+                          >
+                            <Edit3 size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(item.id)}
+                            style={{
+                              background: 'rgba(239, 68, 68, 0.1)',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              color: '#f87171',
+                              padding: '0.32rem 0.55rem',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '0.75rem',
+                              display: 'inline-flex',
+                              alignItems: 'center'
+                            }}
+                            title="Padam Peringatan"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
-                    <button 
-                      className="btn btn-danger" 
-                      onClick={() => handleDelete(item.id)}
-                      style={{ fontSize: '0.8rem', padding: '0.4rem 0.65rem' }}
-                      title="Padam tugasan"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
+          {/* Pagination Footer */}
+          {reminders.length > 0 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '0.85rem 1.25rem',
+              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'rgba(255, 255, 255, 0.02)',
+              flexWrap: 'wrap',
+              gap: '0.75rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                <span>
+                  Memaparkan <strong style={{ color: '#f1f5f9' }}>{totalItems === 0 ? 0 : startIndex + 1} - {endIndex}</strong> daripada <strong style={{ color: '#f1f5f9' }}>{totalItems}</strong> tugasan
+                </span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.7)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: '#cbd5e1',
+                    borderRadius: '6px',
+                    padding: '0.2rem 0.5rem',
+                    fontSize: '0.78rem'
+                  }}
+                >
+                  <option value={5}>5 baris</option>
+                  <option value={10}>10 baris</option>
+                  <option value={20}>20 baris</option>
+                  <option value={50}>50 baris</option>
+                </select>
               </div>
-            );
-          })}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={validCurrentPage <= 1}
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem', opacity: validCurrentPage <= 1 ? 0.4 : 1 }}
+                >
+                  <ChevronLeft size={14} /> Sebelumnya
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalPages || Math.abs(p - validCurrentPage) <= 1)
+                  .map((page, idx, arr) => {
+                    const showEllipsis = idx > 0 && page - arr[idx - 1] > 1;
+                    return (
+                      <React.Fragment key={page}>
+                        {showEllipsis && <span style={{ padding: '0 0.25rem', color: 'var(--text-muted)' }}>...</span>}
+                        <button
+                          type="button"
+                          onClick={() => setCurrentPage(page)}
+                          style={{
+                            background: validCurrentPage === page ? 'linear-gradient(135deg, #f43f5e, #e11d48)' : 'rgba(255, 255, 255, 0.05)',
+                            color: validCurrentPage === page ? '#ffffff' : '#cbd5e1',
+                            border: `1px solid ${validCurrentPage === page ? '#f43f5e' : 'rgba(255, 255, 255, 0.1)'}`,
+                            borderRadius: '6px',
+                            minWidth: '28px',
+                            height: '28px',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          {page}
+                        </button>
+                      </React.Fragment>
+                    );
+                  })}
+
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={validCurrentPage >= totalPages}
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem', opacity: validCurrentPage >= totalPages ? 0.4 : 1 }}
+                >
+                  Seterusnya <ChevronRight size={14} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
