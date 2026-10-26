@@ -275,29 +275,6 @@ export default function Reminder({ onAlertsChanged }) {
 
   return (
     <div style={{ padding: '1.5rem 0', maxWidth: '1200px', margin: '0 auto' }}>
-      {/* ── Header Modul Reminder ── */}
-      <div className="glass-panel" style={{ padding: '1.75rem 2rem', marginBottom: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', background: 'linear-gradient(135deg, rgba(244,63,94,0.12), rgba(99,102,241,0.12))', border: '1px solid rgba(244,63,94,0.25)' }}>
-        <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', background: 'rgba(244,63,94,0.18)', color: '#fda4af', padding: '0.25rem 0.85rem', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.6rem', border: '1px solid rgba(244,63,94,0.3)' }}>
-            <Bell size={13} style={{ color: '#fb7185' }} /> IKNOW KNOWLEDGE HUB • PUSAT PERINGATAN OPERASI
-          </div>
-          <h1 style={{ fontSize: '1.85rem', fontWeight: 800, margin: '0 0 0.35rem 0', letterSpacing: '-0.5px', color: '#f8fafc' }}>
-            Reminder & Pengurusan Tugasan
-          </h1>
-          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.92rem' }}>
-            Pantau tarikh matang, jadual penyelenggaraan berkala, dan notifikasi emel bagi sebarang tugasan sistem.
-          </p>
-        </div>
-
-        <button 
-          className="btn btn-primary" 
-          onClick={openAddModal}
-          style={{ background: 'linear-gradient(135deg, #f43f5e, #e11d48)', boxShadow: '0 4px 15px rgba(244, 63, 94, 0.4)', padding: '0.75rem 1.4rem' }}
-        >
-          <Plus size={18} /> Tambah Reminder
-        </button>
-      </div>
-
       {/* ── KPI Summary Cards ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
         {/* 1. Overdue */}
@@ -440,6 +417,21 @@ export default function Reminder({ onAlertsChanged }) {
             <RotateCcw size={14} /> Reset
           </button>
         )}
+
+        {/* Butang Tambah Reminder */}
+        <button 
+          className="btn btn-primary" 
+          onClick={openAddModal}
+          style={{ 
+            background: 'linear-gradient(135deg, #f43f5e, #e11d48)', 
+            boxShadow: '0 4px 15px rgba(244, 63, 94, 0.4)', 
+            padding: '0.55rem 1.15rem',
+            fontSize: '0.85rem',
+            marginLeft: 'auto'
+          }}
+        >
+          <Plus size={16} /> Tambah Reminder
+        </button>
       </div>
 
       {/* ── Reminders List Table ── */}

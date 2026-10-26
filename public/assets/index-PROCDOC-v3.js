@@ -1240,20 +1240,6 @@ function ReminderManager(){
   let currentItems=items.slice(startIndex,endIndex);
 
   return(0,L.jsxs)("div",{style:{padding:"1.5rem 0",maxWidth:"1200px",margin:"0 auto"},children:[
-    /* Header */
-    (0,L.jsxs)("div",{className:"glass-panel",style:{padding:"1.75rem 2rem",marginBottom:"1.75rem",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"1rem",background:"linear-gradient(135deg, rgba(244,63,94,0.12), rgba(99,102,241,0.12))",border:"1px solid rgba(244,63,94,0.25)"},children:[
-      (0,L.jsxs)("div",{children:[
-        (0,L.jsxs)("div",{style:{display:"inline-flex",alignItems:"center",gap:"0.45rem",background:"rgba(244,63,94,0.18)",color:"#fda4af",padding:"0.25rem 0.85rem",borderRadius:"999px",fontSize:"0.78rem",fontWeight:700,marginBottom:"0.6rem",border:"1px solid rgba(244,63,94,0.3)"},children:[
-          "🔔 IKNOW KNOWLEDGE HUB • PUSAT PERINGATAN OPERASI"
-        ]}),
-        (0,L.jsx)("h1",{style:{fontSize:"1.85rem",fontWeight:800,margin:"0 0 0.35rem 0",letterSpacing:"-0.5px",color:"#f8fafc"},children:"Reminder & Pengurusan Tugasan"}),
-        (0,L.jsx)("p",{style:{margin:0,color:"var(--text-muted)",fontSize:"0.92rem"},children:"Pantau tarikh matang, jadual penyelenggaraan berkala, dan notifikasi emel bagi sebarang tugasan sistem."})
-      ]}),
-      (0,L.jsxs)("button",{className:"btn btn-primary",onClick:openAdd,style:{background:"linear-gradient(135deg, #f43f5e, #e11d48)",boxShadow:"0 4px 15px rgba(244, 63, 94, 0.4)",padding:"0.75rem 1.4rem"},children:[
-        "+ Tambah Reminder"
-      ]})
-    ]}),
-
     /* KPI Summary Cards */
     (0,L.jsxs)("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))",gap:"1rem",marginBottom:"1.75rem"},children:[
       (0,L.jsxs)("div",{className:"glass-card",onClick:()=>setBucket(bucket==="overdue"?"all":"overdue"),style:{padding:"1.15rem 1.25rem",cursor:"pointer",border:bucket==="overdue"?"2px solid #ef4444":"1px solid rgba(239, 68, 68, 0.25)",background:"linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(15, 23, 42, 0.5))"},children:[
@@ -1290,7 +1276,7 @@ function ReminderManager(){
       ]})
     ]}),
 
-    /* Search & Filter */
+    /* Search & Filter (including + Tambah Reminder button) */
     (0,L.jsxs)("div",{className:"glass-panel",style:{padding:"1.1rem 1.5rem",marginBottom:"1.75rem",display:"flex",gap:"0.85rem",alignItems:"center",flexWrap:"wrap"},children:[
       (0,L.jsx)("div",{style:{position:"relative",flex:"1 1 260px"},children:
         (0,L.jsx)("input",{
@@ -1338,6 +1324,12 @@ function ReminderManager(){
         onClick:()=>{setBucket("all");setCat("all");setPri("all");setSearch("");},
         style:{fontSize:"0.8rem",padding:"0.55rem 0.85rem"},
         children:"↺ Reset"
+      }),
+      (0,L.jsx)("button",{
+        className:"btn btn-primary",
+        onClick:openAdd,
+        style:{background:"linear-gradient(135deg, #f43f5e, #e11d48)",boxShadow:"0 4px 15px rgba(244, 63, 94, 0.4)",padding:"0.55rem 1.15rem",fontSize:"0.85rem",marginLeft:"auto"},
+        children:"+ Tambah Reminder"
       })
     ]}),
 
