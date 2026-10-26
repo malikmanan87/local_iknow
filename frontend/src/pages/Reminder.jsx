@@ -754,7 +754,7 @@ export default function Reminder({ onAlertsChanged }) {
       {/* ── Modal Add / Edit Reminder ── */}
       {showModal && (
         <div className="modal-backdrop">
-          <div className="modal-content" style={{ maxWidth: '640px' }}>
+          <div className="modal-content" style={{ maxWidth: '640px', background: '#0f172a', backgroundColor: '#0f172a', color: '#f8fafc', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '18px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.85)', padding: '1.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.75rem' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Bell size={20} style={{ color: '#f43f5e' }} />
@@ -821,6 +821,7 @@ export default function Reminder({ onAlertsChanged }) {
                   <input 
                     type="datetime-local" 
                     className="form-input" 
+                    style={{ colorScheme: 'dark' }}
                     value={formData.due_date}
                     onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
                     required

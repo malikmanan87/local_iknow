@@ -1126,7 +1126,7 @@ function ReminderManager(){
   let saveReminder=async(e)=>{
     e.preventDefault();
     if(!form.title.trim()||!form.due_date){
-      if(window.Swal)window.Swal.fire({icon:"error",title:"Ralat",text:"Sila lengkapkan tajuk dan tarikh matang."});
+      if(window.Swal)window.Swal.fire({icon:"error",title:"Ralat",text:"Sila lengkapkan tajuk dan tarikh matang.",background:"#0f172a",color:"#f8fafc",confirmButtonColor:"#f43f5e",customClass:{popup:"iknow-swal-popup",confirmButton:"btn-danger-confirm"}});
       return;
     }
     setSubmitting(!0);
@@ -1139,11 +1139,11 @@ function ReminderManager(){
         body:JSON.stringify(form)
       }).then(x=>x.json());
       if(res&&res.status==="success"){
-        if(window.Swal)window.Swal.fire({icon:"success",title:"Berjaya",text:res.message||"Peringatan berjaya disimpan.",timer:1500,showConfirmButton:!1});
+        if(window.Swal)window.Swal.fire({icon:"success",title:"Berjaya",text:res.message||"Peringatan berjaya disimpan.",timer:1800,showConfirmButton:!1,background:"#0f172a",color:"#f8fafc",customClass:{popup:"iknow-swal-popup"}});
         setShowModal(!1);
         loadData();
       }else{
-        if(window.Swal)window.Swal.fire({icon:"error",title:"Ralat",text:res.messages?.error||"Gagal menyimpan rekod."});
+        if(window.Swal)window.Swal.fire({icon:"error",title:"Ralat",text:res.messages?.error||"Gagal menyimpan rekod.",background:"#0f172a",color:"#f8fafc",confirmButtonColor:"#f43f5e",customClass:{popup:"iknow-swal-popup",confirmButton:"btn-danger-confirm"}});
       }
     }catch(err){console.error(err)}finally{setSubmitting(!1)}
   };
@@ -1152,7 +1152,7 @@ function ReminderManager(){
     try{
       let res=await fetch("api/reminders/"+it.id+"/toggle-complete",{method:"POST"}).then(x=>x.json());
       if(res&&res.status==="success"){
-        if(window.Swal)window.Swal.fire({icon:"success",title:"Dikemaskini",text:res.message||"Status selesai dikemaskini.",timer:1200,showConfirmButton:!1});
+        if(window.Swal)window.Swal.fire({icon:"success",title:"Dikemaskini",text:res.message||"Status selesai dikemaskini.",timer:1400,showConfirmButton:!1,background:"#0f172a",color:"#f8fafc",customClass:{popup:"iknow-swal-popup"}});
         loadData();
       }
     }catch(err){console.error(err)}
@@ -1160,17 +1160,17 @@ function ReminderManager(){
 
   let sendEmail=async(it)=>{
     if(!it.assigned_email){
-      if(window.Swal)window.Swal.fire({icon:"warning",title:"Tiada Emel",text:"Sila kemaskini tugasan dan tetapkan emel pegawai terlebih dahulu."});
+      if(window.Swal)window.Swal.fire({icon:"warning",title:"Tiada Emel",text:"Sila kemaskini tugasan dan tetapkan emel pegawai terlebih dahulu.",background:"#0f172a",color:"#f8fafc",confirmButtonColor:"#6366f1",customClass:{popup:"iknow-swal-popup"}});
       return;
     }
     setSendingEmailId(it.id);
     try{
       let res=await fetch("api/reminders/"+it.id+"/send-email",{method:"POST"}).then(x=>x.json());
       if(res&&res.status==="success"){
-        if(window.Swal)window.Swal.fire({icon:"success",title:"Emel Dihantar",text:res.message||"Emel peringatan berjaya diproses.",timer:1600,showConfirmButton:!1});
+        if(window.Swal)window.Swal.fire({icon:"success",title:"Emel Dihantar",text:res.message||"Emel peringatan berjaya diproses.",timer:2000,showConfirmButton:!1,background:"#0f172a",color:"#f8fafc",customClass:{popup:"iknow-swal-popup"}});
         loadData();
       }else{
-        if(window.Swal)window.Swal.fire({icon:"error",title:"Ralat Emel",text:res.messages?.error||"Gagal menghantar notifikasi emel."});
+        if(window.Swal)window.Swal.fire({icon:"error",title:"Ralat Emel",text:res.messages?.error||"Gagal menghantar notifikasi emel.",background:"#0f172a",color:"#f8fafc",confirmButtonColor:"#f43f5e",customClass:{popup:"iknow-swal-popup",confirmButton:"btn-danger-confirm"}});
       }
     }catch(err){console.error(err)}finally{setSendingEmailId(null)}
   };
@@ -1184,8 +1184,13 @@ function ReminderManager(){
         icon:"warning",
         showCancelButton:!0,
         confirmButtonColor:"#f43f5e",
+        cancelButtonColor:"rgba(255, 255, 255, 0.15)",
         confirmButtonText:"Ya, Padam",
-        cancelButtonText:"Batal"
+        cancelButtonText:"Batal",
+        background:"#0f172a",
+        color:"#f8fafc",
+        reverseButtons:!0,
+        customClass:{popup:"iknow-swal-popup",confirmButton:"btn-danger-confirm"}
       });
       conf=c.isConfirmed;
     }else{
@@ -1195,7 +1200,7 @@ function ReminderManager(){
     try{
       let res=await fetch("api/reminders/"+id,{method:"DELETE"}).then(x=>x.json());
       if(res&&res.status==="success"){
-        if(window.Swal)window.Swal.fire({icon:"success",title:"Dipadam",text:"Peringatan berjaya dipadam.",timer:1200,showConfirmButton:!1});
+        if(window.Swal)window.Swal.fire({icon:"success",title:"Dipadam",text:"Peringatan berjaya dipadam.",timer:1400,showConfirmButton:!1,background:"#0f172a",color:"#f8fafc",customClass:{popup:"iknow-swal-popup"}});
         loadData();
       }
     }catch(err){console.error(err)}
@@ -1572,7 +1577,7 @@ function ReminderManager(){
 
     /* Modal Add / Edit */
     showModal&&(0,L.jsx)("div",{className:"modal-backdrop",children:
-      (0,L.jsxs)("div",{className:"modal-content",style:{maxWidth:"620px"},children:[
+      (0,L.jsxs)("div",{className:"modal-content",style:{maxWidth:"620px",background:"#0f172a",backgroundColor:"#0f172a",color:"#f8fafc",border:"1px solid rgba(255,255,255,0.15)",borderRadius:"18px",boxShadow:"0 25px 50px -12px rgba(0,0,0,0.85)",padding:"1.75rem"},children:[
         (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1.25rem",borderBottom:"1px solid rgba(255,255,255,0.08)",paddingBottom:"0.75rem"},children:[
           (0,L.jsxs)("h2",{style:{fontSize:"1.25rem",fontWeight:800,margin:0,color:"#f8fafc"},children:[editingId?"Kemaskini Peringatan":"Cipta Peringatan Baharu"]}),
           (0,L.jsx)("button",{onClick:()=>setShowModal(!1),style:{background:"none",border:"none",color:"var(--text-muted)",fontSize:"1.3rem",cursor:"pointer"},children:"✕"})
@@ -1606,7 +1611,7 @@ function ReminderManager(){
           (0,L.jsxs)("div",{style:{display:"grid",gridTemplateColumns:"1.3fr 0.9fr",gap:"1rem"},children:[
             (0,L.jsxs)("div",{className:"form-group",children:[
               (0,L.jsxs)("label",{className:"form-label",children:["Tarikh & Masa Matang ",(0,L.jsx)("span",{style:{color:"#f43f5e"},children:"*"})]}),
-              (0,L.jsx)("input",{type:"datetime-local",className:"form-input",value:form.due_date,onChange:e=>setForm({...form,due_date:e.target.value}),required:!0})
+              (0,L.jsx)("input",{type:"datetime-local",className:"form-input",style:{colorScheme:"dark"},value:form.due_date,onChange:e=>setForm({...form,due_date:e.target.value}),required:!0})
             ]}),
             (0,L.jsxs)("div",{className:"form-group",children:[
               (0,L.jsx)("label",{className:"form-label",children:"Amaran Awal"}),

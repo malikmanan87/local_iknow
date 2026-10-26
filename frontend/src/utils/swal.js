@@ -27,6 +27,8 @@ export const showAlert = (message, title = 'Makluman', icon = 'info') => {
     icon,
     confirmButtonText: 'Tutup',
     confirmButtonColor: '#6366f1',
+    background: '#0f172a',
+    color: '#f8fafc',
     customClass: { popup: 'iknow-swal-popup' }
   });
 };
@@ -43,6 +45,8 @@ export const showError = (message, title = 'Ralat') => {
     icon: 'error',
     confirmButtonText: 'Tutup',
     confirmButtonColor: '#f43f5e',
+    background: '#0f172a',
+    color: '#f8fafc',
     customClass: { popup: 'iknow-swal-popup', confirmButton: 'btn-danger-confirm' }
   });
 };
@@ -59,6 +63,8 @@ export const showSuccess = (message, title = 'Berjaya', timer = 2000) => {
     icon: 'success',
     timer,
     showConfirmButton: false,
+    background: '#0f172a',
+    color: '#f8fafc',
     customClass: { popup: 'iknow-swal-popup' }
   });
 };
@@ -75,6 +81,8 @@ export const showConfirm = async (message, title = 'Pengesahan', confirmText = '
     showCancelButton: true,
     confirmButtonText: confirmText,
     cancelButtonText: 'Batal',
+    background: '#0f172a',
+    color: '#f8fafc',
     customClass: {
       popup: 'iknow-swal-popup',
       confirmButton: isDanger ? 'btn-danger-confirm' : ''

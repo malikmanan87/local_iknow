@@ -29,39 +29,50 @@
     style.id = 'iknow-swal-custom-css';
     style.innerHTML = `
       .swal2-container {
-        backdrop-filter: blur(8px) !important;
-        -webkit-backdrop-filter: blur(8px) !important;
-        background: rgba(4, 7, 15, 0.75) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        background: rgba(4, 7, 15, 0.8) !important;
         z-index: 999999 !important;
       }
-      .swal2-popup.iknow-swal-popup {
-        background: rgba(15, 23, 42, 0.95) !important;
-        background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 60%),
-                          radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.1) 0px, transparent 60%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(99, 102, 241, 0.15) !important;
+      .swal2-popup,
+      .swal2-modal,
+      .swal2-popup.iknow-swal-popup,
+      div:where(.swal2-container) div:where(.swal2-popup) {
+        background: #0f172a !important;
+        background-color: #0f172a !important;
+        background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.18) 0px, transparent 65%),
+                          radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.12) 0px, transparent 65%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85), 0 0 35px rgba(99, 102, 241, 0.25) !important;
         border-radius: 18px !important;
         padding: 1.75rem 1.5rem !important;
         color: #f8fafc !important;
         font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
       }
-      .swal2-title {
+      .swal2-title,
+      div:where(.swal2-container) h2:where(.swal2-title) {
         color: #ffffff !important;
         font-size: 1.25rem !important;
         font-weight: 800 !important;
         letter-spacing: -0.3px !important;
         margin-bottom: 0.5rem !important;
       }
-      .swal2-html-container {
-        color: #94a3b8 !important;
-        font-size: 0.9rem !important;
+      .swal2-html-container,
+      div:where(.swal2-container) div:where(.swal2-html-container) {
+        color: #cbd5e1 !important;
+        font-size: 0.92rem !important;
         line-height: 1.55 !important;
         margin: 0.5rem 0 1rem 0 !important;
       }
       .swal2-icon {
-        transform: scale(0.85) !important;
+        transform: scale(0.88) !important;
         margin: 0.75rem auto 0.75rem auto !important;
         border-width: 3px !important;
+      }
+      .swal2-success-circular-line-left,
+      .swal2-success-circular-line-right,
+      .swal2-success-fix {
+        background-color: #0f172a !important;
       }
       .swal2-actions {
         gap: 0.65rem !important;
@@ -89,17 +100,17 @@
         box-shadow: 0 4px 14px rgba(244, 63, 94, 0.4) !important;
       }
       .swal2-styled.swal2-cancel {
-        background: rgba(255, 255, 255, 0.08) !important;
-        color: #cbd5e1 !important;
+        background: rgba(255, 255, 255, 0.1) !important;
+        color: #f1f5f9 !important;
         font-weight: 600 !important;
         font-size: 0.85rem !important;
         padding: 0.6rem 1.25rem !important;
         border-radius: 10px !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border: 1px solid rgba(255, 255, 255, 0.18) !important;
         transition: all 0.2s ease !important;
       }
       .swal2-styled.swal2-cancel:hover {
-        background: rgba(255, 255, 255, 0.15) !important;
+        background: rgba(255, 255, 255, 0.18) !important;
         color: #ffffff !important;
       }
       .swal2-close {
@@ -134,6 +145,25 @@
 
   // Global override for window.alert and custom confirmation dialog
   function installAlertInterceptor() {
+    const activeSwal = getGlobalSwal();
+    if (activeSwal && !activeSwal._iknowHooked) {
+      activeSwal._iknowHooked = true;
+      const originalFire = activeSwal.fire.bind(activeSwal);
+      activeSwal.fire = function(...args) {
+        if (args.length === 1 && typeof args[0] === 'object' && args[0] !== null) {
+          const opt = Object.assign({}, args[0]);
+          if (!opt.background) opt.background = '#0f172a';
+          if (!opt.color) opt.color = '#f8fafc';
+          if (!opt.customClass) {
+            opt.customClass = { popup: 'iknow-swal-popup' };
+          } else if (typeof opt.customClass === 'object' && !opt.customClass.popup) {
+            opt.customClass = Object.assign({}, opt.customClass, { popup: 'iknow-swal-popup' });
+          }
+          return originalFire(opt);
+        }
+        return originalFire(...args);
+      };
+    }
     // Reusable custom confirm dialog for SweetAlert2
     window.iknowConfirm = async function(title, text, confirmBtnText = 'Ya, Teruskan', isDanger = true) {
       const activeSwal = getGlobalSwal();
