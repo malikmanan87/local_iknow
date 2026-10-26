@@ -322,74 +322,89 @@ class ReminderController extends ResourceController
         $systemEmail = $settings['system_email'] ?? 'noreply@hosza.my';
 
         $dueFormatted = date('d M Y, h:i A', strtotime($reminder['due_date']));
-        $priorityColor = match ($reminder['priority']) {
-            'critical' => '#ef4444',
-            'high'     => '#f97316',
-            'medium'   => '#f59e0b',
-            default    => '#10b981'
+        $categoryLabel = match ($reminder['category'] ?? '') {
+            'system'      => 'Sistem & Pelayan',
+            'procurement' => 'Perolehan & Dokumen',
+            'issue'       => 'Isu & Troubleshooting',
+            'staff_admin' => 'Rutin Harian / Staf',
+            default       => 'Umum'
         };
-        $priorityLabel = strtoupper($reminder['priority']);
+        $priorityLabel = match ($reminder['priority'] ?? '') {
+            'critical' => 'Kritikal',
+            'high'     => 'Tinggi',
+            'medium'   => 'Sederhana',
+            'low'      => 'Rendah',
+            default    => ucfirst($reminder['priority'] ?? 'Umum')
+        };
+        $assignedName = !empty($reminder['assigned_to']) ? htmlspecialchars($reminder['assigned_to']) : 'Pegawai Bertugas';
+        $appUrl = 'http://localhost/iknow/';
 
-        // Templat Emel HTML Responsif
+        // Templat Emel Ringkas & Bersih (Monokrom / Tiada Elemen Warna)
         $htmlMessage = "
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset='utf-8'>
-          <title>Peringatan Tugasan - {$reminder['title']}</title>
+          <title>Peringatan Tugasan</title>
         </head>
-        <body style='margin:0; padding:20px; background-color:#0b0f19; font-family:Plus Jakarta Sans, Arial, sans-serif; color:#f8fafc;'>
-          <table align='center' border='0' cellpadding='0' cellspacing='0' width='600' style='border-collapse:collapse; background:#161e31; border:1px solid rgba(255,255,255,0.1); border-radius:14px; overflow:hidden;'>
-            <tr>
-              <td style='padding:24px; background:linear-gradient(135deg, #1e1b4b, #312e81); text-align:center;'>
-                <h1 style='margin:0; font-size:18px; font-weight:800; color:#38bdf8; letter-spacing:0.5px;'>🏥 IKNOW KNOWLEDGE HUB</h1>
-                <p style='margin:4px 0 0 0; font-size:12px; color:#c7d2fe;'>PUSAT OPERASI & PANGKALAN MAKLUMAT BERSEPADU</p>
-              </td>
-            </tr>
-            <tr>
-              <td style='padding:28px 24px;'>
-                <div style='display:inline-block; padding:4px 12px; border-radius:999px; background:rgba(99,102,241,0.2); border:1px solid rgba(99,102,241,0.4); color:#a5b4fc; font-size:11px; font-weight:700; margin-bottom:12px;'>
-                  🔔 PERINGATAN TUGASAN RASMI
-                </div>
-                <h2 style='margin:0 0 16px 0; font-size:19px; color:#ffffff; line-height:1.4;'>{$reminder['title']}</h2>
-                
-                <table width='100%' style='background:#0f172a; border:1px solid rgba(255,255,255,0.08); border-radius:10px; margin-bottom:20px; font-size:13px;'>
-                  <tr>
-                    <td style='padding:10px 14px; color:#94a3b8; border-bottom:1px solid rgba(255,255,255,0.06); width:130px;'>Kategori:</td>
-                    <td style='padding:10px 14px; color:#f8fafc; font-weight:600; border-bottom:1px solid rgba(255,255,255,0.06);'>" . ucfirst($reminder['category']) . "</td>
-                  </tr>
-                  <tr>
-                    <td style='padding:10px 14px; color:#94a3b8; border-bottom:1px solid rgba(255,255,255,0.06);'>Keutamaan:</td>
-                    <td style='padding:10px 14px; color:{$priorityColor}; font-weight:700; border-bottom:1px solid rgba(255,255,255,0.06);'>● {$priorityLabel}</td>
-                  </tr>
-                  <tr>
-                    <td style='padding:10px 14px; color:#94a3b8; border-bottom:1px solid rgba(255,255,255,0.06);'>Tarikh Matang:</td>
-                    <td style='padding:10px 14px; color:#38bdf8; font-weight:700; border-bottom:1px solid rgba(255,255,255,0.06);'>{$dueFormatted}</td>
-                  </tr>
-                  <tr>
-                    <td style='padding:10px 14px; color:#94a3b8;'>Pegawai Bertugas:</td>
-                    <td style='padding:10px 14px; color:#f8fafc;'>{$reminder['assigned_to']}</td>
-                  </tr>
-                </table>
+        <body style='margin:0; padding:20px; background-color:#ffffff; font-family:Arial, sans-serif; font-size:14px; line-height:1.6; color:#111827;'>
+          <div style='max-width:600px; margin:0 auto; border:1px solid #d1d5db; border-radius:4px; padding:24px; background:#ffffff;'>
+            
+            <div style='border-bottom:2px solid #111827; padding-bottom:10px; margin-bottom:18px;'>
+              <h2 style='margin:0; font-size:16px; font-weight:bold; color:#111827; letter-spacing:0.3px;'>
+                IKNOW — PERINGATAN TUGASAN
+              </h2>
+            </div>
 
-                " . (!empty($reminder['description']) ? "
-                <div style='background:#090d16; padding:12px 14px; border-radius:8px; border-left:3px solid #6366f1; margin-bottom:24px; font-size:12.5px; color:#cbd5e1; line-height:1.5;'>
-                  <strong>Arahan / Catatan:</strong><br>" . nl2br(htmlspecialchars($reminder['description'])) . "
-                </div>" : "") . "
+            <p style='margin:0 0 14px 0;'>
+              Salam sejahtera <strong>{$assignedName}</strong>,
+            </p>
 
-                <div style='text-align:center; margin:24px 0 10px 0;'>
-                  <a href='http://localhost/iknow/' style='display:inline-block; padding:12px 28px; background:linear-gradient(135deg, #6366f1, #4f46e5); color:#ffffff; text-decoration:none; font-weight:700; font-size:13px; border-radius:10px; box-shadow:0 4px 14px rgba(99,102,241,0.4);'>
-                    👉 BUKA SISTEM IKNOW UNTUK KEMASKINI
-                  </a>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td style='padding:16px 24px; background:#0f172a; border-top:1px solid rgba(255,255,255,0.06); text-align:center; font-size:11px; color:#64748b;'>
-                Emel ini dijana secara automatik oleh modul <strong>iKNOW Reminder</strong>. Sekiranya tugasan ini telah selesai, sila tandakan selesai pada sistem.
-              </td>
-            </tr>
-          </table>
+            <p style='margin:0 0 16px 0;'>
+              Ini adalah peringatan bagi tugasan berikut yang memerlukan perhatian atau tindakan anda:
+            </p>
+
+            <table style='width:100%; border-collapse:collapse; margin-bottom:20px; font-size:13.5px;'>
+              <tr>
+                <td style='padding:8px 12px; border:1px solid #d1d5db; width:140px; font-weight:bold; background:#f9fafb;'>Tugasan</td>
+                <td style='padding:8px 12px; border:1px solid #d1d5db; font-weight:bold;'>" . htmlspecialchars($reminder['title']) . "</td>
+              </tr>
+              <tr>
+                <td style='padding:8px 12px; border:1px solid #d1d5db; font-weight:bold; background:#f9fafb;'>Kategori</td>
+                <td style='padding:8px 12px; border:1px solid #d1d5db;'>{$categoryLabel}</td>
+              </tr>
+              <tr>
+                <td style='padding:8px 12px; border:1px solid #d1d5db; font-weight:bold; background:#f9fafb;'>Keutamaan</td>
+                <td style='padding:8px 12px; border:1px solid #d1d5db;'>{$priorityLabel}</td>
+              </tr>
+              <tr>
+                <td style='padding:8px 12px; border:1px solid #d1d5db; font-weight:bold; background:#f9fafb;'>Tarikh Matang</td>
+                <td style='padding:8px 12px; border:1px solid #d1d5db;'>{$dueFormatted}</td>
+              </tr>
+              <tr>
+                <td style='padding:8px 12px; border:1px solid #d1d5db; font-weight:bold; background:#f9fafb;'>Pegawai Bertugas</td>
+                <td style='padding:8px 12px; border:1px solid #d1d5db;'>{$assignedName}</td>
+              </tr>
+              " . (!empty($reminder['description']) ? "
+              <tr>
+                <td style='padding:8px 12px; border:1px solid #d1d5db; font-weight:bold; vertical-align:top; background:#f9fafb;'>Arahan / Catatan</td>
+                <td style='padding:8px 12px; border:1px solid #d1d5db;'>" . nl2br(htmlspecialchars($reminder['description'])) . "</td>
+              </tr>" : "") . "
+            </table>
+
+            <p style='margin:0 0 16px 0;'>
+              Sila klik pautan di bawah untuk membuka sistem dan mengemaskini status tugasan ini:
+              <br>
+              <a href='{$appUrl}' style='color:#111827; font-weight:bold; text-decoration:underline;'>{$appUrl}</a>
+            </p>
+
+            <hr style='border:none; border-top:1px solid #e5e7eb; margin:20px 0 14px 0;'>
+
+            <p style='margin:0; font-size:12px; color:#4b5563;'>
+              Emel ini dijana secara automatik oleh modul Reminder sistem iKNOW. Sila jangan balas emel ini. Sekiranya tugasan telah selesai, sila tandakan selesai pada sistem.
+            </p>
+
+          </div>
         </body>
         </html>
         ";
@@ -403,7 +418,7 @@ class ReminderController extends ResourceController
 
             $email->setFrom($fromEmail ?: 'noreply@unisza.edu.my', $fromName ?: 'iKNOW Knowledge Hub');
             $email->setTo($emailAddress);
-            $email->setSubject("🔔 Peringatan Tugasan: {$reminder['title']} [{$priorityLabel}]");
+            $email->setSubject("Peringatan Tugasan: {$reminder['title']} [{$priorityLabel}]");
             $email->setMessage($htmlMessage);
             $email->setMailType('html');
 
