@@ -352,7 +352,7 @@ class ReminderController extends ResourceController
             
             <div style='border-bottom:2px solid #111827; padding-bottom:10px; margin-bottom:18px;'>
               <h2 style='margin:0; font-size:16px; font-weight:bold; color:#111827; letter-spacing:0.3px;'>
-                IKNOW — PERINGATAN TUGASAN
+                🔔 IKNOW — PERINGATAN TUGASAN
               </h2>
             </div>
 
@@ -418,7 +418,7 @@ class ReminderController extends ResourceController
 
             $email->setFrom($fromEmail ?: 'noreply@unisza.edu.my', $fromName ?: 'iKNOW Knowledge Hub');
             $email->setTo($emailAddress);
-            $email->setSubject("Peringatan Tugasan: {$reminder['title']} [{$priorityLabel}]");
+            $email->setSubject("🔔 Peringatan Tugasan: {$reminder['title']} [{$priorityLabel}]");
             $email->setMessage($htmlMessage);
             $email->setMailType('html');
 
