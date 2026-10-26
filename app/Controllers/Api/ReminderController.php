@@ -396,26 +396,39 @@ class ReminderController extends ResourceController
 
         try {
             $email = Services::email();
-            $email->setFrom($systemEmail, $appName);
+            
+            // Muat konfigurasi daripada Settings jika wujud
+            $fromEmail = !empty($settings['system_email']) ? $settings['system_email'] : config('Email')->fromEmail;
+            $fromName  = !empty($settings['app_name']) ? $settings['app_name'] : config('Email')->fromName;
+
+            $email->setFrom($fromEmail ?: 'noreply@unisza.edu.my', $fromName ?: 'iKNOW Knowledge Hub');
             $email->setTo($emailAddress);
             $email->setSubject("🔔 Peringatan Tugasan: {$reminder['title']} [{$priorityLabel}]");
             $email->setMessage($htmlMessage);
             $email->setMailType('html');
 
             $sent = $email->send(false);
+            if (!$sent) {
+                $debugMsg = strip_tags($email->printDebugger(['headers']));
+                log_message('error', "Ralat hantar emel: {$debugMsg}");
+                return $this->fail([
+                    'status'  => 'error',
+                    'message' => 'Gagal menghantar emel kepada ' . $emailAddress . '. ' . ($debugMsg ?: 'Sila semak tetapan SMTP di app/Config/Email.php.')
+                ]);
+            }
+
             $model->update($id, ['last_email_sent_at' => date('Y-m-d H:i:s')]);
 
             return $this->respond([
                 'status'  => 'success',
-                'sent'    => $sent,
-                'message' => $sent ? "Emel peringatan berjaya dihantar ke {$emailAddress}." : "Emel telah dijana dan direkodkan (Status pelayan emel: disimpan secara tempatan)."
+                'sent'    => true,
+                'message' => "Emel peringatan berjaya dihantar ke {$emailAddress}."
             ]);
         } catch (\Throwable $e) {
-            $model->update($id, ['last_email_sent_at' => date('Y-m-d H:i:s')]);
-            return $this->respond([
-                'status'  => 'success',
-                'sent'    => false,
-                'message' => "Emel telah diproses bagi {$emailAddress} (Perincian: " . $e->getMessage() . ")."
+            log_message('error', "Pengecualian emel: " . $e->getMessage());
+            return $this->fail([
+                'status'  => 'error',
+                'message' => "Ralat penghantaran emel: " . $e->getMessage()
             ]);
         }
     }
