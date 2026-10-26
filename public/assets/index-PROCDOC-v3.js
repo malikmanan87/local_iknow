@@ -404,6 +404,7 @@ function HomePage({onNavigate:nav,onSelectModule:selMod}){
       id:"iknow-home-search-panel",
       className:"glass-panel iknow-home-search-panel",
       style:{
+        position:"relative",
         padding:"2.2rem 1.5rem",
         marginBottom:"2rem",
         textAlign:"center",
