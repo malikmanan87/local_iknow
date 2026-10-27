@@ -120,14 +120,12 @@ class BackupController extends ResourceController {
      * 1. iknow_db_backup/iknow_db_backup_YYYY-MM-DD.sql (Sandaran harian arkib)
      * 2. iknow_db_backup/iknow_db_backup_latest.sql (Salinan terkini folder)
      * 3. iknow_db_backup.sql (Fail utama root)
-     * 4. iknow_db_recovered_full.sql (Keserasian legasi)
      */
     private function performBackup(): array {
         $db = \Config\Database::connect();
         $dailyPath = $this->getDailyBackupPath();
         $rootPath = $this->getRootBackupPath();
         $folderLatestPath = $this->getBackupDir() . 'iknow_db_backup_latest.sql';
-        $legacyPath = ROOTPATH . 'iknow_db_recovered_full.sql';
 
         $hostname = $db->hostname ?? 'localhost';
         $database = $db->database ?? 'iknow_db';
@@ -163,7 +161,6 @@ class BackupController extends ResourceController {
             @file_put_contents($dailyPath, $dumpContent);
             @file_put_contents($folderLatestPath, $dumpContent);
             @file_put_contents($rootPath, $dumpContent);
-            @file_put_contents($legacyPath, $dumpContent);
             $this->cleanupOldBackups($dailyPath);
             return ['success' => true];
         }
@@ -208,7 +205,6 @@ class BackupController extends ResourceController {
             @file_put_contents($dailyPath, $sql);
             @file_put_contents($folderLatestPath, $sql);
             @file_put_contents($rootPath, $sql);
-            @file_put_contents($legacyPath, $sql);
             $this->cleanupOldBackups($dailyPath);
             return ['success' => true];
         } catch (\Throwable $e) {

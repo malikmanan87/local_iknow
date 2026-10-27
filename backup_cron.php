@@ -19,7 +19,6 @@ $cycleDate = ($now >= $today8am) ? date('Y-m-d', $now) : date('Y-m-d', strtotime
 $dailyPath = $backupDir . "iknow_db_backup_{$cycleDate}.sql";
 $rootPath  = __DIR__ . DIRECTORY_SEPARATOR . 'iknow_db_backup.sql';
 $folderLatestPath = $backupDir . 'iknow_db_backup_latest.sql';
-$legacyPath = __DIR__ . DIRECTORY_SEPARATOR . 'iknow_db_recovered_full.sql';
 
 $logFile = $backupDir . 'backup_log.txt';
 
@@ -82,7 +81,6 @@ if ($returnVar === 0 && strlen($dumpContent) > 1000 && str_contains($dumpContent
     @file_put_contents($dailyPath, $dumpContent);
     @file_put_contents($folderLatestPath, $dumpContent);
     @file_put_contents($rootPath, $dumpContent);
-    @file_put_contents($legacyPath, $dumpContent);
 
     $msg = "[$timestampFormatted] BERJAYA: Sandaran pangkalan data disimpan ke $dailyPath (" . filesize($dailyPath) . " bytes)\n";
     echo $msg;
@@ -129,7 +127,6 @@ if ($returnVar === 0 && strlen($dumpContent) > 1000 && str_contains($dumpContent
         @file_put_contents($dailyPath, $sql);
         @file_put_contents($folderLatestPath, $sql);
         @file_put_contents($rootPath, $sql);
-        @file_put_contents($legacyPath, $sql);
 
         $msg = "[$timestampFormatted] BERJAYA (PHP Engine): Sandaran disimpan ke $dailyPath (" . filesize($dailyPath) . " bytes)\n";
         echo $msg;
