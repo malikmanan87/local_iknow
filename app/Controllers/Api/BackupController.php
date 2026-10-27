@@ -91,7 +91,7 @@ class BackupController extends ResourceController {
             }
         }
 
-        $this->cleanupOldBackups(30);
+        $this->cleanupOldBackups($dailyPath);
 
         return $this->respond($this->getBackupInfo());
     }
@@ -164,7 +164,7 @@ class BackupController extends ResourceController {
             @file_put_contents($folderLatestPath, $dumpContent);
             @file_put_contents($rootPath, $dumpContent);
             @file_put_contents($legacyPath, $dumpContent);
-            $this->cleanupOldBackups(30);
+            $this->cleanupOldBackups($dailyPath);
             return ['success' => true];
         }
 
@@ -209,7 +209,7 @@ class BackupController extends ResourceController {
             @file_put_contents($folderLatestPath, $sql);
             @file_put_contents($rootPath, $sql);
             @file_put_contents($legacyPath, $sql);
-            $this->cleanupOldBackups(30);
+            $this->cleanupOldBackups($dailyPath);
             return ['success' => true];
         } catch (\Throwable $e) {
             return [
@@ -220,29 +220,52 @@ class BackupController extends ResourceController {
     }
 
     /**
-     * Dasar Pembersihan Automatik (Retention Policy):
-     * Memadam fail sandaran arkib harian yang melebihi $retentionDays hari (lalai 30 hari)
-     * bagi mengelakkan ruang cakera storan pelayan penuh.
+     * Dasar Pembersihan Automatik (Retention Policy: Hanya Sandaran Terkini):
+     * Memadam semua fail sandaran arkib lama dan hanya menyimpan fail sandaran harian terkini
+     * selepas backup dibuat bagi menjimatkan ruang storan pelayan.
      */
-    private function cleanupOldBackups(int $retentionDays = 30): array {
+    private function cleanupOldBackups(?string $keepDailyPath = null): array {
         $backupDir = $this->getBackupDir();
-        $cutoff = time() - ($retentionDays * 86400);
         $pruned = [];
 
         $files = glob($backupDir . 'iknow_db_backup_*.sql');
         if (!empty($files)) {
+            // Jika $keepDailyPath tidak dinyatakan atau belum wujud, pilih fail paling baharu mengikut mtime
+            if (empty($keepDailyPath) || !file_exists($keepDailyPath)) {
+                $candidates = array_filter($files, fn($f) => !str_contains($f, '_latest.sql'));
+                if (!empty($candidates)) {
+                    usort($candidates, fn($a, $b) => filemtime($b) - filemtime($a));
+                    $keepDailyPath = $candidates[0];
+                }
+            }
+
             foreach ($files as $file) {
-                // Jangan padam fail latest
-                if (str_contains($file, '_latest.sql')) {
+                // Simpan fail terkini dan salinan _latest.sql
+                if ($file === $keepDailyPath || str_contains($file, '_latest.sql')) {
                     continue;
                 }
 
+                $basename = basename($file);
                 $mtime = filemtime($file);
-                if ($mtime < $cutoff) {
-                    $basename = basename($file);
-                    if (@unlink($file)) {
+                if (@unlink($file)) {
+                    $pruned[] = [
+                        'file' => $basename,
+                        'date' => date('Y-m-d H:i:s', $mtime)
+                    ];
+                }
+            }
+        }
+
+        // Padam juga sebarang fail sandaran lama di root directory (cth: iknow_db_backup_before_*)
+        $rootOld = glob(ROOTPATH . 'iknow_db_backup_*.sql');
+        if (!empty($rootOld)) {
+            foreach ($rootOld as $rf) {
+                if ($rf !== ROOTPATH . 'iknow_db_backup.sql') {
+                    $base = basename($rf);
+                    $mtime = filemtime($rf);
+                    if (@unlink($rf)) {
                         $pruned[] = [
-                            'file' => $basename,
+                            'file' => $base,
                             'date' => date('Y-m-d H:i:s', $mtime)
                         ];
                     }
@@ -251,9 +274,9 @@ class BackupController extends ResourceController {
         }
 
         return [
-            'retention_days' => $retentionDays,
-            'pruned_count'   => count($pruned),
-            'pruned_files'   => $pruned
+            'retention_policy' => 'latest_only',
+            'pruned_count'     => count($pruned),
+            'pruned_files'     => $pruned
         ];
     }
 
@@ -340,8 +363,8 @@ class BackupController extends ResourceController {
             'status'                 => $isCycleCovered ? 'healthy' : 'warning',
             'daily_date'             => date('Y-m-d', $mtime),
             'total_backups_count'    => count($allSql),
-            'retention_days'         => 30,
-            'retention_label'        => 'Simpanan 30 Hari (Pembersihan Automatik)',
+            'retention_days'         => 1,
+            'retention_label'        => 'Hanya Sandaran Terkini Disimpan (Pembersihan Automatik)',
             'history'                => $history
         ];
     }

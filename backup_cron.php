@@ -43,20 +43,33 @@ $returnVar = -1;
 $dumpContent = implode("\n", $output);
 
 /**
- * Dasar Pembersihan Automatik (Retention Policy: 30 Hari)
+ * Dasar Pembersihan Automatik (Retention Policy: Hanya Sandaran Terkini)
+ * Memadam semua fail sandaran lama dan hanya menyimpan fail sandaran harian terkini.
  */
-function applyRetentionPolicy($backupDir, $dailyPath, $logFile, $timestampFormatted, $retentionDays = 30) {
-    $cutoff = time() - ($retentionDays * 86400);
+function applyRetentionPolicy($backupDir, $dailyPath, $logFile, $timestampFormatted) {
     $files = glob($backupDir . 'iknow_db_backup_*.sql');
     if (!empty($files)) {
         foreach ($files as $file) {
             if (str_contains($file, '_latest.sql') || $file === $dailyPath) {
                 continue;
             }
-            if (filemtime($file) < $cutoff) {
-                $base = basename($file);
-                if (@unlink($file)) {
-                    $cleanMsg = "[$timestampFormatted] RETENTION POLICY: Fail arkib dipadam (melebihi {$retentionDays} hari): $base\n";
+            $base = basename($file);
+            if (@unlink($file)) {
+                $cleanMsg = "[$timestampFormatted] RETENTION POLICY: Fail arkib lama dipadam (hanya simpan terkini): $base\n";
+                echo $cleanMsg;
+                @file_put_contents($logFile, $cleanMsg, FILE_APPEND);
+            }
+        }
+    }
+
+    // Padam sebarang fail sandaran arkib lama di root directory
+    $rootOld = glob(__DIR__ . DIRECTORY_SEPARATOR . 'iknow_db_backup_*.sql');
+    if (!empty($rootOld)) {
+        foreach ($rootOld as $rf) {
+            if ($rf !== __DIR__ . DIRECTORY_SEPARATOR . 'iknow_db_backup.sql') {
+                $base = basename($rf);
+                if (@unlink($rf)) {
+                    $cleanMsg = "[$timestampFormatted] RETENTION POLICY: Fail sandaran arkib root dipadam: $base\n";
                     echo $cleanMsg;
                     @file_put_contents($logFile, $cleanMsg, FILE_APPEND);
                 }
@@ -75,7 +88,7 @@ if ($returnVar === 0 && strlen($dumpContent) > 1000 && str_contains($dumpContent
     echo $msg;
     @file_put_contents($logFile, $msg, FILE_APPEND);
 
-    applyRetentionPolicy($backupDir, $dailyPath, $logFile, $timestampFormatted, 30);
+    applyRetentionPolicy($backupDir, $dailyPath, $logFile, $timestampFormatted);
     exit(0);
 } else {
     // Fallback enjin PHP
@@ -122,7 +135,7 @@ if ($returnVar === 0 && strlen($dumpContent) > 1000 && str_contains($dumpContent
         echo $msg;
         @file_put_contents($logFile, $msg, FILE_APPEND);
 
-        applyRetentionPolicy($backupDir, $dailyPath, $logFile, $timestampFormatted, 30);
+        applyRetentionPolicy($backupDir, $dailyPath, $logFile, $timestampFormatted);
         exit(0);
     } catch (Exception $e) {
         $msg = "[$timestampFormatted] GAGAL: " . $e->getMessage() . "\n";

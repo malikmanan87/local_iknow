@@ -247,7 +247,7 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
               fontSize: '0.78rem',
               color: 'var(--text-muted)'
             }}
-            title={`Sandaran Pangkalan Data Harian (iknow_db_backup):\nKitaran: Setiap 24 Jam (8:00 AM)\nFail: iknow_db_backup/${backupInfo.file_name}\nSeterusnya: ${backupInfo.next_cycle_formatted || '-'}\nDasar Simpanan: ${backupInfo.retention_label || '30 Hari (Pembersihan Automatik)'}`}
+            title={`Sandaran Pangkalan Data Harian (iknow_db_backup):\nKitaran: Setiap 24 Jam (8:00 AM)\nFail: iknow_db_backup/${backupInfo.file_name}\nSeterusnya: ${backupInfo.next_cycle_formatted || '-'}\nDasar Simpanan: ${backupInfo.retention_label || 'Hanya Sandaran Terkini Disimpan (Pembersihan Automatik)'}`}
           >
             <span style={{
               width: '8px',
