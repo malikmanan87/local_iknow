@@ -13,7 +13,11 @@ $routes->get('/', function() {
         $indexPath = FCPATH . '../frontend/dist/index.html';
     }
     if (file_exists($indexPath)) {
-        return response()->setBody(file_get_contents($indexPath))->setHeader('Content-Type', 'text/html');
+        return response()
+            ->setBody(file_get_contents($indexPath))
+            ->setHeader('Content-Type', 'text/html')
+            ->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->setHeader('Pragma', 'no-cache');
     }
     return 'Frontend dist not found. Please build frontend first.';
 });
@@ -124,6 +128,10 @@ $routes->group('api', function($routes) {
     $routes->delete('reminders/(:num)', 'Api\ReminderController::delete/$1');
     $routes->post('reminders/(:num)/toggle-complete', 'Api\ReminderController::toggleComplete/$1');
     $routes->post('reminders/(:num)/send-email', 'Api\ReminderController::sendEmail/$1');
+
+    // AI Virtual Assistant
+    $routes->post('ai/chat', 'Api\AiAssistantController::chat');
+    $routes->get('ai/suggestions', 'Api\AiAssistantController::suggestions');
 });
 
 
