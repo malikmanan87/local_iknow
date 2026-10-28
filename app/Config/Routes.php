@@ -48,27 +48,27 @@ $routes->group('api', function($routes) {
     $routes->get('modules', 'Api\ModuleController::index');
     $routes->get('modules/(:num)', 'Api\ModuleController::show/$1');
     $routes->post('modules', 'Api\ModuleController::create');
-    $routes->match(['put', 'post'], 'modules/(:num)', 'Api\ModuleController::update/$1');
+    $routes->match(['PUT', 'POST'], 'modules/(:num)', 'Api\ModuleController::update/$1');
     $routes->delete('modules/(:num)', 'Api\ModuleController::delete/$1');
 
     // Submodules
     $routes->post('submodules', 'Api\SubmoduleController::create');
-    $routes->match(['put', 'post'], 'submodules/(:num)', 'Api\SubmoduleController::update/$1');
+    $routes->match(['PUT', 'POST'], 'submodules/(:num)', 'Api\SubmoduleController::update/$1');
     $routes->delete('submodules/(:num)', 'Api\SubmoduleController::delete/$1');
 
     // Flows
     $routes->post('flows', 'Api\FlowController::create');
-    $routes->match(['put', 'post'], 'flows/(:num)', 'Api\FlowController::update/$1');
+    $routes->match(['PUT', 'POST'], 'flows/(:num)', 'Api\FlowController::update/$1');
     $routes->delete('flows/(:num)', 'Api\FlowController::delete/$1');
 
     // Issues
     $routes->post('issues', 'Api\IssueController::create');
-    $routes->match(['put', 'post'], 'issues/(:num)', 'Api\IssueController::update/$1');
+    $routes->match(['PUT', 'POST'], 'issues/(:num)', 'Api\IssueController::update/$1');
     $routes->delete('issues/(:num)', 'Api\IssueController::delete/$1');
 
     // Contacts
     $routes->post('contacts', 'Api\ContactController::create');
-    $routes->match(['put', 'post'], 'contacts/(:num)', 'Api\ContactController::update/$1');
+    $routes->match(['PUT', 'POST'], 'contacts/(:num)', 'Api\ContactController::update/$1');
     $routes->delete('contacts/(:num)', 'Api\ContactController::delete/$1');
 
     // Image Upload
@@ -76,7 +76,7 @@ $routes->group('api', function($routes) {
 
     // Flowcharts (load & save per module + context_key)
     $routes->get('flowcharts/(:num)/(:any)',                 'Api\\FlowchartController::load/$1/$2');
-    $routes->match(['put', 'post'], 'flowcharts/(:num)/(:any)', 'Api\\FlowchartController::save/$1/$2');
+    $routes->match(['PUT', 'POST'], 'flowcharts/(:num)/(:any)', 'Api\\FlowchartController::save/$1/$2');
 
     // Notes & Scratchpad
     $routes->get('notes', 'Api\NoteController::index');
@@ -103,7 +103,7 @@ $routes->group('api', function($routes) {
     $routes->get('procurement-documents', 'Api\ProcurementDocumentController::index');
     $routes->get('procurement-documents/(:num)', 'Api\ProcurementDocumentController::show/$1');
     $routes->post('procurement-documents', 'Api\ProcurementDocumentController::create');
-    $routes->match(['put', 'post'], 'procurement-documents/(:num)', 'Api\ProcurementDocumentController::update/$1');
+    $routes->match(['PUT', 'POST'], 'procurement-documents/(:num)', 'Api\ProcurementDocumentController::update/$1');
     $routes->delete('procurement-documents/(:num)', 'Api\ProcurementDocumentController::delete/$1');
 
     // Database Auto-Backup & Manual Trigger
@@ -113,7 +113,7 @@ $routes->group('api', function($routes) {
     // Server IP & Network Monitor
     $routes->get('servers', 'Api\ServerController::index');
     $routes->post('servers', 'Api\ServerController::create');
-    $routes->match(['put', 'post'], 'servers/(:num)', 'Api\ServerController::update/$1');
+    $routes->match(['PUT', 'POST'], 'servers/(:num)', 'Api\ServerController::update/$1');
     $routes->delete('servers/(:num)', 'Api\ServerController::delete/$1');
     $routes->get('servers/check-hourly', 'Api\ServerController::checkHourly');
     $routes->post('servers/ping/(:any)', 'Api\ServerController::ping/$1');
@@ -124,7 +124,7 @@ $routes->group('api', function($routes) {
     $routes->get('reminders/alerts-count', 'Api\ReminderController::getAlertsCount');
     $routes->get('reminders/(:num)', 'Api\ReminderController::show/$1');
     $routes->post('reminders', 'Api\ReminderController::create');
-    $routes->match(['put', 'post'], 'reminders/(:num)', 'Api\ReminderController::update/$1');
+    $routes->match(['PUT', 'POST'], 'reminders/(:num)', 'Api\ReminderController::update/$1');
     $routes->delete('reminders/(:num)', 'Api\ReminderController::delete/$1');
     $routes->post('reminders/(:num)/toggle-complete', 'Api\ReminderController::toggleComplete/$1');
     $routes->post('reminders/(:num)/send-email', 'Api\ReminderController::sendEmail/$1');
