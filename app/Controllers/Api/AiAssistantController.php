@@ -22,7 +22,14 @@ class AiAssistantController extends BaseController
      */
     public function chat()
     {
-        $input = $this->request->getJSON(true) ?? $this->request->getPost();
+        try {
+            $input = $this->request->getJSON(true);
+        } catch (\Throwable $e) {
+            $input = null;
+        }
+        if (empty($input)) {
+            $input = $this->request->getPost();
+        }
         $message = trim($input['message'] ?? '');
 
         if (empty($message)) {
@@ -134,8 +141,9 @@ class AiAssistantController extends BaseController
         if (preg_match('/(server|pelayan|ping|latency|down|uptime|ip pelayan)/i', $lower)) {
             $matchedExact = true;
             $servers = [];
-            if ($this->db->tableExists('servers')) {
-                $servers = $this->db->table('servers')->orderBy('name', 'ASC')->get()->getResultArray();
+            $serverTable = $this->db->tableExists('monitored_servers') ? 'monitored_servers' : ($this->db->tableExists('servers') ? 'servers' : null);
+            if ($serverTable) {
+                $servers = $this->db->table($serverTable)->orderBy('name', 'ASC')->get()->getResultArray();
             }
 
             if (empty($servers)) {
@@ -153,21 +161,41 @@ class AiAssistantController extends BaseController
                     $icon = $isUp ? '🟢' : ($status === 'warning' ? '🟡' : '🔴');
                     $latency = !empty($s['latency_ms']) ? "{$s['latency_ms']} ms" : 'N/A';
                     $ip = !empty($s['ip_address']) ? "`{$s['ip_address']}`" : '-';
-                    $details[] = "{$icon} **{$s['name']}** ({$ip}) — Status: `{$status}` | Latency: **{$latency}**";
+                    $service = !empty($s['service_type']) ? " [{$s['service_type']}]" : '';
+                    $details[] = "{$icon} **{$s['name']}**{$service} ({$ip}) — Status: `{$status}` | Latency: **{$latency}**";
                 }
 
-                $reply = "⚡ **Status Semasa Pelayan ({$onlineCount}/{$total} Dalam Talian):**\n\n" .
-                         implode("\n", $details) . "\n\n" .
-                         "💡 *Anda boleh membuka modul Pelayan untuk melakukan ping penuh atau mengemas kini konfigurasi.*";
+                $isDownInquiry = (bool)preg_match('/(down|mati|terputus|offline|masalah|rosak|isu)/i', $lower);
+                if ($isDownInquiry) {
+                    $downServers = array_filter($servers, fn($s) => strtolower($s['status'] ?? '') !== 'online' && strtolower($s['status'] ?? '') !== 'up');
+                    if (empty($downServers)) {
+                        $reply = "✅ **Alhamdulillah, tiada pelayan yang terputus atau down!**\n\n" .
+                                 "Semua **{$total}** pelayan operasi kini berstatus **Online (Aktif)**:\n\n" .
+                                 implode("\n", $details) . "\n\n" .
+                                 "💡 *Sistem berada dalam keadaan stabil dan tiada gangguan rangkaian dikesan.*";
+                    } else {
+                        $downCount = count($downServers);
+                        $reply = "⚠️ **Amaran: Terdapat {$downCount} Pelayan Tidak Aktif / Down:**\n\n";
+                        foreach ($downServers as $ds) {
+                            $ip = !empty($ds['ip_address']) ? "`{$ds['ip_address']}`" : '-';
+                            $reply .= "🔴 **{$ds['name']}** ({$ip}) — Status: `{$ds['status']}`\n";
+                        }
+                        $reply .= "\n💡 *Sila semak sambungan rangkaian atau servis pelayan berkaitan.*";
+                    }
+                } else {
+                    $reply = "⚡ **Status Semasa Pelayan ({$onlineCount}/{$total} Dalam Talian):**\n\n" .
+                             implode("\n", $details) . "\n\n" .
+                             "💡 *Anda boleh membuka modul Pelayan untuk melakukan ping penuh atau mengemas kini konfigurasi.*";
+                }
 
                 $actions[] = [
                     'label'  => 'Buka Pengurus Pelayan',
                     'action' => 'navigate',
-                    'target' => 'server-manager'
+                    'target' => 'servers'
                 ];
             }
 
-            $suggestions = ['Ada server yang down?', 'Senarai peringatan tugas'];
+            $suggestions = ['Ada server yang down?', 'Senarai peringatan tugas', 'Cari skrip SQL'];
             return ['reply' => $reply, 'suggestions' => $suggestions, 'actions' => $actions, 'matched_exact' => $matchedExact];
         }
 
@@ -260,22 +288,29 @@ class AiAssistantController extends BaseController
         }
 
         // Intent: Troubleshooting & Issues Search in DB
-        if ($this->db->tableExists('issues')) {
+        $issuesTable = $this->db->tableExists('module_issues') ? 'module_issues' : ($this->db->tableExists('issues') ? 'issues' : null);
+        if ($issuesTable) {
             $searchWord = preg_replace('/[^a-zA-Z0-9\s]/', '', $lower);
             $words = array_filter(explode(' ', $searchWord), fn($w) => strlen($w) > 3);
 
             if (!empty($words)) {
-                $builder = $this->db->table('issues');
+                $builder = $this->db->table($issuesTable);
                 foreach ($words as $w) {
                     $builder->orLike('title', $w);
-                    $builder->orLike('description', $w);
+                    if ($issuesTable === 'module_issues') {
+                        $builder->orLike('symptoms', $w);
+                        $builder->orLike('issue_code', $w);
+                    } else {
+                        $builder->orLike('description', $w);
+                    }
                 }
                 $foundIssues = $builder->limit(3)->get()->getResultArray();
 
                 if (!empty($foundIssues)) {
                     $issueItems = [];
                     foreach ($foundIssues as $iss) {
-                        $issueItems[] = "⚠️ **{$iss['title']}**\n" . ($iss['description'] ?? '');
+                        $desc = $iss['symptoms'] ?? $iss['description'] ?? '';
+                        $issueItems[] = "⚠️ **{$iss['title']}**" . (!empty($iss['issue_code']) ? " (`{$iss['issue_code']}`)" : '') . (!empty($desc) ? "\n" . $desc : '');
                     }
 
                     $reply = "🔍 **Padanan Isu & Penyelesaian Ditemui dalam IKNOW:**\n\n" .
