@@ -8,30 +8,58 @@ import {
 import api from '../services/api';
 import { showAlert, showError } from '../utils/swal';
 
-const MSG_TYPES  = ['Semua', 'ORM', 'ORR', 'ORU', 'P03'];
-const STATUSES   = ['Semua', 'SENT', 'ERROR', 'QUEUED', 'FILTERED'];
+const MSG_TYPES  = ['Semua', 'ORM', 'ORR', 'ORU', 'P03', 'QRY', 'ADT', 'JSON'];
+const STATUSES   = ['Semua', 'SENT', 'ERROR', 'QUEUED', 'FILTERED', 'TRANSFORMED'];
 const PAGE_SIZE  = 10;
 
 const statusStyle = {
-  SENT:     { bg: 'rgba(16,185,129,0.15)', color: '#10b981', icon: <CheckCircle size={12}/> },
-  ERROR:    { bg: 'rgba(239,68,68,0.15)',  color: '#ef4444', icon: <AlertCircle size={12}/> },
-  QUEUED:   { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b', icon: <Clock size={12}/> },
-  FILTERED: { bg: 'rgba(99,102,241,0.15)', color: '#818cf8', icon: <Minus size={12}/> },
+  SENT:        { bg: 'rgba(16,185,129,0.15)', color: '#10b981', icon: <CheckCircle size={12}/> },
+  TRANSFORMED: { bg: 'rgba(16,185,129,0.15)', color: '#10b981', icon: <CheckCircle size={12}/> },
+  ERROR:       { bg: 'rgba(239,68,68,0.15)',  color: '#ef4444', icon: <AlertCircle size={12}/> },
+  QUEUED:      { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b', icon: <Clock size={12}/> },
+  FILTERED:    { bg: 'rgba(99,102,241,0.15)', color: '#818cf8', icon: <Minus size={12}/> },
 };
 
 const msgTypeBadge = {
-  ORM: { bg: 'rgba(6,182,212,0.15)',  color: '#06b6d4' },
-  ORR: { bg: 'rgba(99,102,241,0.15)', color: '#818cf8' },
-  ORU: { bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
-  P03: { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b' },
+  ORM:  { bg: 'rgba(6,182,212,0.15)',  color: '#06b6d4' },
+  ORR:  { bg: 'rgba(99,102,241,0.15)', color: '#818cf8' },
+  ORU:  { bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
+  P03:  { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b' },
+  QRY:  { bg: 'rgba(236,72,153,0.15)', color: '#ec4899' },
+  ADT:  { bg: 'rgba(168,85,247,0.15)', color: '#a855f7' },
+  JSON: { bg: 'rgba(59,130,246,0.15)', color: '#3b82f6' },
 };
 
 // ─── HL7 Parser Helper ──────────────────────────────────────────────────────
 function parseHl7(raw) {
   if (!raw) return null;
-  const lines = raw.split('\r').filter(Boolean);
+
+  // Support JSON payload (e.g. COMEN HTTP-ECG)
+  const trimmed = raw.trim();
+  if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+    try {
+      const json = JSON.parse(trimmed);
+      return {
+        isJson: true,
+        jsonData: json,
+        msh: { sendingApp: 'COMEN HTTP-ECG', facility: 'COMEN Integration', dateTime: json.date || '', msgType: 'JSON^ECG' },
+        pid: { mrn: json.rn || json.mrn || '-', ic: '-', name: 'Pesakit ECG (COMEN)', dob: '-', gender: '-' },
+        pv1: { visitNo: '-' },
+        orc: { orderNo: json.file_name ? json.file_name.split('/').pop() : '-', doctor: '-' },
+        obr: { orderId: json.file_name || '-', testName: 'Pemeriksaan ECG (COMEN)', date: json.msgdate || json.date || '', pdfFile: json.file_name || '' },
+        qrd: null,
+        obxList: [],
+        pdfBase64: null,
+        pdfUrl: json.url || null,
+      };
+    } catch {
+      // Continue to HL7 parsing fallback
+    }
+  }
+
+  const lines = raw.split(/[\r\n]+/).filter(Boolean);
   const data = {
-    msh: {}, pid: {}, pv1: {}, orc: {}, obr: {}, obxList: [], pdfBase64: null,
+    msh: {}, pid: {}, pv1: {}, orc: {}, obr: {}, qrd: null, obxList: [], pdfBase64: null, pdfUrl: null,
   };
   lines.forEach(line => {
     const f = line.split('|');
@@ -40,12 +68,24 @@ function parseHl7(raw) {
       data.msh = { sendingApp: f[2], facility: f[3], dateTime: f[6], msgType: f[8] };
     } else if (seg === 'PID') {
       data.pid = {
-        mrn: f[3] || f[2],
+        mrn: (f[3] || f[2] || '').replace(/[`\^]/g, ' ').trim().split(' ')[0],
         ic: f[4],
         name: (f[5] || '').replace(/\^/g, ' ').trim(),
         dob: f[7],
         gender: f[8] === 'F' ? 'Perempuan (Female)' : f[8] === 'M' ? 'Lelaki (Male)' : f[8],
       };
+    } else if (seg === 'QRD') {
+      data.qrd = {
+        dateTime: f[1],
+        format: f[2],
+        priority: f[3],
+        queryId: f[4],
+        mrn: (f[8] || '').replace(/[`\^]/g, ' ').trim().split(' ')[0],
+        whatSubject: f[9]
+      };
+      if (!data.pid.mrn) data.pid.mrn = data.qrd.mrn;
+      if (!data.orc.orderNo) data.orc.orderNo = data.qrd.queryId;
+      if (!data.obr.testName) data.obr.testName = 'Pertanyaan Status / Rekod ECG (QRY)';
     } else if (seg === 'PV1') {
       data.pv1 = { visitNo: f[19] };
     } else if (seg === 'ORC') {
@@ -164,6 +204,54 @@ function Hl7ReportModal({ raw, onClose }) {
               <div><span style={{ color: '#64748b', fontSize: '0.73rem' }}>Doktor Pemohon:</span><br/><strong>{hl7.orc.doctor || hl7.obxList[0]?.doctor || '-'}</strong></div>
             </div>
           </div>
+
+          {/* Direct PDF Link (e.g. COMEN HTTP-ECG) */}
+          {hl7.pdfUrl && (
+            <div style={{
+              background: 'rgba(6,182,212,0.08)',
+              border: '1px solid #0284c7',
+              borderRadius: '8px',
+              padding: '1rem',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.75rem'
+            }}>
+              <div>
+                <strong style={{ color: '#0369a1', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  📄 Laporan PDF ECG COMEN Ditemui
+                </strong>
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem', wordBreak: 'break-all' }}>
+                  {hl7.obr.pdfFile || hl7.pdfUrl}
+                </div>
+              </div>
+              <a
+                href={hl7.pdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-primary"
+                style={{ fontSize: '0.82rem', padding: '0.45rem 1rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                🔗 Buka / Muat Turun Fail PDF ECG
+              </a>
+            </div>
+          )}
+
+          {/* QRD Query Details (e.g. COMEN QRY-ECG) */}
+          {hl7.qrd && (
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.9rem 1.1rem', marginBottom: '1.1rem' }}>
+              <h4 style={{ fontSize: '0.8rem', fontWeight: 800, color: '#ec4899', textTransform: 'uppercase', marginBottom: '0.6rem', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.25rem', letterSpacing: '0.5px' }}>
+                🔍 PERINCIAN KUIRI ECG (QUERY DETAILS - QRD)
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', fontSize: '0.83rem' }}>
+                <div><span style={{ color: '#64748b', fontSize: '0.73rem' }}>ID Kuiri:</span><br/><strong style={{ fontFamily: 'monospace' }}>{hl7.qrd.queryId || '-'}</strong></div>
+                <div><span style={{ color: '#64748b', fontSize: '0.73rem' }}>Sasaran MRN:</span><br/><strong style={{ fontFamily: 'monospace', color: '#0369a1' }}>{hl7.qrd.mrn || '-'}</strong></div>
+                <div><span style={{ color: '#64748b', fontSize: '0.73rem' }}>Keutamaan / Format:</span><br/><strong>{hl7.qrd.priority === 'I' ? 'Segera (Immediate)' : hl7.qrd.priority || '-'} / {hl7.qrd.format || '-'}</strong></div>
+              </div>
+            </div>
+          )}
 
           {/* Embedded Base64 PDF (If Present) */}
           {hl7.pdfBase64 && (
@@ -457,8 +545,12 @@ export default function MirthViewer() {
   };
 
   const getMsgBaseType = (type) => {
-    const base = (type || '').split('^')[0].toUpperCase();
-    return base === 'DFT' ? 'P03' : base;
+    const raw = (type || '').trim();
+    if (raw.startsWith('{') || raw.includes('JSON')) return 'JSON';
+    const base = raw.split('^')[0].toUpperCase();
+    if (base === 'DFT') return 'P03';
+    if (base === 'RO1') return 'ORU';
+    return base;
   };
 
   return (

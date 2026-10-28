@@ -204,13 +204,14 @@ class AiAssistantController extends BaseController
             return $this->processListReminders();
         }
 
-        // Intent: Mirth / HL7
-        if (preg_match('/(mirth|hl7|channel|saluran|transformer|connector)/i', $lower)) {
+        // Intent: Mirth / HL7 / COMEN
+        if (preg_match('/(mirth|hl7|channel|saluran|transformer|connector|comen)/i', $lower)) {
             $matchedExact = true;
             $reply = "🏥 **Panduan & Status Integrasi Mirth Connect HL7:**\n\n" .
                      "1. **Semakan Saluran (Channels)**: Pastikan status saluran berada dalam keadaan `Started` di Mirth Viewer.\n" .
-                     "2. **Isu Saluran Terhenti (Stopped)**: Biasanya disebabkan port terputus, kegagalan sambungan pangkalan data destinasi, atau format mesej HL7 tidak sah.\n" .
-                     "3. **Skrip Pantas**: Buka modul **Mirth Viewer** untuk melihat statistik mesej, saluran aktif, dan mesej ralat terkini.";
+                     "2. **Integrasi COMEN**: Saluran COMEN merangkumi **QRY-ECG** (kuiri rekod ECG pesakit), **ORU-PM** (telemetri pemantau pesakit / vital signs ICU), dan **HTTP-ECG** (penerimaan pautan laporan fail PDF ECG).\n" .
+                     "3. **Isu Saluran Terhenti (Stopped)**: Biasanya disebabkan port terputus, kegagalan sambungan pangkalan data destinasi, atau format mesej HL7 tidak sah.\n" .
+                     "4. **Skrip Pantas**: Buka modul **Mirth Viewer** untuk melihat statistik mesej, saluran aktif, dan mesej terkini.";
 
             $actions[] = [
                 'label'  => 'Buka Mirth Viewer',

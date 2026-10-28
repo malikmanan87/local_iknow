@@ -129,7 +129,7 @@ class MirthController extends ResourceController
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_SSL_VERIFYHOST => false,
-                CURLOPT_TIMEOUT        => 45,
+                CURLOPT_TIMEOUT        => 12,
                 CURLOPT_HTTPHEADER     => $headers,
                 CURLOPT_HEADER         => true,
                 CURLOPT_BUFFERSIZE     => 131072,
@@ -309,6 +309,18 @@ class MirthController extends ResourceController
             return [$msgType, $mrn, $orderId];
         }
 
+        // Support JSON payloads (e.g. COMEN HTTP-ECG)
+        $trimmed = trim($raw);
+        if (str_starts_with($trimmed, '{') && str_ends_with($trimmed, '}')) {
+            $json = json_decode($trimmed, true);
+            if (is_array($json)) {
+                $mrn = trim((string)($json['rn'] ?? $json['mrn'] ?? $json['patient_id'] ?? ''), " `\t\n\r\0\x0B");
+                $msgType = 'JSON^ECG';
+                $orderId = (string)($json['file_name'] ?? $json['url'] ?? '');
+                return [$msgType, $mrn, $orderId];
+            }
+        }
+
         $lines = preg_split('/[\r\n]+/', $raw);
 
         foreach ($lines as $line) {
@@ -322,11 +334,11 @@ class MirthController extends ResourceController
                 $msgType = $f[8] ?? '';
             } elseif ($seg === 'PID') {
                 if (empty($mrn) && !empty($f[3])) {
-                    $pid3 = $f[3];
+                    $pid3 = trim($f[3], " `\t\n\r\0\x0B");
                     $repParts = explode('~', $pid3);
                     foreach ($repParts as $rp) {
                         $compParts = explode('^', $rp);
-                        $candidate = trim($compParts[0]);
+                        $candidate = trim($compParts[0], " `\t\n\r\0\x0B");
                         if (!empty($candidate)) {
                             $mrn = $candidate;
                             break;
@@ -334,10 +346,19 @@ class MirthController extends ResourceController
                     }
                 }
                 if (empty($mrn) && !empty($f[2])) {
-                    $mrn = trim(explode('^', $f[2])[0]);
+                    $mrn = trim(explode('^', $f[2])[0], " `\t\n\r\0\x0B");
                 }
                 if (empty($mrn) && !empty($f[4])) {
-                    $mrn = trim(explode('^', $f[4])[0]);
+                    $mrn = trim(explode('^', $f[4])[0], " `\t\n\r\0\x0B");
+                }
+            } elseif ($seg === 'QRD') {
+                // QRD segment (used in QRY^R02 e.g. COMEN QRY-ECG)
+                // QRD-4 is Query ID ($f[4]), QRD-8 is Who Subject Filter / Patient MRN ($f[8])
+                if (empty($orderId) && !empty($f[4])) {
+                    $orderId = trim(explode('^', $f[4])[0]);
+                }
+                if (empty($mrn) && !empty($f[8])) {
+                    $mrn = trim(explode('^', $f[8])[0], " `\t\n\r\0\x0B");
                 }
             } elseif ($seg === 'ORC') {
                 if (empty($orderId) && !empty($f[2])) {
@@ -538,7 +559,7 @@ class MirthController extends ResourceController
         $endDateFilter   = trim($this->request->getGet('end_date') ?? '');
         $typeFilter      = strtoupper(trim($this->request->getGet('type') ?? ''));
         $statusFilter    = strtoupper(trim($this->request->getGet('status') ?? ''));
-        $limitPerChan    = max(10, min(300, (int)($this->request->getGet('limit') ?? 100)));
+        $limitPerChan    = max(5, min(150, (int)($this->request->getGet('limit') ?? 30)));
 
         if (empty($mrnFilter) && empty($orderIdFilter) && empty($channelId) && empty($startDateFilter)) {
             return $this->fail('Sila masukkan sekurang-kurangnya No. MRN, Order ID, atau Tarikh untuk carian.', 400);
@@ -623,7 +644,29 @@ class MirthController extends ResourceController
 
             foreach ((array)$list as $msg) {
                 $msgDateMs  = (int)($msg['receivedDate']['time'] ?? 0);
-                $status     = (string)($msg['processedResponse']['status'] ?? $msg['status'] ?? '');
+                
+                // Accurate status extraction from connectorMessages
+                $status = '';
+                if (!empty($msg['connectorMessages']['entry'])) {
+                    $entries = $msg['connectorMessages']['entry'];
+                    if (isset($entries['connectorMessage'])) {
+                        $entries = [$entries];
+                    }
+                    foreach ((array)$entries as $entry) {
+                        $cMsg = $entry['connectorMessage'] ?? $entry;
+                        $cStatus = (string)($cMsg['status'] ?? '');
+                        if (in_array(strtoupper($cStatus), ['ERROR', 'QUEUED', 'FILTERED', 'SENT'])) {
+                            $status = $cStatus;
+                            if (strtoupper($cStatus) === 'ERROR') {
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (empty($status)) {
+                    $status = (string)($msg['processedResponse']['status'] ?? $msg['status'] ?? 'SENT');
+                }
+
                 $rawContent = $this->extractRawContent($msg);
 
                 // Date filter check
@@ -637,8 +680,11 @@ class MirthController extends ResourceController
                     $matchType = false;
                     if ($typeFilter === 'ORM' && str_contains($msgType, 'ORM')) $matchType = true;
                     if ($typeFilter === 'ORR' && str_contains($msgType, 'ORR')) $matchType = true;
-                    if ($typeFilter === 'ORU' && str_contains($msgType, 'ORU')) $matchType = true;
+                    if ($typeFilter === 'ORU' && (str_contains($msgType, 'ORU') || str_contains($msgType, 'RO1'))) $matchType = true;
                     if ($typeFilter === 'P03' && (str_contains($msgType, 'P03') || str_contains($msgType, 'DFT'))) $matchType = true;
+                    if ($typeFilter === 'QRY' && str_contains($msgType, 'QRY')) $matchType = true;
+                    if ($typeFilter === 'ADT' && str_contains($msgType, 'ADT')) $matchType = true;
+                    if (($typeFilter === 'JSON' || $typeFilter === 'ECG') && (str_contains($msgType, 'JSON') || str_contains($msgType, 'ECG'))) $matchType = true;
                     if (!$matchType) continue;
                 }
 
