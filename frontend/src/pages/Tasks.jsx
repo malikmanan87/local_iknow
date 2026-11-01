@@ -252,7 +252,7 @@ export default function Tasks() {
   const currentTasks = tasks.slice(startIndex, endIndex);
 
   return (
-    <div>
+    <div style={{ padding: '1.25rem 0' }}>
       {/* Header Tugasan */}
       <div style={{
         display: 'flex',
