@@ -1215,6 +1215,17 @@ function TaskManager(){
   let currentTasks=items.slice(startIdx,endIdx);
 
   return(0,L.jsxs)("div",{children:[
+    (0,L.jsx)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"1rem",marginBottom:"1.25rem",paddingBottom:"0.85rem",borderBottom:"1px solid rgba(255, 255, 255, 0.08)"},children:
+      (0,L.jsxs)("h1",{style:{fontSize:"1.5rem",fontWeight:800,margin:"0px",display:"flex",alignItems:"center",gap:"0.6rem"},children:[
+        (0,L.jsx)("span",{style:{display:"inline-flex",padding:"0.35rem",borderRadius:"8px",background:"rgba(168, 85, 247, 0.15)",color:"rgb(192, 132, 252)",border:"1px solid rgba(168, 85, 247, 0.3)"},children:
+          (0,L.jsxs)("svg",{xmlns:"http://www.w3.org/2000/svg",width:20,height:20,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round",className:"lucide lucide-shield-check",children:[
+            (0,L.jsx)("path",{d:"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"}),
+            (0,L.jsx)("path",{d:"m9 12 2 2 4-4"})
+          ]})
+        }),
+        " task"
+      ]})
+    }),
     /* 5 KPI Stat Cards */
     (0,L.jsxs)("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))",gap:"0.85rem",marginBottom:"1.5rem",marginTop:"0.5rem"},children:[
       (0,L.jsxs)("div",{className:"glass-panel",style:{padding:"1rem 1.2rem",borderRadius:"14px",border:"1px solid rgba(255,255,255,0.08)"},children:[

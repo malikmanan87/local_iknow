@@ -16,7 +16,8 @@ import {
   Layers, 
   CircleDot,
   Bell,
-  Send
+  Send,
+  ShieldCheck
 } from 'lucide-react';
 import { showSuccess, showError, showConfirm } from '../utils/swal';
 
@@ -252,6 +253,32 @@ export default function Tasks() {
 
   return (
     <div>
+      {/* Header Tugasan */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '1rem',
+        marginBottom: '1.25rem',
+        paddingBottom: '0.85rem',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
+      }}>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0px', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <span style={{
+            display: 'inline-flex',
+            padding: '0.35rem',
+            borderRadius: '8px',
+            background: 'rgba(168, 85, 247, 0.15)',
+            color: 'rgb(192, 132, 252)',
+            border: '1px solid rgba(168, 85, 247, 0.3)'
+          }}>
+            <ShieldCheck size={20} />
+          </span>
+          task
+        </h1>
+      </div>
+
       {/* 5 KPI Summary Cards */}
       <div style={{
         display: 'grid',
