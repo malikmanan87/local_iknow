@@ -49,7 +49,13 @@ class TaskController extends ResourceController
         // Tapisan Status
         $status = $this->request->getGet('status');
         if (!empty($status) && $status !== 'all') {
-            $builder->where('status', $status);
+            if ($status === 'overdue') {
+                $builder->whereNotIn('status', ['completed', 'cancelled'])
+                        ->where('due_date IS NOT NULL', null, false)
+                        ->where('due_date <', date('Y-m-d 00:00:00'));
+            } else {
+                $builder->where('status', $status);
+            }
         }
 
         // Tapisan Prioriti

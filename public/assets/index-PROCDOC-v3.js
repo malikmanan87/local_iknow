@@ -1228,59 +1228,51 @@ function TaskManager(){
         ]}),
         (0,L.jsx)("p",{style:{color:"var(--text-muted)",fontSize:"0.88rem",margin:"0.35rem 0px 0px"},children:"Pusat pengurusan, agihan dan pemantauan status tugasan IT Hospital secara sistematik."})
       ]}),
-      (0,L.jsxs)("div",{style:{position:"relative",width:"280px"},children:[
-        (0,L.jsxs)("svg",{xmlns:"http://www.w3.org/2000/svg",width:16,height:16,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round",className:"lucide lucide-search",style:{position:"absolute",left:"0.75rem",top:"50%",transform:"translateY(-50%)",color:"var(--text-muted)"},children:[
-          (0,L.jsx)("path",{d:"m21 21-4.34-4.34"}),
-          (0,L.jsx)("circle",{cx:11,cy:11,r:8})
+      (0,L.jsxs)("div",{style:{display:"flex",alignItems:"center",gap:"0.75rem",flexWrap:"wrap"},children:[
+        (0,L.jsxs)("div",{style:{position:"relative",width:"280px"},children:[
+          (0,L.jsxs)("svg",{xmlns:"http://www.w3.org/2000/svg",width:16,height:16,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round",className:"lucide lucide-search",style:{position:"absolute",left:"0.75rem",top:"50%",transform:"translateY(-50%)",color:"var(--text-muted)"},children:[
+            (0,L.jsx)("path",{d:"m21 21-4.34-4.34"}),
+            (0,L.jsx)("circle",{cx:11,cy:11,r:8})
+          ]}),
+          (0,L.jsx)("input",{className:"form-input",placeholder:"Cari tajuk tugasan...",type:"text",value:search,onChange:e=>setSearch(e.target.value),style:{padding:"0.45rem 2rem 0.45rem 2.4rem",fontSize:"0.85rem",borderRadius:"10px",width:"100%"}}),
+          search&&(0,L.jsx)("button",{onClick:()=>setSearch(""),style:{position:"absolute",right:"0.6rem",top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"var(--text-muted)",cursor:"pointer",fontSize:"1rem"},children:"×"})
         ]}),
-        (0,L.jsx)("input",{className:"form-input",placeholder:"Cari tajuk tugasan...",type:"text",value:search,onChange:e=>setSearch(e.target.value),style:{padding:"0.45rem 0.75rem 0.45rem 2.4rem",fontSize:"0.85rem",borderRadius:"10px",width:"100%"}}),
-        search&&(0,L.jsx)("button",{onClick:()=>setSearch(""),style:{position:"absolute",right:"0.6rem",top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"var(--text-muted)",cursor:"pointer",fontSize:"1rem"},children:"×"})
+        (0,L.jsxs)("button",{className:"btn btn-primary",onClick:openAdd,style:{display:"inline-flex",alignItems:"center",gap:"0.45rem",background:"linear-gradient(135deg, #06b6d4 0%, #2563eb 100%)",border:"none",padding:"0.5rem 1rem",fontSize:"0.85rem",fontWeight:700,borderRadius:"9px",boxShadow:"0 3px 12px rgba(6, 182, 212, 0.35)",cursor:"pointer",whiteSpace:"nowrap"},children:[
+          "+ Tambah Tugasan"
+        ]})
       ]})
     ]}),
-    /* 5 KPI Stat Cards */
+    /* 5 KPI Stat Cards (Boleh diklik untuk menapis senarai tugasan di bawah) */
     (0,L.jsxs)("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))",gap:"0.85rem",marginBottom:"1.5rem",marginTop:"0.5rem"},children:[
-      (0,L.jsxs)("div",{className:"glass-panel",style:{padding:"1rem 1.2rem",borderRadius:"14px",border:"1px solid rgba(255,255,255,0.08)"},children:[
-        (0,L.jsx)("span",{style:{fontSize:"0.78rem",color:"var(--text-muted)",fontWeight:600,textTransform:"uppercase"},children:"Jumlah Tugasan"}),
+      (0,L.jsxs)("div",{className:"glass-panel",onClick:()=>setStatFilter("all"),title:"Klik untuk papar semua tugasan",style:{padding:"1rem 1.2rem",borderRadius:"14px",border:statFilter==="all"?"2px solid #818cf8":"1px solid rgba(255,255,255,0.08)",background:statFilter==="all"?"rgba(129, 140, 248, 0.12)":"rgba(255, 255, 255, 0.02)",boxShadow:statFilter==="all"?"0 0 15px rgba(129, 140, 248, 0.25)":"none",cursor:"pointer",transition:"all 0.2s ease",userSelect:"none"},children:[
+        (0,L.jsx)("span",{style:{fontSize:"0.78rem",color:statFilter==="all"?"#a5b4fc":"var(--text-muted)",fontWeight:600,textTransform:"uppercase"},children:"Jumlah Tugasan"}),
         (0,L.jsx)("div",{style:{fontSize:"1.75rem",fontWeight:800,color:"#f8fafc",marginTop:"0.3rem"},children:summary.total})
       ]}),
-      (0,L.jsxs)("div",{className:"glass-panel",style:{padding:"1rem 1.2rem",borderRadius:"14px",border:"1px solid rgba(245, 158, 11, 0.25)",background:"rgba(245, 158, 11, 0.04)"},children:[
+      (0,L.jsxs)("div",{className:"glass-panel",onClick:()=>setStatFilter(statFilter==="pending"?"all":"pending"),title:"Klik untuk papar tugasan belum selesai",style:{padding:"1rem 1.2rem",borderRadius:"14px",border:statFilter==="pending"?"2px solid #fbbf24":"1px solid rgba(245, 158, 11, 0.25)",background:statFilter==="pending"?"rgba(245, 158, 11, 0.16)":"rgba(245, 158, 11, 0.04)",boxShadow:statFilter==="pending"?"0 0 15px rgba(245, 158, 11, 0.3)":"none",cursor:"pointer",transition:"all 0.2s ease",userSelect:"none"},children:[
         (0,L.jsx)("span",{style:{fontSize:"0.78rem",color:"#fbbf24",fontWeight:600,textTransform:"uppercase"},children:"Belum Selesai"}),
         (0,L.jsx)("div",{style:{fontSize:"1.75rem",fontWeight:800,color:"#fbbf24",marginTop:"0.3rem"},children:summary.pending})
       ]}),
-      (0,L.jsxs)("div",{className:"glass-panel",style:{padding:"1rem 1.2rem",borderRadius:"14px",border:"1px solid rgba(6, 182, 212, 0.25)",background:"rgba(6, 182, 212, 0.04)"},children:[
+      (0,L.jsxs)("div",{className:"glass-panel",onClick:()=>setStatFilter(statFilter==="in_progress"?"all":"in_progress"),title:"Klik untuk papar tugasan sedang berjalan",style:{padding:"1rem 1.2rem",borderRadius:"14px",border:statFilter==="in_progress"?"2px solid #22d3ee":"1px solid rgba(6, 182, 212, 0.25)",background:statFilter==="in_progress"?"rgba(6, 182, 212, 0.16)":"rgba(6, 182, 212, 0.04)",boxShadow:statFilter==="in_progress"?"0 0 15px rgba(6, 182, 212, 0.3)":"none",cursor:"pointer",transition:"all 0.2s ease",userSelect:"none"},children:[
         (0,L.jsx)("span",{style:{fontSize:"0.78rem",color:"#22d3ee",fontWeight:600,textTransform:"uppercase"},children:"Sedang Berjalan"}),
         (0,L.jsx)("div",{style:{fontSize:"1.75rem",fontWeight:800,color:"#22d3ee",marginTop:"0.3rem"},children:summary.in_progress})
       ]}),
-      (0,L.jsxs)("div",{className:"glass-panel",style:{padding:"1rem 1.2rem",borderRadius:"14px",border:"1px solid rgba(16, 185, 129, 0.25)",background:"rgba(16, 185, 129, 0.04)"},children:[
+      (0,L.jsxs)("div",{className:"glass-panel",onClick:()=>setStatFilter(statFilter==="completed"?"all":"completed"),title:"Klik untuk papar tugasan selesai",style:{padding:"1rem 1.2rem",borderRadius:"14px",border:statFilter==="completed"?"2px solid #34d399":"1px solid rgba(16, 185, 129, 0.25)",background:statFilter==="completed"?"rgba(16, 185, 129, 0.16)":"rgba(16, 185, 129, 0.04)",boxShadow:statFilter==="completed"?"0 0 15px rgba(16, 185, 129, 0.3)":"none",cursor:"pointer",transition:"all 0.2s ease",userSelect:"none"},children:[
         (0,L.jsx)("span",{style:{fontSize:"0.78rem",color:"#34d399",fontWeight:600,textTransform:"uppercase"},children:"Selesai"}),
         (0,L.jsx)("div",{style:{fontSize:"1.75rem",fontWeight:800,color:"#34d399",marginTop:"0.3rem"},children:summary.completed})
       ]}),
-      (0,L.jsxs)("div",{className:"glass-panel",style:{padding:"1rem 1.2rem",borderRadius:"14px",border:"1px solid rgba(239, 68, 68, 0.25)",background:"rgba(239, 68, 68, 0.04)"},children:[
+      (0,L.jsxs)("div",{className:"glass-panel",onClick:()=>setStatFilter(statFilter==="overdue"?"all":"overdue"),title:"Klik untuk papar tugasan melepasi sasaran",style:{padding:"1rem 1.2rem",borderRadius:"14px",border:statFilter==="overdue"?"2px solid #f87171":"1px solid rgba(239, 68, 68, 0.25)",background:statFilter==="overdue"?"rgba(239, 68, 68, 0.16)":"rgba(239, 68, 68, 0.04)",boxShadow:statFilter==="overdue"?"0 0 15px rgba(239, 68, 68, 0.3)":"none",cursor:"pointer",transition:"all 0.2s ease",userSelect:"none"},children:[
         (0,L.jsx)("span",{style:{fontSize:"0.78rem",color:"#f87171",fontWeight:600,textTransform:"uppercase"},children:"Melepasi Sasaran"}),
         (0,L.jsx)("div",{style:{fontSize:"1.75rem",fontWeight:800,color:"#f87171",marginTop:"0.3rem"},children:summary.overdue})
       ]})
     ]}),
 
-    /* Search & Filter Bar with Tambah Tugasan button */
-    (0,L.jsxs)("div",{className:"glass-panel",style:{padding:"0.85rem 1rem",borderRadius:"14px",marginBottom:"1.5rem",display:"flex",flexWrap:"wrap",gap:"0.75rem",alignItems:"center",justifyContent:"space-between"},children:[
-      (0,L.jsxs)("div",{style:{display:"flex",gap:"0.65rem",alignItems:"center",flexWrap:"wrap"},children:[
-        (0,L.jsxs)("select",{className:"form-select",value:statFilter,onChange:e=>setStatFilter(e.target.value),style:{fontSize:"0.82rem",padding:"0.45rem 0.75rem"},children:[
-          (0,L.jsx)("option",{value:"all",children:"Semua Status"}),
-          (0,L.jsx)("option",{value:"pending",children:"Belum Selesai"}),
-          (0,L.jsx)("option",{value:"in_progress",children:"Sedang Berjalan"}),
-          (0,L.jsx)("option",{value:"completed",children:"Selesai"}),
-          (0,L.jsx)("option",{value:"cancelled",children:"Dibatalkan"})
-        ]}),
-        (0,L.jsxs)("select",{className:"form-select",value:prioFilter,onChange:e=>setPrioFilter(e.target.value),style:{fontSize:"0.82rem",padding:"0.45rem 0.75rem"},children:[
-          (0,L.jsx)("option",{value:"all",children:"Semua Prioriti"}),
-          (0,L.jsx)("option",{value:"urgent",children:"Urgent"}),
-          (0,L.jsx)("option",{value:"normal",children:"Normal"})
-        ]}),
-        (search||statFilter!=="all"||prioFilter!=="all")&&(0,L.jsx)("button",{onClick:()=>{setSearch("");setStatFilter("all");setPrioFilter("all");},className:"btn btn-secondary",style:{fontSize:"0.78rem",padding:"0.45rem 0.75rem"},children:"Reset Tapisan"})
+    /* Petunjuk Tapisan Aktif */
+    statFilter!=="all"&&(0,L.jsxs)("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1rem",padding:"0.4rem 0.8rem",background:"rgba(255, 255, 255, 0.03)",borderRadius:"10px",border:"1px solid rgba(255, 255, 255, 0.06)"},children:[
+      (0,L.jsxs)("span",{style:{fontSize:"0.83rem",color:"var(--text-muted)"},children:[
+        "Menapis status: ",
+        (0,L.jsx)("strong",{style:{color:"#fff"},children:statFilter==="pending"?"Belum Selesai":statFilter==="in_progress"?"Sedang Berjalan":statFilter==="completed"?"Selesai":"Melepasi Sasaran"})
       ]}),
-      (0,L.jsxs)("button",{className:"btn btn-primary",onClick:openAdd,style:{display:"inline-flex",alignItems:"center",gap:"0.45rem",background:"linear-gradient(135deg, #06b6d4 0%, #2563eb 100%)",border:"none",padding:"0.5rem 1rem",fontSize:"0.85rem",fontWeight:700,borderRadius:"9px",boxShadow:"0 3px 12px rgba(6, 182, 212, 0.35)",cursor:"pointer"},children:[
-        "+ Tambah Tugasan"
-      ]})
+      (0,L.jsx)("button",{onClick:()=>setStatFilter("all"),className:"btn btn-secondary",style:{fontSize:"0.75rem",padding:"0.25rem 0.65rem"},children:"✕ Papar Semua Tugasan"})
     ]}),
 
     /* Task Table */
