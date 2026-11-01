@@ -17,7 +17,8 @@ import {
   CircleDot,
   Bell,
   Send,
-  ShieldCheck
+  ShieldCheck,
+  Pin
 } from 'lucide-react';
 import { showSuccess, showError, showConfirm } from '../utils/swal';
 
@@ -44,6 +45,7 @@ export default function Tasks() {
     title: '',
     priority: 'normal',
     recurrence: 'none',
+    is_pinned: false,
     due_date: '',
     status: 'pending',
     notify_email: true
@@ -101,6 +103,7 @@ export default function Tasks() {
       title: '',
       priority: 'normal',
       recurrence: 'none',
+      is_pinned: false,
       due_date: dateStr,
       status: 'pending',
       notify_email: true
@@ -119,6 +122,7 @@ export default function Tasks() {
       title: task.title || '',
       priority: task.priority === 'urgent' ? 'urgent' : 'normal',
       recurrence: task.recurrence || 'none',
+      is_pinned: Boolean(task.is_pinned && task.is_pinned != '0'),
       due_date: formattedDue,
       status: task.status || 'pending',
       notify_email: false
@@ -158,6 +162,19 @@ export default function Tasks() {
       showError('Gagal menyimpan maklumat tugasan.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleTogglePin = async (task) => {
+    try {
+      const res = await axios.post(getApiUrl(`tasks/${task.id}/toggle-pin`));
+      if (res.data?.status === 'success') {
+        showSuccess(res.data.message || (res.data.is_pinned ? 'Tugasan telah dipin ke atas.' : 'Pin tugasan dibatalkan.'));
+      }
+      fetchTasks();
+    } catch (err) {
+      console.error('Ralat toggle pin:', err);
+      showError('Gagal menukar status pin tugasan.');
     }
   };
 
@@ -529,7 +546,8 @@ export default function Tasks() {
                       key={t.id}
                       style={{
                         borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                        background: isDone ? 'rgba(16, 185, 129, 0.02)' : 'transparent',
+                        background: isDone ? 'rgba(16, 185, 129, 0.02)' : Boolean(t.is_pinned && t.is_pinned != '0') ? 'rgba(245, 158, 11, 0.04)' : 'transparent',
+                        borderLeft: Boolean(t.is_pinned && t.is_pinned != '0') ? '3px solid #f59e0b' : 'none',
                         transition: 'background 0.2s'
                       }}
                     >
@@ -568,6 +586,22 @@ export default function Tasks() {
                           }}>
                             {t.title}
                           </span>
+                          {Boolean(t.is_pinned && t.is_pinned != '0') && (
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.2rem',
+                              padding: '0.12rem 0.45rem',
+                              borderRadius: '6px',
+                              background: 'rgba(245, 158, 11, 0.15)',
+                              color: '#fbbf24',
+                              border: '1px solid rgba(245, 158, 11, 0.3)',
+                              fontSize: '0.7rem',
+                              fontWeight: 700
+                            }} title="Tugasan ini dipin ke atas">
+                              📌 Dipin
+                            </span>
+                          )}
                           {t.recurrence && t.recurrence !== 'none' && (
                             <span style={{
                               display: 'inline-flex',
@@ -628,6 +662,21 @@ export default function Tasks() {
                       <td style={{ padding: '0.85rem 1rem', verticalAlign: 'middle', textAlign: 'right' }}>
                         <div style={{ display: 'inline-flex', gap: '0.35rem' }}>
                           {/* Bell Notification Button to malikmanan@unisza.edu.my */}
+                          <button
+                            onClick={() => handleTogglePin(t)}
+                            className="btn btn-secondary"
+                            style={{
+                              padding: '0.3rem 0.55rem',
+                              borderRadius: '6px',
+                              color: Boolean(t.is_pinned && t.is_pinned != '0') ? '#fbbf24' : 'var(--text-muted)',
+                              borderColor: Boolean(t.is_pinned && t.is_pinned != '0') ? 'rgba(245, 158, 11, 0.4)' : 'rgba(255, 255, 255, 0.12)',
+                              background: Boolean(t.is_pinned && t.is_pinned != '0') ? 'rgba(245, 158, 11, 0.15)' : 'transparent'
+                            }}
+                            title={Boolean(t.is_pinned && t.is_pinned != '0') ? 'Nyahpin daripada atas' : 'Pin tugasan ke atas'}
+                          >
+                            <Pin size={14} style={{ transform: Boolean(t.is_pinned && t.is_pinned != '0') ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s' }} />
+                          </button>
+
                           <button
                             onClick={() => handleSendNotification(t)}
                             disabled={isSendingNoti}
@@ -821,6 +870,30 @@ export default function Tasks() {
                     <option value="yearly">Tahunan (Yearly)</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Pin to Top Checkbox */}
+              <div style={{
+                background: formData.is_pinned ? 'rgba(245, 158, 11, 0.1)' : 'rgba(255, 255, 255, 0.03)',
+                border: formData.is_pinned ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)',
+                padding: '0.65rem 1rem',
+                borderRadius: '10px',
+                marginBottom: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.65rem',
+                transition: 'all 0.2s'
+              }}>
+                <input
+                  type="checkbox"
+                  id="is_pinned_check"
+                  checked={Boolean(formData.is_pinned)}
+                  onChange={(e) => setFormData({ ...formData, is_pinned: e.target.checked })}
+                  style={{ width: '16px', height: '16px', accentColor: '#fbbf24', cursor: 'pointer' }}
+                />
+                <label htmlFor="is_pinned_check" style={{ fontSize: '0.82rem', color: formData.is_pinned ? '#fbbf24' : '#e2e8f0', cursor: 'pointer', margin: 0, fontWeight: 600 }}>
+                  📌 Pin tugasan ini ke bahagian atas senarai
+                </label>
               </div>
 
               {/* Notifikasi Emel Checkbox (malikmanan@unisza.edu.my) */}

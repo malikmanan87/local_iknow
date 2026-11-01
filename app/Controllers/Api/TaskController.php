@@ -64,7 +64,8 @@ class TaskController extends ResourceController
             $builder->where('priority', $priority);
         }
 
-        // Susunan: Tugasan belum siap dahulu, disusuli tarikh sasaran terdekat
+        // Susunan: Tugasan yang dipin sentiasa di atas sekali, diikuti tugasan belum siap, dan tarikh sasaran terdekat
+        $builder->orderBy('is_pinned', 'DESC');
         $builder->orderBy("CASE WHEN status = 'completed' THEN 2 ELSE 1 END", 'ASC', false);
         $builder->orderBy("CASE WHEN due_date IS NULL THEN 1 ELSE 0 END", 'ASC', false);
         $builder->orderBy('due_date', 'ASC');
@@ -127,6 +128,7 @@ class TaskController extends ResourceController
             'priority'   => (!empty($data['priority']) && strtolower($data['priority']) === 'urgent') ? 'urgent' : 'normal',
             'status'     => !empty($data['status']) ? $data['status'] : 'pending',
             'recurrence' => $recurrence,
+            'is_pinned'  => !empty($data['is_pinned']) ? 1 : 0,
             'due_date'   => !empty($data['due_date']) ? date('Y-m-d 00:00:00', strtotime($data['due_date'])) : null,
         ];
 
@@ -178,6 +180,9 @@ class TaskController extends ResourceController
         }
         if (isset($data['recurrence'])) {
             $updateData['recurrence'] = in_array($data['recurrence'], ['daily', 'weekly', 'monthly', 'yearly']) ? $data['recurrence'] : 'none';
+        }
+        if (isset($data['is_pinned'])) {
+            $updateData['is_pinned'] = !empty($data['is_pinned']) ? 1 : 0;
         }
         if (array_key_exists('due_date', $data)) {
             $updateData['due_date'] = !empty($data['due_date']) ? date('Y-m-d 00:00:00', strtotime($data['due_date'])) : null;
@@ -260,6 +265,29 @@ class TaskController extends ResourceController
             'message'            => $msg,
             'recurring_advanced' => $recurringResult['advanced'] ?? false,
             'data'               => $model->find($id)
+        ]);
+    }
+
+    /**
+     * Pin atau nyahpin tugasan ke bahagian atas senarai
+     */
+    public function togglePin($id = null)
+    {
+        $model = $this->getModelInstance();
+        $task = $model->find($id);
+
+        if (!$task) {
+            return $this->failNotFound("Tugasan #{$id} tidak dijumpai.");
+        }
+
+        $newPinned = empty($task['is_pinned']) ? 1 : 0;
+        $model->update($id, ['is_pinned' => $newPinned]);
+
+        return $this->respond([
+            'status'    => 'success',
+            'is_pinned' => (bool) $newPinned,
+            'message'   => $newPinned ? 'Tugasan telah dipin ke atas.' : 'Pin tugasan telah dibatalkan.',
+            'data'      => $model->find($id)
         ]);
     }
 

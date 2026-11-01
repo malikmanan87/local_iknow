@@ -1043,6 +1043,7 @@ function TaskManager(){
        title:"",
        priority:"normal",
        recurrence:"none",
+       is_pinned:!1,
        due_date:"",
        status:"pending",
        notify_email:!0
@@ -1082,6 +1083,7 @@ function TaskManager(){
       title:"",
       priority:"normal",
       recurrence:"none",
+      is_pinned:!1,
       due_date:defDate,
       status:"pending",
       notify_email:!0
@@ -1099,6 +1101,7 @@ function TaskManager(){
       title:it.title||"",
       priority:(it.priority==="urgent"?"urgent":"normal"),
       recurrence:it.recurrence||"none",
+      is_pinned:Boolean(it.is_pinned&&it.is_pinned!="0"),
       due_date:dt,
       status:it.status||"pending",
       notify_email:!1
@@ -1131,6 +1134,16 @@ function TaskManager(){
         if(window.Swal)window.Swal.fire({icon:"error",title:"Ralat",text:res.messages?.error||"Gagal menyimpan rekod.",background:"#0f172a",color:"#f8fafc",confirmButtonColor:"#f43f5e",customClass:{popup:"iknow-swal-popup"}});
       }
     }catch(err){console.error(err)}finally{setSubmitting(!1)}
+  };
+
+  let togglePin=async(it)=>{
+    try{
+      let res=await fetch("api/tasks/"+it.id+"/toggle-pin",{method:"POST"}).then(r=>r.json());
+      if(res&&res.status==="success"){
+        if(window.Swal)window.Swal.fire({icon:"success",title:res.is_pinned?"Dipin ke Atas":"Pin Dibatalkan",text:res.message,timer:1800,showConfirmButton:!1,background:"#0f172a",color:"#f8fafc",customClass:{popup:"iknow-swal-popup"}});
+        loadData();
+      }
+    }catch(err){console.error(err)}
   };
 
   let toggleStatus=async(it)=>{
@@ -1303,7 +1316,7 @@ function TaskManager(){
               let pBadge=getPrio(t.priority);
               let isDone=t.status==="completed";
               let isSending=sendingNotiId===t.id;
-              return(0,L.jsxs)("tr",{key:t.id,style:{borderBottom:"1px solid rgba(255, 255, 255, 0.05)",background:isDone?"rgba(16, 185, 129, 0.02)":"transparent"},children:[
+              return(0,L.jsxs)("tr",{key:t.id,style:{borderBottom:"1px solid rgba(255, 255, 255, 0.05)",background:isDone?"rgba(16, 185, 129, 0.02)":Boolean(t.is_pinned&&t.is_pinned!="0")?"rgba(245, 158, 11, 0.04)":"transparent",borderLeft:Boolean(t.is_pinned&&t.is_pinned!="0")?"3px solid #f59e0b":"none"},children:[
                 (0,L.jsx)("td",{style:{padding:"0.85rem 1rem",verticalAlign:"middle"},children:
                   (0,L.jsx)("button",{
                     onClick:()=>toggleStatus(t),
@@ -1327,6 +1340,7 @@ function TaskManager(){
                 (0,L.jsx)("td",{style:{padding:"0.85rem 1rem",verticalAlign:"middle"},children:
                   (0,L.jsxs)("div",{style:{display:"flex",alignItems:"center",gap:"0.5rem",flexWrap:"wrap"},children:[
                     (0,L.jsx)("span",{style:{fontWeight:700,fontSize:"0.92rem",color:isDone?"var(--text-muted)":"#f8fafc",textDecoration:isDone?"line-through":"none"},children:t.title}),
+                    Boolean(t.is_pinned&&t.is_pinned!="0")&&(0,L.jsx)("span",{style:{display:"inline-flex",alignItems:"center",gap:"0.2rem",padding:"0.12rem 0.45rem",borderRadius:"6px",background:"rgba(245, 158, 11, 0.15)",color:"#fbbf24",border:"1px solid rgba(245, 158, 11, 0.3)",fontSize:"0.7rem",fontWeight:700},children:"📌 Dipin"}),
                     t.recurrence&&t.recurrence!=="none"&&(0,L.jsxs)("span",{style:{display:"inline-flex",alignItems:"center",gap:"0.25rem",padding:"0.15rem 0.5rem",borderRadius:"6px",background:"rgba(99, 102, 241, 0.12)",color:"#a5b4fc",border:"1px solid rgba(99, 102, 241, 0.25)",fontSize:"0.72rem",fontWeight:600},children:["🔄 ",t.recurrence==="daily"?"Harian":t.recurrence==="weekly"?"Mingguan":t.recurrence==="monthly"?"Bulanan":"Tahunan"]})
                   ]})
                 }),
@@ -1339,6 +1353,13 @@ function TaskManager(){
                 ]}),
                 (0,L.jsx)("td",{style:{padding:"0.85rem 1rem",verticalAlign:"middle",textAlign:"right"},children:
                   (0,L.jsxs)("div",{style:{display:"inline-flex",gap:"0.35rem"},children:[
+                    (0,L.jsx)("button",{
+                      onClick:()=>togglePin(t),
+                      className:"btn btn-secondary",
+                      style:{padding:"0.3rem 0.55rem",borderRadius:"6px",fontSize:"0.78rem",color:Boolean(t.is_pinned&&t.is_pinned!="0")?"#fbbf24":"var(--text-muted)",borderColor:Boolean(t.is_pinned&&t.is_pinned!="0")?"rgba(245, 158, 11, 0.4)":"rgba(255, 255, 255, 0.12)",background:Boolean(t.is_pinned&&t.is_pinned!="0")?"rgba(245, 158, 11, 0.15)":"transparent"},
+                      title:Boolean(t.is_pinned&&t.is_pinned!="0")?"Nyahpin daripada atas":"Pin tugasan ke atas",
+                      children:"📌"
+                    }),
                     (0,L.jsx)("button",{
                       onClick:()=>sendNotification(t),
                       disabled:isSending,
@@ -1420,6 +1441,11 @@ function TaskManager(){
                 (0,L.jsx)("option",{value:"yearly",children:"Tahunan (Yearly)"})
               ]})
             ]})
+          ]}),
+          /* Pin to Top Checkbox */
+          (0,L.jsxs)("div",{style:{background:form.is_pinned?"rgba(245, 158, 11, 0.1)":"rgba(255, 255, 255, 0.03)",border:form.is_pinned?"1px solid rgba(245, 158, 11, 0.3)":"1px solid rgba(255, 255, 255, 0.08)",padding:"0.65rem 1rem",borderRadius:"10px",marginBottom:"1rem",display:"flex",alignItems:"center",gap:"0.65rem",transition:"all 0.2s"},children:[
+            (0,L.jsx)("input",{type:"checkbox",id:"is_pinned_check",checked:Boolean(form.is_pinned),onChange:e=>setForm({...form,is_pinned:e.target.checked}),style:{width:"16px",height:"16px",accentColor:"#fbbf24",cursor:"pointer"}}),
+            (0,L.jsx)("label",{htmlFor:"is_pinned_check",style:{fontSize:"0.82rem",color:form.is_pinned?"#fbbf24":"#e2e8f0",cursor:"pointer",margin:0,fontWeight:600},children:"📌 Pin tugasan ini ke bahagian atas senarai"})
           ]}),
           /* Notifikasi Emel Checkbox (malikmanan@unisza.edu.my) */
           (0,L.jsxs)("div",{style:{background:"rgba(6, 182, 212, 0.08)",border:"1px solid rgba(6, 182, 212, 0.25)",padding:"0.75rem 1rem",borderRadius:"10px",marginBottom:"1.35rem",display:"flex",alignItems:"center",gap:"0.65rem"},children:[

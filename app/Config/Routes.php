@@ -127,5 +127,6 @@ $routes->group('api', function($routes) {
     $routes->match(['PUT', 'POST'], 'tasks/(:num)', 'Api\TaskController::update/$1');
     $routes->delete('tasks/(:num)', 'Api\TaskController::delete/$1');
     $routes->post('tasks/(:num)/toggle-status', 'Api\TaskController::toggleStatus/$1');
+    $routes->post('tasks/(:num)/toggle-pin', 'Api\TaskController::togglePin/$1');
     $routes->post('tasks/(:num)/send-notification', 'Api\TaskController::sendNotification/$1');
 });
