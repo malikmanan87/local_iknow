@@ -1364,9 +1364,9 @@ function TaskManager(){
                       onClick:()=>sendNotification(t),
                       disabled:isSending,
                       className:"btn btn-secondary",
-                      style:{padding:"0.3rem 0.55rem",borderRadius:"6px",fontSize:"0.78rem",color:"#fbbf24",borderColor:"rgba(245, 158, 11, 0.3)",background:"rgba(245, 158, 11, 0.08)"},
+                      style:{padding:"0.3rem 0.55rem",borderRadius:"6px",fontSize:"0.78rem",color:"#38bdf8",borderColor:"rgba(56, 189, 248, 0.3)",background:"rgba(56, 189, 248, 0.08)"},
                       title:"Hantar notifikasi emel ke malikmanan@unisza.edu.my",
-                      children:isSending?"⏳":"🔔"
+                      children:isSending?"⏳":"✉️"
                     }),
                     (0,L.jsx)("button",{onClick:()=>openEdit(t),className:"btn btn-secondary",style:{padding:"0.3rem 0.55rem",borderRadius:"6px",fontSize:"0.75rem"},title:"Kemaskini",children:"✏️"}),
                     (0,L.jsx)("button",{onClick:()=>deleteTask(t.id,t.title),className:"btn btn-secondary",style:{padding:"0.3rem 0.55rem",borderRadius:"6px",fontSize:"0.75rem",color:"#f87171"},title:"Padam",children:"🗑️"})
@@ -1396,7 +1396,7 @@ function TaskManager(){
       (0,L.jsxs)("div",{className:"glass-panel",style:{width:"100%",maxWidth:"520px",borderRadius:"16px",border:"1px solid rgba(255, 255, 255, 0.15)",boxShadow:"0 20px 40px rgba(0, 0, 0, 0.6)",background:"#0d1527",padding:"1.75rem"},children:[
         (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1.25rem"},children:[
           (0,L.jsxs)("h3",{style:{margin:0,fontSize:"1.2rem",fontWeight:800,color:"#f8fafc",display:"flex",alignItems:"center",gap:"0.5rem"},children:[
-            "🔔 ",editingId?"Kemaskini Tugasan":"Tambah Tugasan Baharu"
+            "📋 ",editingId?"Kemaskini Tugasan":"Tambah Tugasan Baharu"
           ]}),
           (0,L.jsx)("button",{onClick:()=>setShowModal(!1),style:{background:"transparent",border:"none",color:"var(--text-muted)",fontSize:"1.25rem",cursor:"pointer"},children:"✕"})
         ]}),
@@ -1451,7 +1451,7 @@ function TaskManager(){
           (0,L.jsxs)("div",{style:{background:"rgba(6, 182, 212, 0.08)",border:"1px solid rgba(6, 182, 212, 0.25)",padding:"0.75rem 1rem",borderRadius:"10px",marginBottom:"1.35rem",display:"flex",alignItems:"center",gap:"0.65rem"},children:[
             (0,L.jsx)("input",{type:"checkbox",id:"notify_email_check",checked:form.notify_email,onChange:e=>setForm({...form,notify_email:e.target.checked}),style:{width:"16px",height:"16px",accentColor:"#06b6d4",cursor:"pointer"}}),
             (0,L.jsxs)("label",{htmlFor:"notify_email_check",style:{fontSize:"0.82rem",color:"#e2e8f0",cursor:"pointer",margin:0,lineHeight:1.3},children:[
-              "🔔 Hantar notifikasi ke ",(0,L.jsx)("strong",{children:"malikmanan@unisza.edu.my"})
+              "✉️ Hantar notifikasi ke ",(0,L.jsx)("strong",{children:"malikmanan@unisza.edu.my"})
             ]})
           ]}),
           /* Submit Buttons */

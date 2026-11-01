@@ -16,6 +16,7 @@ import {
   Layers, 
   CircleDot,
   Bell,
+  Mail,
   Send,
   ShieldCheck,
   Pin
@@ -684,13 +685,13 @@ export default function Tasks() {
                             style={{
                               padding: '0.3rem 0.55rem',
                               borderRadius: '6px',
-                              color: '#fbbf24',
-                              borderColor: 'rgba(245, 158, 11, 0.3)',
-                              background: 'rgba(245, 158, 11, 0.08)'
+                              color: '#38bdf8',
+                              borderColor: 'rgba(56, 189, 248, 0.3)',
+                              background: 'rgba(56, 189, 248, 0.08)'
                             }}
                             title="Hantar notifikasi emel ke malikmanan@unisza.edu.my"
                           >
-                            <Bell size={14} className={isSendingNoti ? 'spin' : ''} />
+                            <Mail size={14} className={isSendingNoti ? 'spin' : ''} />
                           </button>
 
                           {/* Edit Button */}
@@ -790,7 +791,7 @@ export default function Tasks() {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Bell size={20} color="#06b6d4" />
+                <ListTodo size={20} color="#06b6d4" />
                 {editingId ? 'Kemaskini Tugasan' : 'Tambah Tugasan Baharu'}
               </h3>
               <button
@@ -915,7 +916,7 @@ export default function Tasks() {
                   style={{ width: '16px', height: '16px', accentColor: '#06b6d4', cursor: 'pointer' }}
                 />
                 <label htmlFor="notify_email" style={{ fontSize: '0.82rem', color: '#e2e8f0', cursor: 'pointer', margin: 0, lineHeight: 1.3 }}>
-                  <Bell size={13} style={{ display: 'inline', verticalAlign: '-1px', marginRight: '4px', color: '#fbbf24' }} />
+                  <Mail size={13} style={{ display: 'inline', verticalAlign: '-1px', marginRight: '4px', color: '#38bdf8' }} />
                   Hantar notifikasi ke <strong>malikmanan@unisza.edu.my</strong>
                 </label>
               </div>
