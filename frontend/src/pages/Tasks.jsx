@@ -193,6 +193,54 @@ export default function Tasks() {
     }
   };
 
+  const handleOpenGoogleCalendar = (task) => {
+    if (!task.due_date) {
+      showError("Sila tetapkan tarikh sasaran tugasan terlebih dahulu untuk dimasukkan ke Google Calendar.");
+      return;
+    }
+
+    try {
+      const datePart = task.due_date.substring(0, 10);
+      const parts = datePart.split("-");
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const startFormatted = "" + year + String(month + 1).padStart(2, "0") + String(day).padStart(2, "0");
+
+      const d = new Date(year, month, day);
+      d.setDate(d.getDate() + 1);
+      const endFormatted = "" + d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
+
+      const titleParam = encodeURIComponent("[Tugasan iKNOW] " + task.title);
+      let details = "Tugasan iKNOW: " + task.title + "\nPrioriti: " + (task.priority === "urgent" ? "Segera (Urgent)" : "Biasa (Normal)") + "\nStatus: " + task.status + "\nTarikh Sasaran: " + datePart;
+      if (task.recurrence && task.recurrence !== "none") {
+        const recMap = { daily: "Harian", weekly: "Mingguan", monthly: "Bulanan", yearly: "Tahunan" };
+        details += "\nKekerapan: " + (recMap[task.recurrence] || task.recurrence);
+      }
+      details += "\n\nSistem iKNOW Hospital UniSZA";
+      const detailsParam = encodeURIComponent(details);
+
+      let gCalUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + titleParam + "&dates=" + startFormatted + "/" + endFormatted + "&details=" + detailsParam + "&add=malikmanan@unisza.edu.my";
+
+      if (task.recurrence && task.recurrence !== "none") {
+        const rruleMap = {
+          daily: "RRULE:FREQ=DAILY",
+          weekly: "RRULE:FREQ=WEEKLY",
+          monthly: "RRULE:FREQ=MONTHLY",
+          yearly: "RRULE:FREQ=YEARLY"
+        };
+        if (rruleMap[task.recurrence]) {
+          gCalUrl += "&recur=" + encodeURIComponent(rruleMap[task.recurrence]);
+        }
+      }
+
+      window.open(gCalUrl, "_blank");
+    } catch (err) {
+      console.error("Ralat Google Calendar:", err);
+      showError("Gagal membuka Google Calendar.");
+    }
+  };
+
   const handleSendNotification = async (task) => {
     try {
       setSendingNotiId(task.id);
@@ -533,7 +581,7 @@ export default function Tasks() {
                   <th style={{ padding: '0.85rem 1rem' }}>Tajuk Tugasan</th>
                   <th style={{ padding: '0.85rem 1rem', width: '130px' }}>Prioriti</th>
                   <th style={{ padding: '0.85rem 1rem', width: '180px' }}>Tarikh Sasaran</th>
-                  <th style={{ padding: '0.85rem 1rem', width: '140px', textAlign: 'right' }}>Tindakan</th>
+                  <th style={{ padding: '0.85rem 1rem', width: '175px', textAlign: 'right' }}>Tindakan</th>
                 </tr>
               </thead>
               <tbody>
@@ -676,6 +724,21 @@ export default function Tasks() {
                             title={Boolean(t.is_pinned && t.is_pinned != '0') ? 'Nyahpin daripada atas' : 'Pin tugasan ke atas'}
                           >
                             <Pin size={14} style={{ transform: Boolean(t.is_pinned && t.is_pinned != '0') ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s' }} />
+                          </button>
+
+                          <button
+                            onClick={() => handleOpenGoogleCalendar(t)}
+                            className="btn btn-secondary"
+                            style={{
+                              padding: '0.3rem 0.55rem',
+                              borderRadius: '6px',
+                              color: '#4285f4',
+                              borderColor: 'rgba(66, 133, 244, 0.35)',
+                              background: 'rgba(66, 133, 244, 0.08)'
+                            }}
+                            title="Tambah ke Google Calendar (malikmanan@unisza.edu.my)"
+                          >
+                            <Calendar size={14} />
                           </button>
 
                           <button

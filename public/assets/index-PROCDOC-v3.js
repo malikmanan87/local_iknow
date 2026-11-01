@@ -1161,6 +1161,38 @@ function TaskManager(){
     }catch(err){console.error(err)}
   };
 
+  let openGCal=(it)=>{
+    if(!it.due_date){
+      if(window.Swal)window.Swal.fire({icon:"warning",title:"Tiada Tarikh Sasaran",text:"Sila tetapkan tarikh sasaran tugasan terlebih dahulu untuk dimasukkan ke Google Calendar.",background:"#0f172a",color:"#f8fafc",confirmButtonColor:"#f59e0b",customClass:{popup:"iknow-swal-popup"}});
+      return;
+    }
+    try{
+      let datePart=it.due_date.substring(0,10);
+      let parts=datePart.split("-");
+      let year=parseInt(parts[0],10);
+      let month=parseInt(parts[1],10)-1;
+      let day=parseInt(parts[2],10);
+      let startFormatted=""+year+String(month+1).padStart(2,"0")+String(day).padStart(2,"0");
+      let d=new Date(year,month,day);
+      d.setDate(d.getDate()+1);
+      let endFormatted=""+d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
+      let titleParam=encodeURIComponent("[Tugasan iKNOW] "+it.title);
+      let details="Tugasan iKNOW: "+it.title+"\nPrioriti: "+(it.priority==="urgent"?"Segera (Urgent)":"Biasa (Normal)")+"\nStatus: "+it.status+"\nTarikh Sasaran: "+datePart;
+      if(it.recurrence&&it.recurrence!=="none"){
+        let rMap={daily:"Harian",weekly:"Mingguan",monthly:"Bulanan",yearly:"Tahunan"};
+        details+="\nKekerapan: "+(rMap[it.recurrence]||it.recurrence);
+      }
+      details+="\n\nSistem iKNOW Hospital UniSZA";
+      let detailsParam=encodeURIComponent(details);
+      let url="https://calendar.google.com/calendar/render?action=TEMPLATE&text="+titleParam+"&dates="+startFormatted+"/"+endFormatted+"&details="+detailsParam+"&add=malikmanan@unisza.edu.my";
+      if(it.recurrence&&it.recurrence!=="none"){
+        let rrMap={daily:"RRULE:FREQ=DAILY",weekly:"RRULE:FREQ=WEEKLY",monthly:"RRULE:FREQ=MONTHLY",yearly:"RRULE:FREQ=YEARLY"};
+        if(rrMap[it.recurrence])url+="&recur="+encodeURIComponent(rrMap[it.recurrence]);
+      }
+      window.open(url,"_blank");
+    }catch(err){console.error(err)}
+  };
+
   let sendNotification=async(it)=>{
     setSendingNotiId(it.id);
     try{
@@ -1308,7 +1340,7 @@ function TaskManager(){
               (0,L.jsx)("th",{style:{padding:"0.85rem 1rem"},children:"Tajuk Tugasan"}),
               (0,L.jsx)("th",{style:{padding:"0.85rem 1rem",width:"130px"},children:"Prioriti"}),
               (0,L.jsx)("th",{style:{padding:"0.85rem 1rem",width:"180px"},children:"Tarikh Sasaran"}),
-              (0,L.jsx)("th",{style:{padding:"0.85rem 1rem",width:"140px",textAlign:"right"},children:"Tindakan"})
+              (0,L.jsx)("th",{style:{padding:"0.85rem 1rem",width:"175px",textAlign:"right"},children:"Tindakan"})
             ]})
           }),
           (0,L.jsx)("tbody",{children:
@@ -1359,6 +1391,13 @@ function TaskManager(){
                       style:{padding:"0.3rem 0.55rem",borderRadius:"6px",fontSize:"0.78rem",color:Boolean(t.is_pinned&&t.is_pinned!="0")?"#fbbf24":"var(--text-muted)",borderColor:Boolean(t.is_pinned&&t.is_pinned!="0")?"rgba(245, 158, 11, 0.4)":"rgba(255, 255, 255, 0.12)",background:Boolean(t.is_pinned&&t.is_pinned!="0")?"rgba(245, 158, 11, 0.15)":"transparent"},
                       title:Boolean(t.is_pinned&&t.is_pinned!="0")?"Nyahpin daripada atas":"Pin tugasan ke atas",
                       children:"📌"
+                    }),
+                    (0,L.jsx)("button",{
+                      onClick:()=>openGCal(t),
+                      className:"btn btn-secondary",
+                      style:{padding:"0.3rem 0.55rem",borderRadius:"6px",fontSize:"0.78rem",color:"#4285f4",borderColor:"rgba(66, 133, 244, 0.35)",background:"rgba(66, 133, 244, 0.08)"},
+                      title:"Tambah ke Google Calendar (malikmanan@unisza.edu.my)",
+                      children:"📅"
                     }),
                     (0,L.jsx)("button",{
                       onClick:()=>sendNotification(t),
