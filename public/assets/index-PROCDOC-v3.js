@@ -1042,6 +1042,7 @@ function TaskManager(){
      [form,setForm]=(0,v.useState)({
        title:"",
        priority:"normal",
+       recurrence:"none",
        due_date:"",
        status:"pending",
        notify_email:!0
@@ -1080,6 +1081,7 @@ function TaskManager(){
     setForm({
       title:"",
       priority:"normal",
+      recurrence:"none",
       due_date:defDate,
       status:"pending",
       notify_email:!0
@@ -1096,6 +1098,7 @@ function TaskManager(){
     setForm({
       title:it.title||"",
       priority:(it.priority==="urgent"?"urgent":"normal"),
+      recurrence:it.recurrence||"none",
       due_date:dt,
       status:it.status||"pending",
       notify_email:!1
@@ -1139,6 +1142,7 @@ function TaskManager(){
         body:JSON.stringify({status:newSt})
       }).then(r=>r.json());
       if(res&&res.status==="success"){
+        if(res.recurring_spawned&&window.Swal)window.Swal.fire({icon:"success",title:"Tugasan Selesai",text:res.message,timer:2500,showConfirmButton:!1,background:"#0f172a",color:"#f8fafc",customClass:{popup:"iknow-swal-popup"}});
         loadData();
       }
     }catch(err){console.error(err)}
@@ -1321,7 +1325,10 @@ function TaskManager(){
                   })
                 }),
                 (0,L.jsx)("td",{style:{padding:"0.85rem 1rem",verticalAlign:"middle"},children:
-                  (0,L.jsx)("div",{style:{fontWeight:700,fontSize:"0.92rem",color:isDone?"var(--text-muted)":"#f8fafc",textDecoration:isDone?"line-through":"none"},children:t.title})
+                  (0,L.jsxs)("div",{style:{display:"flex",alignItems:"center",gap:"0.5rem",flexWrap:"wrap"},children:[
+                    (0,L.jsx)("span",{style:{fontWeight:700,fontSize:"0.92rem",color:isDone?"var(--text-muted)":"#f8fafc",textDecoration:isDone?"line-through":"none"},children:t.title}),
+                    t.recurrence&&t.recurrence!=="none"&&(0,L.jsxs)("span",{style:{display:"inline-flex",alignItems:"center",gap:"0.25rem",padding:"0.15rem 0.5rem",borderRadius:"6px",background:"rgba(99, 102, 241, 0.12)",color:"#a5b4fc",border:"1px solid rgba(99, 102, 241, 0.25)",fontSize:"0.72rem",fontWeight:600},children:["🔄 ",t.recurrence==="daily"?"Harian":t.recurrence==="weekly"?"Mingguan":t.recurrence==="monthly"?"Bulanan":"Tahunan"]})
+                  ]})
                 }),
                 (0,L.jsx)("td",{style:{padding:"0.85rem 1rem",verticalAlign:"middle"},children:
                   (0,L.jsx)("span",{style:{fontSize:"0.72rem",fontWeight:700,padding:"0.2rem 0.55rem",borderRadius:"6px",background:pBadge.bg,color:pBadge.color,border:"1px solid "+pBadge.border},children:pBadge.label})
@@ -1397,10 +1404,22 @@ function TaskManager(){
               ]})
             ]})
           ]}),
-          /* 4. Tarikh Sasaran */
-          (0,L.jsxs)("div",{className:"form-group",style:{marginBottom:"1.2rem"},children:[
-            (0,L.jsx)("label",{className:"form-label",style:{fontWeight:600},children:"Tarikh Sasaran"}),
-            (0,L.jsx)("input",{type:"date",className:"form-input",value:form.due_date,onChange:e=>setForm({...form,due_date:e.target.value})})
+          /* 4. Tarikh Sasaran & Kekerapan Berulang */
+          (0,L.jsxs)("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.85rem",marginBottom:"1.2rem"},children:[
+            (0,L.jsxs)("div",{className:"form-group",children:[
+              (0,L.jsx)("label",{className:"form-label",style:{fontWeight:600},children:"Tarikh Sasaran"}),
+              (0,L.jsx)("input",{type:"date",className:"form-input",value:form.due_date,onChange:e=>setForm({...form,due_date:e.target.value})})
+            ]}),
+            (0,L.jsxs)("div",{className:"form-group",children:[
+              (0,L.jsx)("label",{className:"form-label",style:{fontWeight:600},children:"Kekerapan (Berulang)"}),
+              (0,L.jsxs)("select",{className:"form-select",value:form.recurrence||"none",onChange:e=>setForm({...form,recurrence:e.target.value}),children:[
+                (0,L.jsx)("option",{value:"none",children:"Tiada (Sekali Sahaja)"}),
+                (0,L.jsx)("option",{value:"daily",children:"Harian (Daily)"}),
+                (0,L.jsx)("option",{value:"weekly",children:"Mingguan (Weekly)"}),
+                (0,L.jsx)("option",{value:"monthly",children:"Bulanan (Monthly)"}),
+                (0,L.jsx)("option",{value:"yearly",children:"Tahunan (Yearly)"})
+              ]})
+            ]})
           ]}),
           /* Notifikasi Emel Checkbox (malikmanan@unisza.edu.my) */
           (0,L.jsxs)("div",{style:{background:"rgba(6, 182, 212, 0.08)",border:"1px solid rgba(6, 182, 212, 0.25)",padding:"0.75rem 1rem",borderRadius:"10px",marginBottom:"1.35rem",display:"flex",alignItems:"center",gap:"0.65rem"},children:[

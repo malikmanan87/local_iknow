@@ -121,10 +121,12 @@ class TaskController extends ResourceController
             return $this->failValidationErrors('Tajuk tugasan diperlukan.');
         }
 
+        $recurrence = (!empty($data['recurrence']) && in_array($data['recurrence'], ['daily', 'weekly', 'monthly', 'yearly'])) ? $data['recurrence'] : 'none';
         $insertData = [
             'title'      => trim($data['title']),
             'priority'   => (!empty($data['priority']) && strtolower($data['priority']) === 'urgent') ? 'urgent' : 'normal',
             'status'     => !empty($data['status']) ? $data['status'] : 'pending',
+            'recurrence' => $recurrence,
             'due_date'   => !empty($data['due_date']) ? date('Y-m-d 00:00:00', strtotime($data['due_date'])) : null,
         ];
 
@@ -174,6 +176,9 @@ class TaskController extends ResourceController
         if (isset($data['status'])) {
             $updateData['status'] = $data['status'];
         }
+        if (isset($data['recurrence'])) {
+            $updateData['recurrence'] = in_array($data['recurrence'], ['daily', 'weekly', 'monthly', 'yearly']) ? $data['recurrence'] : 'none';
+        }
         if (array_key_exists('due_date', $data)) {
             $updateData['due_date'] = !empty($data['due_date']) ? date('Y-m-d 00:00:00', strtotime($data['due_date'])) : null;
         }
@@ -182,6 +187,9 @@ class TaskController extends ResourceController
             $model->update($id, $updateData);
         }
 
+        $newStatus = $updateData['status'] ?? $task['status'];
+        $recurringResult = $this->handleRecurringOnComplete($task, $newStatus);
+
         // Hantar notifikasi emel automatik sekiranya diminta semasa kemaskini
         $sentEmail = false;
         if (!empty($data['notify_email'])) {
@@ -189,11 +197,17 @@ class TaskController extends ResourceController
             $sentEmail = true;
         }
 
+        $msg = 'Tugasan berjaya dikemaskini.' . ($sentEmail ? ' Notifikasi dihantar ke malikmanan@unisza.edu.my' : '');
+        if (!empty($recurringResult['spawned'])) {
+            $msg .= " Kitaran seterusnya (" . $this->getRecurrenceLabel($recurringResult['recurrence']) . ") telah dijana secara automatik.";
+        }
+
         return $this->respond([
-            'status'     => 'success',
-            'message'    => 'Tugasan berjaya dikemaskini.' . ($sentEmail ? ' Notifikasi dihantar ke malikmanan@unisza.edu.my' : ''),
-            'email_sent' => $sentEmail,
-            'data'       => $model->find($id)
+            'status'            => 'success',
+            'message'           => $msg,
+            'email_sent'        => $sentEmail,
+            'recurring_spawned' => $recurringResult['spawned'] ?? false,
+            'data'              => $model->find($id)
         ]);
     }
 
@@ -233,11 +247,18 @@ class TaskController extends ResourceController
         $newStatus = !empty($data['status']) ? $data['status'] : (($task['status'] === 'completed') ? 'pending' : 'completed');
 
         $model->update($id, ['status' => $newStatus]);
+        $recurringResult = $this->handleRecurringOnComplete($task, $newStatus);
+
+        $msg = "Status tugasan dikemaskini kepada {$newStatus}.";
+        if (!empty($recurringResult['spawned'])) {
+            $msg .= " Kitaran seterusnya (" . $this->getRecurrenceLabel($recurringResult['recurrence']) . ") telah dijana secara automatik.";
+        }
 
         return $this->respond([
-            'status'  => 'success',
-            'message' => "Status tugasan dikemaskini kepada {$newStatus}.",
-            'data'    => $model->find($id)
+            'status'            => 'success',
+            'message'           => $msg,
+            'recurring_spawned' => $recurringResult['spawned'] ?? false,
+            'data'              => $model->find($id)
         ]);
     }
 
@@ -638,5 +659,80 @@ class TaskController extends ResourceController
                 'message' => 'Ralat penghantaran emel: ' . $e->getMessage()
             ];
         }
+    }
+    /**
+     * Label Bahasa Melayu untuk kekerapan tugasan
+     */
+    protected function getRecurrenceLabel($r)
+    {
+        switch ($r) {
+            case 'daily':   return 'Harian';
+            case 'weekly':  return 'Mingguan';
+            case 'monthly': return 'Bulanan';
+            case 'yearly':  return 'Tahunan';
+            default:        return 'Sekali Sahaja';
+        }
+    }
+
+    /**
+     * Semak dan jana tugasan pusingan baharu jika tugasan berulang ditandakan selesai
+     */
+    protected function handleRecurringOnComplete($task, $newStatus)
+    {
+        if ($task['status'] !== 'completed' && $newStatus === 'completed') {
+            $recurrence = $task['recurrence'] ?? 'none';
+            if (!empty($recurrence) && $recurrence !== 'none') {
+                $nextDueDate = null;
+                $currentDue = !empty($task['due_date']) ? new \DateTime($task['due_date']) : new \DateTime();
+                $today = new \DateTime('today');
+
+                switch ($recurrence) {
+                    case 'daily':
+                        $interval = new \DateInterval('P1D');
+                        break;
+                    case 'weekly':
+                        $interval = new \DateInterval('P1W');
+                        break;
+                    case 'monthly':
+                        $interval = new \DateInterval('P1M');
+                        break;
+                    case 'yearly':
+                        $interval = new \DateInterval('P1Y');
+                        break;
+                    default:
+                        $interval = null;
+                }
+
+                if ($interval) {
+                    $nextDue = clone $currentDue;
+                    $nextDue->add($interval);
+                    // Sekiranya tarikh sasaran masih di masa lampau (cth tugasan tertunggak lama),
+                    // teruskan maju ke kitaran hadapan dari hari ini
+                    while ($nextDue < $today) {
+                        $nextDue->add($interval);
+                    }
+                    $nextDueDate = $nextDue->format('Y-m-d 00:00:00');
+
+                    $model = $this->getModelInstance();
+                    $newTask = [
+                        'title'            => $task['title'],
+                        'priority'         => $task['priority'],
+                        'status'           => 'pending',
+                        'recurrence'       => $recurrence,
+                        'due_date'         => $nextDueDate,
+                        'last_notified_at' => null,
+                    ];
+                    $newTaskId = $model->insert($newTask);
+
+                    return [
+                        'spawned'    => true,
+                        'next_id'    => $newTaskId,
+                        'next_due'   => $nextDueDate,
+                        'recurrence' => $recurrence
+                    ];
+                }
+            }
+        }
+        return ['spawned' => false];
     }
 }

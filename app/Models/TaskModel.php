@@ -15,6 +15,7 @@ class TaskModel extends Model
         'title',
         'priority',
         'status',
+        'recurrence',
         'due_date',
         'last_notified_at',
         'created_at',
@@ -37,6 +38,7 @@ class TaskModel extends Model
             `title` VARCHAR(255) NOT NULL,
             `priority` ENUM('normal', 'urgent') DEFAULT 'normal',
             `status` ENUM('pending', 'in_progress', 'completed', 'cancelled') DEFAULT 'pending',
+            `recurrence` ENUM('none', 'daily', 'weekly', 'monthly', 'yearly') DEFAULT 'none',
             `due_date` DATETIME NULL,
             `last_notified_at` DATETIME NULL,
             `created_at` DATETIME NULL,
@@ -50,6 +52,12 @@ class TaskModel extends Model
         try {
             $db->query("ALTER TABLE `tasks` MODIFY COLUMN `priority` ENUM('normal', 'urgent') NOT NULL DEFAULT 'normal'");
         } catch (\Throwable $e) {}
+
+        // Pastikan lajur recurrence wujud jika jadual telah sedia ada
+        $checkRecurrence = $db->query("SHOW COLUMNS FROM `tasks` LIKE 'recurrence'")->getRow();
+        if (!$checkRecurrence) {
+            $db->query("ALTER TABLE `tasks` ADD COLUMN `recurrence` ENUM('none', 'daily', 'weekly', 'monthly', 'yearly') NOT NULL DEFAULT 'none' AFTER `status`;");
+        }
 
         // Pastikan lajur last_notified_at wujud jika jadual telah sedia ada
         $checkCol = $db->query("SHOW COLUMNS FROM `tasks` LIKE 'last_notified_at'")->getRow();

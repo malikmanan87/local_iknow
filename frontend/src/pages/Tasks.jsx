@@ -43,6 +43,7 @@ export default function Tasks() {
   const [formData, setFormData] = useState({
     title: '',
     priority: 'normal',
+    recurrence: 'none',
     due_date: '',
     status: 'pending',
     notify_email: true
@@ -99,6 +100,7 @@ export default function Tasks() {
     setFormData({
       title: '',
       priority: 'normal',
+      recurrence: 'none',
       due_date: dateStr,
       status: 'pending',
       notify_email: true
@@ -116,6 +118,7 @@ export default function Tasks() {
     setFormData({
       title: task.title || '',
       priority: task.priority === 'urgent' ? 'urgent' : 'normal',
+      recurrence: task.recurrence || 'none',
       due_date: formattedDue,
       status: task.status || 'pending',
       notify_email: false
@@ -161,7 +164,10 @@ export default function Tasks() {
   const handleToggleStatus = async (task) => {
     const newStatus = task.status === 'completed' ? 'pending' : 'completed';
     try {
-      await axios.post(getApiUrl(`tasks/${task.id}/toggle-status`), { status: newStatus });
+      const res = await axios.post(getApiUrl(`tasks/${task.id}/toggle-status`), { status: newStatus });
+      if (res.data?.recurring_spawned) {
+        showSuccess(res.data.message || 'Tugasan selesai! Kitaran seterusnya telah dijana secara automatik.');
+      }
       fetchTasks();
     } catch (err) {
       console.error('Ralat kemaskini status:', err);
@@ -553,13 +559,31 @@ export default function Tasks() {
 
                       {/* Tajuk Tugasan */}
                       <td style={{ padding: '0.85rem 1rem', verticalAlign: 'middle' }}>
-                        <div style={{
-                          fontWeight: 700,
-                          fontSize: '0.92rem',
-                          color: isDone ? 'var(--text-muted)' : '#f8fafc',
-                          textDecoration: isDone ? 'line-through' : 'none'
-                        }}>
-                          {t.title}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <span style={{
+                            fontWeight: 700,
+                            fontSize: '0.92rem',
+                            color: isDone ? 'var(--text-muted)' : '#f8fafc',
+                            textDecoration: isDone ? 'line-through' : 'none'
+                          }}>
+                            {t.title}
+                          </span>
+                          {t.recurrence && t.recurrence !== 'none' && (
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              padding: '0.15rem 0.5rem',
+                              borderRadius: '6px',
+                              background: 'rgba(99, 102, 241, 0.12)',
+                              color: '#a5b4fc',
+                              border: '1px solid rgba(99, 102, 241, 0.25)',
+                              fontSize: '0.72rem',
+                              fontWeight: 600
+                            }} title={`Tugasan berulang: ${t.recurrence}`}>
+                              🔄 {t.recurrence === 'daily' ? 'Harian' : t.recurrence === 'weekly' ? 'Mingguan' : t.recurrence === 'monthly' ? 'Bulanan' : 'Tahunan'}
+                            </span>
+                          )}
                         </div>
                       </td>
 
@@ -772,15 +796,31 @@ export default function Tasks() {
                 </div>
               </div>
 
-              {/* 4. Tarikh Sasaran */}
-              <div className="form-group" style={{ marginBottom: '1.2rem' }}>
-                <label className="form-label" style={{ fontWeight: 600 }}>Tarikh Sasaran</label>
-                <input
-                  type="date"
-                  className="form-input"
-                  value={formData.due_date}
-                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                />
+              {/* 4. Tarikh Sasaran & Kekerapan Berulang Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem', marginBottom: '1.2rem' }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: 600 }}>Tarikh Sasaran</label>
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={formData.due_date}
+                    onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: 600 }}>Kekerapan (Berulang)</label>
+                  <select
+                    className="form-select"
+                    value={formData.recurrence || 'none'}
+                    onChange={(e) => setFormData({ ...formData, recurrence: e.target.value })}
+                  >
+                    <option value="none">Tiada (Sekali Sahaja)</option>
+                    <option value="daily">Harian (Daily)</option>
+                    <option value="weekly">Mingguan (Weekly)</option>
+                    <option value="monthly">Bulanan (Monthly)</option>
+                    <option value="yearly">Tahunan (Yearly)</option>
+                  </select>
+                </div>
               </div>
 
               {/* Notifikasi Emel Checkbox (malikmanan@unisza.edu.my) */}
