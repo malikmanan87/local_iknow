@@ -93,7 +93,7 @@ export default function Tasks() {
   const handleOpenAddModal = () => {
     const defaultDueDate = new Date();
     defaultDueDate.setDate(defaultDueDate.getDate() + 3);
-    const dateStr = defaultDueDate.toISOString().slice(0, 16);
+    const dateStr = defaultDueDate.toISOString().slice(0, 10);
 
     setFormData({
       title: '',
@@ -109,10 +109,7 @@ export default function Tasks() {
   const handleOpenEditModal = (task) => {
     let formattedDue = '';
     if (task.due_date) {
-      const d = new Date(task.due_date.replace(' ', 'T'));
-      if (!isNaN(d.getTime())) {
-        formattedDue = d.toISOString().slice(0, 16);
-      }
+      formattedDue = task.due_date.substring(0, 10);
     }
 
     setFormData({
@@ -212,13 +209,14 @@ export default function Tasks() {
     if (!dateStr) return 'Tiada tarikh';
     const d = new Date(dateStr.replace(' ', 'T'));
     if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString('ms-MY', {
+    const daysMalay = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+    const dayName = daysMalay[d.getDay()];
+    const dateFormatted = d.toLocaleDateString('ms-MY', {
       day: '2-digit',
       month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: 'numeric'
     });
+    return `${dateFormatted} (${dayName})`;
   };
 
   const getPriorityBadge = (prio) => {
@@ -689,7 +687,7 @@ export default function Tasks() {
               <div className="form-group" style={{ marginBottom: '1.2rem' }}>
                 <label className="form-label" style={{ fontWeight: 600 }}>Tarikh Sasaran</label>
                 <input
-                  type="datetime-local"
+                  type="date"
                   className="form-input"
                   value={formData.due_date}
                   onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}

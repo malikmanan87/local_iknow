@@ -1076,7 +1076,7 @@ function TaskManager(){
   let openAdd=()=>{
     let d=new Date();
     d.setDate(d.getDate()+3);
-    let defDate=d.toISOString().slice(0,16);
+    let defDate=d.toISOString().slice(0,10);
     setForm({
       title:"",
       priority:"normal",
@@ -1091,7 +1091,7 @@ function TaskManager(){
   let openEdit=(it)=>{
     let dt="";
     if(it.due_date){
-      try{let d=new Date(it.due_date.replace(" ","T"));if(!isNaN(d.getTime()))dt=d.toISOString().slice(0,16)}catch{}
+      dt=it.due_date.substring(0,10);
     }
     setForm({
       title:it.title||"",
@@ -1192,7 +1192,11 @@ function TaskManager(){
     if(!s)return "-";
     try{
       let d=new Date(s.replace(" ","T"));
-      return d.toLocaleDateString("ms-MY",{day:"2-digit",month:"short",year:"numeric"})+", "+d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",hour12:!0});
+      if(isNaN(d.getTime()))return s;
+      let days=["Ahad","Isnin","Selasa","Rabu","Khamis","Jumaat","Sabtu"];
+      let dayName=days[d.getDay()];
+      let dt=d.toLocaleDateString("ms-MY",{day:"2-digit",month:"short",year:"numeric"});
+      return dt+" ("+dayName+")";
     }catch{return s}
   };
 
@@ -1384,7 +1388,7 @@ function TaskManager(){
           /* 4. Tarikh Sasaran */
           (0,L.jsxs)("div",{className:"form-group",style:{marginBottom:"1.2rem"},children:[
             (0,L.jsx)("label",{className:"form-label",style:{fontWeight:600},children:"Tarikh Sasaran"}),
-            (0,L.jsx)("input",{type:"datetime-local",className:"form-input",value:form.due_date,onChange:e=>setForm({...form,due_date:e.target.value})})
+            (0,L.jsx)("input",{type:"date",className:"form-input",value:form.due_date,onChange:e=>setForm({...form,due_date:e.target.value})})
           ]}),
           /* Notifikasi Emel Checkbox (malikmanan@unisza.edu.my) */
           (0,L.jsxs)("div",{style:{background:"rgba(6, 182, 212, 0.08)",border:"1px solid rgba(6, 182, 212, 0.25)",padding:"0.75rem 1rem",borderRadius:"10px",marginBottom:"1.35rem",display:"flex",alignItems:"center",gap:"0.65rem"},children:[

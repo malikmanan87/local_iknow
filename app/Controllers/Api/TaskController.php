@@ -34,7 +34,7 @@ class TaskController extends ResourceController
             'overdue'     => (int) $db->table('tasks')
                                 ->whereNotIn('status', ['completed', 'cancelled'])
                                 ->where('due_date IS NOT NULL', null, false)
-                                ->where('due_date <', $now)
+                                ->where('due_date <', date('Y-m-d 00:00:00'))
                                 ->countAllResults(),
         ];
 
@@ -66,11 +66,13 @@ class TaskController extends ResourceController
 
         $tasks = $builder->get()->getResultArray();
 
-        // Tambah petunjuk is_overdue
+        // Tambah petunjuk is_overdue (berdasarkan tarikh tanpa jam)
+        $todayDate = date('Y-m-d');
         foreach ($tasks as &$task) {
             $task['is_overdue'] = false;
             if (!empty($task['due_date']) && !in_array($task['status'], ['completed', 'cancelled'])) {
-                if ($task['due_date'] < $now) {
+                $taskDay = date('Y-m-d', strtotime($task['due_date']));
+                if ($taskDay < $todayDate) {
                     $task['is_overdue'] = true;
                 }
             }
@@ -117,7 +119,7 @@ class TaskController extends ResourceController
             'title'      => trim($data['title']),
             'priority'   => (!empty($data['priority']) && strtolower($data['priority']) === 'urgent') ? 'urgent' : 'normal',
             'status'     => !empty($data['status']) ? $data['status'] : 'pending',
-            'due_date'   => !empty($data['due_date']) ? date('Y-m-d H:i:s', strtotime($data['due_date'])) : null,
+            'due_date'   => !empty($data['due_date']) ? date('Y-m-d 00:00:00', strtotime($data['due_date'])) : null,
         ];
 
         $newId = $model->insert($insertData);
@@ -167,7 +169,7 @@ class TaskController extends ResourceController
             $updateData['status'] = $data['status'];
         }
         if (array_key_exists('due_date', $data)) {
-            $updateData['due_date'] = !empty($data['due_date']) ? date('Y-m-d H:i:s', strtotime($data['due_date'])) : null;
+            $updateData['due_date'] = !empty($data['due_date']) ? date('Y-m-d 00:00:00', strtotime($data['due_date'])) : null;
         }
 
         if (!empty($updateData)) {
@@ -403,9 +405,15 @@ class TaskController extends ResourceController
             $prioColor = $taskIsUrgent ? '#ef4444' : '#d97706';
 
             $dueTime = !empty($task['due_date']) ? strtotime($task['due_date']) : null;
-            $isOverdue = ($dueTime && ($dueTime < $now));
+            $taskDate = $dueTime ? date('Y-m-d', $dueTime) : null;
+            $todayDate = date('Y-m-d', $now);
+            $isOverdue = ($taskDate && ($taskDate < $todayDate));
+
+            $daysMalay = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+            $dayName = $dueTime ? $daysMalay[(int)date('w', $dueTime)] : '';
+
             $dueFormatted = $dueTime
-                ? date('d M Y, h:i A', $dueTime) . ($isOverdue ? " <span style='color: #ef4444; font-weight: bold;'>(OVERDUE)</span>" : "")
+                ? date('d M Y', $dueTime) . " ({$dayName})" . ($isOverdue ? " <span style='color: #ef4444; font-weight: bold;'>(OVERDUE)</span>" : "")
                 : 'Tiada Tarikh';
             $rowBg = $isOverdue ? "background: rgba(239, 68, 68, 0.08);" : "background: transparent;";
 
@@ -521,7 +529,12 @@ class TaskController extends ResourceController
 
         $dueTime = !empty($task['due_date']) ? strtotime($task['due_date']) : null;
         $now = time();
-        $isOverdue = ($dueTime && ($dueTime < $now));
+        $taskDate = $dueTime ? date('Y-m-d', $dueTime) : null;
+        $todayDate = date('Y-m-d', $now);
+        $isOverdue = ($taskDate && ($taskDate < $todayDate));
+
+        $daysMalay = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+        $dayName = $dueTime ? $daysMalay[(int)date('w', $dueTime)] : '';
 
         // 2 Template Emel:
         // 1. Template Merah untuk Urgent
@@ -541,7 +554,7 @@ class TaskController extends ResourceController
         }
 
         $dueFormatted = !empty($task['due_date'])
-            ? date('d M Y, h:i A', strtotime($task['due_date'])) . ($isOverdue ? " <span style='color: #ef4444; font-weight: bold;'>(OVERDUE)</span>" : "")
+            ? date('d M Y', strtotime($task['due_date'])) . " ({$dayName})" . ($isOverdue ? " <span style='color: #ef4444; font-weight: bold;'>(OVERDUE)</span>" : "")
             : 'Tiada Tarikh Ditetapkan';
 
         $htmlMessage = "
