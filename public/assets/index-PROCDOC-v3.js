@@ -1215,17 +1215,28 @@ function TaskManager(){
   let currentTasks=items.slice(startIdx,endIdx);
 
   return(0,L.jsxs)("div",{children:[
-    (0,L.jsx)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"1rem",marginBottom:"1.25rem",paddingBottom:"0.85rem",borderBottom:"1px solid rgba(255, 255, 255, 0.08)"},children:
-      (0,L.jsxs)("h1",{style:{fontSize:"1.5rem",fontWeight:800,margin:"0px",display:"flex",alignItems:"center",gap:"0.6rem"},children:[
-        (0,L.jsx)("span",{style:{display:"inline-flex",padding:"0.35rem",borderRadius:"8px",background:"rgba(168, 85, 247, 0.15)",color:"rgb(192, 132, 252)",border:"1px solid rgba(168, 85, 247, 0.3)"},children:
-          (0,L.jsxs)("svg",{xmlns:"http://www.w3.org/2000/svg",width:20,height:20,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round",className:"lucide lucide-shield-check",children:[
-            (0,L.jsx)("path",{d:"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"}),
-            (0,L.jsx)("path",{d:"m9 12 2 2 4-4"})
-          ]})
-        }),
-        " task"
+    (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1.5rem",flexWrap:"wrap",gap:"1rem",paddingBottom:"1rem",borderBottom:"1px solid rgba(255, 255, 255, 0.08)"},children:[
+      (0,L.jsxs)("div",{children:[
+        (0,L.jsxs)("h1",{style:{fontSize:"1.5rem",fontWeight:800,margin:"0px",display:"flex",alignItems:"center",gap:"0.6rem"},children:[
+          (0,L.jsx)("span",{style:{display:"inline-flex",padding:"0.35rem",borderRadius:"8px",background:"rgba(168, 85, 247, 0.15)",color:"rgb(192, 132, 252)",border:"1px solid rgba(168, 85, 247, 0.3)"},children:
+            (0,L.jsxs)("svg",{xmlns:"http://www.w3.org/2000/svg",width:20,height:20,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round",className:"lucide lucide-shield-check",children:[
+              (0,L.jsx)("path",{d:"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"}),
+              (0,L.jsx)("path",{d:"m9 12 2 2 4-4"})
+            ]})
+          }),
+          " TASKS"
+        ]}),
+        (0,L.jsx)("p",{style:{color:"var(--text-muted)",fontSize:"0.88rem",margin:"0.35rem 0px 0px"},children:"Pusat pengurusan, agihan dan pemantauan status tugasan IT Hospital secara sistematik."})
+      ]}),
+      (0,L.jsxs)("div",{style:{position:"relative",width:"280px"},children:[
+        (0,L.jsxs)("svg",{xmlns:"http://www.w3.org/2000/svg",width:16,height:16,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round",className:"lucide lucide-search",style:{position:"absolute",left:"0.75rem",top:"50%",transform:"translateY(-50%)",color:"var(--text-muted)"},children:[
+          (0,L.jsx)("path",{d:"m21 21-4.34-4.34"}),
+          (0,L.jsx)("circle",{cx:11,cy:11,r:8})
+        ]}),
+        (0,L.jsx)("input",{className:"form-input",placeholder:"Cari tajuk tugasan...",type:"text",value:search,onChange:e=>setSearch(e.target.value),style:{padding:"0.45rem 0.75rem 0.45rem 2.4rem",fontSize:"0.85rem",borderRadius:"10px",width:"100%"}}),
+        search&&(0,L.jsx)("button",{onClick:()=>setSearch(""),style:{position:"absolute",right:"0.6rem",top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"var(--text-muted)",cursor:"pointer",fontSize:"1rem"},children:"×"})
       ]})
-    }),
+    ]}),
     /* 5 KPI Stat Cards */
     (0,L.jsxs)("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))",gap:"0.85rem",marginBottom:"1.5rem",marginTop:"0.5rem"},children:[
       (0,L.jsxs)("div",{className:"glass-panel",style:{padding:"1rem 1.2rem",borderRadius:"14px",border:"1px solid rgba(255,255,255,0.08)"},children:[
@@ -1252,10 +1263,7 @@ function TaskManager(){
 
     /* Search & Filter Bar with Tambah Tugasan button */
     (0,L.jsxs)("div",{className:"glass-panel",style:{padding:"0.85rem 1rem",borderRadius:"14px",marginBottom:"1.5rem",display:"flex",flexWrap:"wrap",gap:"0.75rem",alignItems:"center",justifyContent:"space-between"},children:[
-      (0,L.jsx)("div",{style:{position:"relative",flex:"1 1 240px",minWidth:"200px"},children:
-        (0,L.jsx)("input",{type:"text",className:"form-input",placeholder:"Cari tajuk tugasan...",value:search,onChange:e=>setSearch(e.target.value),style:{width:"100%",fontSize:"0.85rem"}})
-      }),
-      (0,L.jsxs)("div",{style:{display:"flex",gap:"0.5rem",alignItems:"center",flexWrap:"wrap"},children:[
+      (0,L.jsxs)("div",{style:{display:"flex",gap:"0.65rem",alignItems:"center",flexWrap:"wrap"},children:[
         (0,L.jsxs)("select",{className:"form-select",value:statFilter,onChange:e=>setStatFilter(e.target.value),style:{fontSize:"0.82rem",padding:"0.45rem 0.75rem"},children:[
           (0,L.jsx)("option",{value:"all",children:"Semua Status"}),
           (0,L.jsx)("option",{value:"pending",children:"Belum Selesai"}),
@@ -1268,9 +1276,10 @@ function TaskManager(){
           (0,L.jsx)("option",{value:"urgent",children:"Urgent"}),
           (0,L.jsx)("option",{value:"normal",children:"Normal"})
         ]}),
-        (0,L.jsxs)("button",{className:"btn btn-primary",onClick:openAdd,style:{display:"inline-flex",alignItems:"center",gap:"0.45rem",background:"linear-gradient(135deg, #06b6d4 0%, #2563eb 100%)",border:"none",padding:"0.5rem 1rem",fontSize:"0.85rem",fontWeight:700,borderRadius:"9px",boxShadow:"0 3px 12px rgba(6, 182, 212, 0.35)",cursor:"pointer"},children:[
-          "+ Tambah Tugasan"
-        ]})
+        (search||statFilter!=="all"||prioFilter!=="all")&&(0,L.jsx)("button",{onClick:()=>{setSearch("");setStatFilter("all");setPrioFilter("all");},className:"btn btn-secondary",style:{fontSize:"0.78rem",padding:"0.45rem 0.75rem"},children:"Reset Tapisan"})
+      ]}),
+      (0,L.jsxs)("button",{className:"btn btn-primary",onClick:openAdd,style:{display:"inline-flex",alignItems:"center",gap:"0.45rem",background:"linear-gradient(135deg, #06b6d4 0%, #2563eb 100%)",border:"none",padding:"0.5rem 1rem",fontSize:"0.85rem",fontWeight:700,borderRadius:"9px",boxShadow:"0 3px 12px rgba(6, 182, 212, 0.35)",cursor:"pointer"},children:[
+        "+ Tambah Tugasan"
       ]})
     ]}),
 

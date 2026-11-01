@@ -258,25 +258,42 @@ export default function Tasks() {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
+        marginBottom: '1.5rem',
         flexWrap: 'wrap',
         gap: '1rem',
-        marginBottom: '1.25rem',
-        paddingBottom: '0.85rem',
+        paddingBottom: '1rem',
         borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
       }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0px', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <span style={{
-            display: 'inline-flex',
-            padding: '0.35rem',
-            borderRadius: '8px',
-            background: 'rgba(168, 85, 247, 0.15)',
-            color: 'rgb(192, 132, 252)',
-            border: '1px solid rgba(168, 85, 247, 0.3)'
-          }}>
-            <ShieldCheck size={20} />
-          </span>
-          task
-        </h1>
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0px', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <span style={{
+              display: 'inline-flex',
+              padding: '0.35rem',
+              borderRadius: '8px',
+              background: 'rgba(168, 85, 247, 0.15)',
+              color: 'rgb(192, 132, 252)',
+              border: '1px solid rgba(168, 85, 247, 0.3)'
+            }}>
+              <ShieldCheck size={20} />
+            </span>
+            TASKS
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', margin: '0.35rem 0px 0px' }}>
+            Pusat pengurusan, agihan dan pemantauan status tugasan IT Hospital secara sistematik.
+          </p>
+        </div>
+
+        <div style={{ position: 'relative', width: '280px' }}>
+          <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <input
+            className="form-input"
+            placeholder="Cari tajuk tugasan..."
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ padding: '0.45rem 0.75rem 0.45rem 2.4rem', fontSize: '0.85rem', borderRadius: '10px', width: '100%' }}
+          />
+        </div>
       </div>
 
       {/* 5 KPI Summary Cards */}
@@ -343,7 +360,7 @@ export default function Tasks() {
         </div>
       </div>
 
-      {/* Filter and Search Bar (Termasuk butang + Tambah Tugasan) */}
+      {/* Filter and Action Bar (Termasuk butang + Tambah Tugasan) */}
       <div className="glass-panel" style={{
         padding: '0.85rem 1rem',
         borderRadius: '14px',
@@ -354,22 +371,8 @@ export default function Tasks() {
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
-        {/* Search Input */}
-        <div style={{ position: 'relative', flex: '1 1 240px', minWidth: '200px' }}>
-          <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
-          <input
-            type="text"
-            className="form-input"
-            placeholder="Cari tajuk tugasan..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ paddingLeft: '2.25rem', width: '100%', fontSize: '0.85rem' }}
-          />
-        </div>
-
-        {/* Status, Priority Filters & Add Task Button */}
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          {/* Status Filter */}
+        {/* Status, Priority Filters */}
+        <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <select
             className="form-select"
             value={statusFilter}
@@ -383,7 +386,6 @@ export default function Tasks() {
             <option value="cancelled">Dibatalkan</option>
           </select>
 
-          {/* Priority Filter */}
           <select
             className="form-select"
             value={priorityFilter}
@@ -395,27 +397,37 @@ export default function Tasks() {
             <option value="normal">Normal</option>
           </select>
 
-          {/* Butang Tambah Tugasan */}
-          <button
-            className="btn btn-primary"
-            onClick={handleOpenAddModal}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              background: 'linear-gradient(135deg, #06b6d4 0%, #2563eb 100%)',
-              border: 'none',
-              padding: '0.5rem 1rem',
-              fontSize: '0.85rem',
-              fontWeight: 700,
-              borderRadius: '9px',
-              boxShadow: '0 3px 12px rgba(6, 182, 212, 0.35)',
-              cursor: 'pointer'
-            }}
-          >
-            <Plus size={16} /> Tambah Tugasan
-          </button>
+          {(search || statusFilter !== 'all' || priorityFilter !== 'all') && (
+            <button
+              onClick={() => { setSearch(''); setStatusFilter('all'); setPriorityFilter('all'); }}
+              className="btn btn-secondary"
+              style={{ fontSize: '0.78rem', padding: '0.45rem 0.75rem' }}
+            >
+              Reset Tapisan
+            </button>
+          )}
         </div>
+
+        {/* Butang Tambah Tugasan */}
+        <button
+          className="btn btn-primary"
+          onClick={handleOpenAddModal}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            background: 'linear-gradient(135deg, #06b6d4 0%, #2563eb 100%)',
+            border: 'none',
+            padding: '0.5rem 1rem',
+            fontSize: '0.85rem',
+            fontWeight: 700,
+            borderRadius: '9px',
+            boxShadow: '0 3px 12px rgba(6, 182, 212, 0.35)',
+            cursor: 'pointer'
+          }}
+        >
+          <Plus size={16} /> Tambah Tugasan
+        </button>
       </div>
 
       {/* Task List Table */}
