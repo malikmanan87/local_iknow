@@ -165,8 +165,8 @@ export default function Tasks() {
     const newStatus = task.status === 'completed' ? 'pending' : 'completed';
     try {
       const res = await axios.post(getApiUrl(`tasks/${task.id}/toggle-status`), { status: newStatus });
-      if (res.data?.recurring_spawned) {
-        showSuccess(res.data.message || 'Tugasan selesai! Kitaran seterusnya telah dijana secara automatik.');
+      if (res.data?.recurring_advanced || res.data?.recurring_spawned) {
+        showSuccess(res.data.message || 'Tugasan selesai! Tarikh sasaran seterusnya telah dianjakkan secara automatik.');
       }
       fetchTasks();
     } catch (err) {

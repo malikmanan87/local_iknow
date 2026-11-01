@@ -1142,7 +1142,7 @@ function TaskManager(){
         body:JSON.stringify({status:newSt})
       }).then(r=>r.json());
       if(res&&res.status==="success"){
-        if(res.recurring_spawned&&window.Swal)window.Swal.fire({icon:"success",title:"Tugasan Selesai",text:res.message,timer:2500,showConfirmButton:!1,background:"#0f172a",color:"#f8fafc",customClass:{popup:"iknow-swal-popup"}});
+        if((res.recurring_advanced||res.recurring_spawned)&&window.Swal)window.Swal.fire({icon:"success",title:"Tugasan Selesai",text:res.message,timer:3000,showConfirmButton:!1,background:"#0f172a",color:"#f8fafc",customClass:{popup:"iknow-swal-popup"}});
         loadData();
       }
     }catch(err){console.error(err)}

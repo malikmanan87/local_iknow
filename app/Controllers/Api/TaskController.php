@@ -198,16 +198,16 @@ class TaskController extends ResourceController
         }
 
         $msg = 'Tugasan berjaya dikemaskini.' . ($sentEmail ? ' Notifikasi dihantar ke malikmanan@unisza.edu.my' : '');
-        if (!empty($recurringResult['spawned'])) {
-            $msg .= " Kitaran seterusnya (" . $this->getRecurrenceLabel($recurringResult['recurrence']) . ") telah dijana secara automatik.";
+        if (!empty($recurringResult['advanced'])) {
+            $msg = "Tugasan selesai! Tarikh sasaran seterusnya (" . $this->getRecurrenceLabel($recurringResult['recurrence']) . ") telah dianjakkan ke " . $recurringResult['formatted_next_due'] . ".";
         }
 
         return $this->respond([
-            'status'            => 'success',
-            'message'           => $msg,
-            'email_sent'        => $sentEmail,
-            'recurring_spawned' => $recurringResult['spawned'] ?? false,
-            'data'              => $model->find($id)
+            'status'             => 'success',
+            'message'            => $msg,
+            'email_sent'         => $sentEmail,
+            'recurring_advanced' => $recurringResult['advanced'] ?? false,
+            'data'               => $model->find($id)
         ]);
     }
 
@@ -246,19 +246,20 @@ class TaskController extends ResourceController
         $data = $this->request->getJSON(true) ?? $this->request->getPost();
         $newStatus = !empty($data['status']) ? $data['status'] : (($task['status'] === 'completed') ? 'pending' : 'completed');
 
-        $model->update($id, ['status' => $newStatus]);
+        // Jika bukan tugasan berulang yang selesai, kemaskini status biasa
         $recurringResult = $this->handleRecurringOnComplete($task, $newStatus);
-
-        $msg = "Status tugasan dikemaskini kepada {$newStatus}.";
-        if (!empty($recurringResult['spawned'])) {
-            $msg .= " Kitaran seterusnya (" . $this->getRecurrenceLabel($recurringResult['recurrence']) . ") telah dijana secara automatik.";
+        if (empty($recurringResult['advanced'])) {
+            $model->update($id, ['status' => $newStatus]);
+            $msg = "Status tugasan dikemaskini kepada {$newStatus}.";
+        } else {
+            $msg = "Tugasan selesai! Tarikh sasaran seterusnya (" . $this->getRecurrenceLabel($recurringResult['recurrence']) . ") telah dianjakkan ke " . $recurringResult['formatted_next_due'] . ".";
         }
 
         return $this->respond([
-            'status'            => 'success',
-            'message'           => $msg,
-            'recurring_spawned' => $recurringResult['spawned'] ?? false,
-            'data'              => $model->find($id)
+            'status'             => 'success',
+            'message'            => $msg,
+            'recurring_advanced' => $recurringResult['advanced'] ?? false,
+            'data'               => $model->find($id)
         ]);
     }
 
@@ -675,14 +676,15 @@ class TaskController extends ResourceController
     }
 
     /**
-     * Semak dan jana tugasan pusingan baharu jika tugasan berulang ditandakan selesai
+     * Kaedah 2: Ulang task yang sama (Single-Record Advance)
+     * Apabila tugasan berulang ditandakan selesai, anjakkan tarikh sasaran (due_date) rekod sedia ada
+     * ke pusingan seterusnya dan reset semula status kepada 'pending' untuk mengelakkan data bertimbun.
      */
     protected function handleRecurringOnComplete($task, $newStatus)
     {
         if ($task['status'] !== 'completed' && $newStatus === 'completed') {
             $recurrence = $task['recurrence'] ?? 'none';
             if (!empty($recurrence) && $recurrence !== 'none') {
-                $nextDueDate = null;
                 $currentDue = !empty($task['due_date']) ? new \DateTime($task['due_date']) : new \DateTime();
                 $today = new \DateTime('today');
 
@@ -708,31 +710,34 @@ class TaskController extends ResourceController
                     $nextDue->add($interval);
                     // Sekiranya tarikh sasaran masih di masa lampau (cth tugasan tertunggak lama),
                     // teruskan maju ke kitaran hadapan dari hari ini
-                    while ($nextDue < $today) {
+                    while ($nextDue <= $today) {
                         $nextDue->add($interval);
                     }
                     $nextDueDate = $nextDue->format('Y-m-d 00:00:00');
 
                     $model = $this->getModelInstance();
-                    $newTask = [
-                        'title'            => $task['title'],
-                        'priority'         => $task['priority'],
+                    // Kemaskini rekod yang SAMA: anjakkan tarikh sasaran & reset status
+                    $model->update($task['id'], [
                         'status'           => 'pending',
-                        'recurrence'       => $recurrence,
                         'due_date'         => $nextDueDate,
                         'last_notified_at' => null,
-                    ];
-                    $newTaskId = $model->insert($newTask);
+                        'updated_at'       => date('Y-m-d H:i:s')
+                    ]);
+
+                    $daysMalay = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+                    $dayName = $daysMalay[(int)$nextDue->format('w')];
+                    $formattedNextDate = $nextDue->format('d M Y') . " ({$dayName})";
 
                     return [
-                        'spawned'    => true,
-                        'next_id'    => $newTaskId,
-                        'next_due'   => $nextDueDate,
-                        'recurrence' => $recurrence
+                        'advanced'           => true,
+                        'task_id'            => $task['id'],
+                        'next_due'           => $nextDueDate,
+                        'formatted_next_due' => $formattedNextDate,
+                        'recurrence'         => $recurrence
                     ];
                 }
             }
         }
-        return ['spawned' => false];
+        return ['advanced' => false];
     }
 }
