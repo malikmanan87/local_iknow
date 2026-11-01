@@ -119,19 +119,13 @@ $routes->group('api', function($routes) {
     $routes->post('servers/ping/(:any)', 'Api\ServerController::ping/$1');
     $routes->get('servers/ping-all', 'Api\ServerController::pingAll');
 
-    // Reminders & Task Alerts
-    $routes->get('reminders', 'Api\ReminderController::index');
-    $routes->get('reminders/alerts-count', 'Api\ReminderController::getAlertsCount');
-    $routes->get('reminders/(:num)', 'Api\ReminderController::show/$1');
-    $routes->post('reminders', 'Api\ReminderController::create');
-    $routes->match(['PUT', 'POST'], 'reminders/(:num)', 'Api\ReminderController::update/$1');
-    $routes->delete('reminders/(:num)', 'Api\ReminderController::delete/$1');
-    $routes->post('reminders/(:num)/toggle-complete', 'Api\ReminderController::toggleComplete/$1');
-    $routes->post('reminders/(:num)/send-email', 'Api\ReminderController::sendEmail/$1');
-
-    // AI Virtual Assistant
-    $routes->post('ai/chat', 'Api\AiAssistantController::chat');
-    $routes->get('ai/suggestions', 'Api\AiAssistantController::suggestions');
+    // Task Management (TASKS)
+    $routes->match(['GET', 'POST'], 'tasks/check-due-alerts', 'Api\TaskController::checkDueAlerts');
+    $routes->get('tasks', 'Api\TaskController::index');
+    $routes->get('tasks/(:num)', 'Api\TaskController::show/$1');
+    $routes->post('tasks', 'Api\TaskController::create');
+    $routes->match(['PUT', 'POST'], 'tasks/(:num)', 'Api\TaskController::update/$1');
+    $routes->delete('tasks/(:num)', 'Api\TaskController::delete/$1');
+    $routes->post('tasks/(:num)/toggle-status', 'Api\TaskController::toggleStatus/$1');
+    $routes->post('tasks/(:num)/send-notification', 'Api\TaskController::sendNotification/$1');
 });
-
-

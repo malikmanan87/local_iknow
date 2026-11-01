@@ -9,7 +9,7 @@ import NotesManager from './pages/NotesManager';
 import StaffDirectory from './pages/StaffDirectory';
 import FinanceProcurement from './pages/FinanceProcurement';
 import ServerManager from './pages/ServerManager';
-import Reminder from './pages/Reminder';
+import Tasks from './pages/Tasks';
 import AddModuleModal from './components/AddModuleModal';
 import { getBackupStatus, runManualBackup } from './services/api';
 import { showError } from './utils/swal';
@@ -22,9 +22,6 @@ export default function App() {
   const [showAddModule, setShowAddModule] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Reminder alerts state
-  const [reminderAlerts, setReminderAlerts] = useState(0);
-
   // Backup status state
   const [backupInfo, setBackupInfo] = useState(null);
   const [backingUp, setBackingUp] = useState(false);
@@ -32,19 +29,6 @@ export default function App() {
   // Server monitoring state (Kitaran 1 jam sekali & Top Alert Banner)
   const [offlineServers, setOfflineServers] = useState([]);
   const [bannerDismissed, setBannerDismissed] = useState(false);
-
-  const fetchReminderAlerts = async () => {
-    try {
-      const origin = window.location.origin;
-      const path = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-      const res = await axios.get(`${origin}${path}api/reminders/alerts-count`);
-      if (res.data?.total_alerts !== undefined) {
-        setReminderAlerts(res.data.total_alerts);
-      }
-    } catch (e) {
-      console.error('Ralat alerts count:', e);
-    }
-  };
 
   const checkServerStatus = async () => {
     try {
@@ -60,6 +44,17 @@ export default function App() {
       }
     } catch (err) {
       console.error('Ralat semakan kitaran pelayan:', err);
+    }
+  };
+
+  // Semakan automatik notifikasi tugasan latar belakang (Kitaran 8:00 AM & tangani kes terlepas)
+  const checkTaskDueAlerts = async () => {
+    try {
+      const origin = window.location.origin;
+      const path = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+      await axios.get(`${origin}${path}api/tasks/check-due-alerts`);
+    } catch (e) {
+      // Senyap jika ralat rangkaian sementara
     }
   };
 
@@ -89,9 +84,9 @@ export default function App() {
   };
 
   useEffect(() => {
-    checkAndBackup(true); // Auto backup semasa buka sistem (atau jika terlepas waktu 8:00 AM)
-    checkServerStatus();  // Semak status pelayan (hanya ping jika sudah melepasi 1 jam dari semakan lalu)
-    fetchReminderAlerts(); // Semak bilangan amaran peringatan (loceng navbar)
+    checkAndBackup(true);   // Auto backup semasa buka sistem (atau jika terlepas waktu 8:00 AM)
+    checkServerStatus();    // Semak status pelayan (hanya ping jika sudah melepasi 1 jam dari semakan lalu)
+    checkTaskDueAlerts();   // Semak amaran tugasan due 2 hari (Kitaran 8:00 AM & tangani jika terlepas)
 
     // Semak kitaran backup setiap minit
     const backupInterval = setInterval(() => {
@@ -103,15 +98,15 @@ export default function App() {
       checkServerStatus();
     }, 300000);
 
-    // Semak amaran reminder setiap 2 minit
-    const reminderInterval = setInterval(() => {
-      fetchReminderAlerts();
-    }, 120000);
+    // Semak amaran tugasan setiap 5 minit (menangkap waktu tepat 8:00 AM atau sebaik internet pulih)
+    const taskAlertInterval = setInterval(() => {
+      checkTaskDueAlerts();
+    }, 300000);
 
     return () => {
       clearInterval(backupInterval);
       clearInterval(serverInterval);
-      clearInterval(reminderInterval);
+      clearInterval(taskAlertInterval);
     };
   }, []);
 
@@ -122,7 +117,7 @@ export default function App() {
   };
 
   const handleSetTab = (tab) => {
-    if (tab === 'dashboard' || tab === 'home' || tab === 'servers') {
+    if (tab === 'dashboard' || tab === 'home' || tab === 'servers' || tab === 'tasks') {
       setSelectedModuleId(null);
     }
     setActiveTab(tab);
@@ -163,15 +158,17 @@ export default function App() {
               🚨
             </span>
             <div style={{ fontSize: '0.88rem', lineHeight: '1.4' }}>
-              <strong>AMARAN KECEMASAN:</strong> {offlineServers.length === 1 
-                ? `Pelayan "${offlineServers[0].name}" (${offlineServers[0].ip_address}) dikesan OFFLINE!`
-                : `${offlineServers.length} Pelayan Hospital dikesan OFFLINE! (${offlineServers.map(s => s.name).join(', ')})`}
+              <strong>AMARAN KECEMASAN: </strong>
+              {offlineServers.length === 1 ? (
+                <>Pelayan "{offlineServers[0].name}" ({offlineServers[0].ip_address}) dikesan <strong>OFFLINE!</strong></>
+              ) : (
+                <>{offlineServers.length} Pelayan Hospital dikesan <strong>OFFLINE!</strong> ({offlineServers.map(s => s.name).join(', ')})</>
+              )}
               <span style={{ opacity: 0.85, fontSize: '0.78rem', marginLeft: '0.5rem' }}>
                 (Semakan automatik berkala 1 jam sekali)
               </span>
             </div>
           </div>
-
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
             <button
               onClick={() => handleSetTab('servers')}
@@ -190,8 +187,7 @@ export default function App() {
                 boxShadow: '0 2px 6px rgba(0,0,0,0.25)'
               }}
             >
-              <span>Urus / Semak Pelayan</span>
-              <span>&rarr;</span>
+              Urus / Semak Pelayan →
             </button>
             <button
               onClick={() => setBannerDismissed(true)}
@@ -216,7 +212,6 @@ export default function App() {
       <Navbar
         activeTab={activeTab}
         setActiveTab={handleSetTab}
-        alertsCount={reminderAlerts}
       />
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem', paddingBottom: '3rem' }}>
@@ -238,8 +233,8 @@ export default function App() {
           <MirthViewer />
         ) : activeTab === 'servers' ? (
           <ServerManager />
-        ) : activeTab === 'reminders' ? (
-          <Reminder onAlertsChanged={fetchReminderAlerts} />
+        ) : activeTab === 'tasks' ? (
+          <Tasks />
         ) : activeTab === 'dashboard' ? (
           <Dashboard
             key={refreshTrigger}
@@ -258,7 +253,6 @@ export default function App() {
           />
         )}
       </div>
-
 
       {showAddModule && (
         <AddModuleModal

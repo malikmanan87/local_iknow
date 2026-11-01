@@ -1,7 +1,7 @@
 import React from 'react';
 import { Home as HomeIcon, BookOpen, Activity, StickyNote, Users, Landmark, Server, Bell } from 'lucide-react';
 
-export default function Navbar({ activeTab, setActiveTab, alertsCount = 0 }) {
+export default function Navbar({ activeTab, setActiveTab }) {
   return (
     <nav className="navbar">
       <div className="logo-container" onClick={() => setActiveTab('home')} style={{ cursor: 'pointer' }}>
@@ -101,35 +101,19 @@ export default function Navbar({ activeTab, setActiveTab, alertsCount = 0 }) {
           <Server size={17} /> Pelayan & IP
         </button>
 
-        {/* 8. Reminder */}
+        {/* 8. TASKS */}
         <button
           className="btn btn-secondary"
-          onClick={() => setActiveTab('reminders')}
+          onClick={() => setActiveTab('tasks')}
           style={{ 
-            borderColor: activeTab === 'reminders' ? '#f43f5e' : undefined, 
-            color: activeTab === 'reminders' ? '#fb7185' : undefined,
-            background: activeTab === 'reminders' ? 'rgba(244, 63, 94, 0.14)' : undefined,
-            position: 'relative'
+            borderColor: activeTab === 'tasks' ? '#06b6d4' : undefined, 
+            color: activeTab === 'tasks' ? '#22d3ee' : undefined,
+            background: activeTab === 'tasks' ? 'rgba(6, 182, 212, 0.14)' : undefined,
           }}
         >
-          <Bell size={17} /> Reminder
-          {alertsCount > 0 && (
-            <span style={{
-              marginLeft: '0.35rem',
-              background: '#f43f5e',
-              color: '#ffffff',
-              fontSize: '0.68rem',
-              fontWeight: 800,
-              padding: '0.1rem 0.45rem',
-              borderRadius: '999px',
-              boxShadow: '0 0 8px rgba(244, 63, 94, 0.6)'
-            }}>
-              {alertsCount}
-            </span>
-          )}
+          <Bell size={17} /> TASKS
         </button>
       </div>
     </nav>
   );
 }
-
