@@ -15,7 +15,10 @@ import {
   FileText,
   ShieldCheck,
   AlertTriangle,
-  Server
+  Server,
+  Phone,
+  GitCommitHorizontal,
+  CheckCircle2
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -135,9 +138,13 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
   // Filtered results
   const totalResults = searchResults?.total_results || 0;
   const modulesList = searchResults?.modules || [];
+  const submodulesList = searchResults?.submodules || [];
+  const flowsList = searchResults?.flows || [];
+  const issuesList = searchResults?.issues || [];
+  const solutionsList = searchResults?.solutions || [];
+  const contactsList = searchResults?.contacts || [];
   const notesList = searchResults?.notes || [];
   const procList = searchResults?.procurement || [];
-  const issuesList = searchResults?.issues || [];
 
   return (
     <div style={{ padding: '1.25rem 0' }}>
@@ -444,9 +451,13 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
             <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
               {[
                 { id: 'all', label: `Semua (${totalResults})` },
-                { id: 'modules', label: `Modul (${modulesList.length})` },
-                { id: 'notes', label: `Nota (${notesList.length})` },
-                { id: 'procurement', label: `Kewangan (${procList.length})` }
+                ...(modulesList.length > 0 ? [{ id: 'modules', label: `Modul (${modulesList.length})` }] : []),
+                ...(submodulesList.length > 0 ? [{ id: 'submodules', label: `Submodul (${submodulesList.length})` }] : []),
+                ...(flowsList.length > 0 ? [{ id: 'flows', label: `Flow (${flowsList.length})` }] : []),
+                ...(issuesList.length > 0 || solutionsList.length > 0 ? [{ id: 'issues', label: `Isu & Solusi (${issuesList.length + solutionsList.length})` }] : []),
+                ...(contactsList.length > 0 ? [{ id: 'contacts', label: `PIC (${contactsList.length})` }] : []),
+                ...(notesList.length > 0 ? [{ id: 'notes', label: `Nota (${notesList.length})` }] : []),
+                ...(procList.length > 0 ? [{ id: 'procurement', label: `Kewangan (${procList.length})` }] : [])
               ].map(f => (
                 <button
                   key={f.id}
@@ -492,7 +503,7 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
                       <div
                         key={m.id}
                         className="glass-card"
-                        onClick={() => onSelectModule(m.id)}
+                        onClick={() => onSelectModule(m.id, 'flows')}
                         style={{ padding: '1rem', borderRadius: '12px', cursor: 'pointer', border: '1px solid rgba(99, 102, 241, 0.2)' }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
@@ -511,7 +522,163 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
                 </div>
               )}
 
-              {/* 2. Bahagian Papan Nota & Skrip */}
+              {/* 2. Bahagian Sub-Modul Sistem */}
+              {(activeFilter === 'all' || activeFilter === 'submodules') && submodulesList.length > 0 && (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 700, color: '#22d3ee', marginBottom: '0.65rem' }}>
+                    <FileText size={16} /> SUB-MODUL ({submodulesList.length})
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
+                    {submodulesList.map(s => (
+                      <div
+                        key={s.id}
+                        className="glass-card"
+                        onClick={() => onSelectModule(s.module_id, 'flows')}
+                        style={{ padding: '1rem', borderRadius: '12px', cursor: 'pointer', borderLeft: '3px solid #22d3ee', borderTop: '1px solid rgba(34, 211, 238, 0.2)', borderRight: '1px solid rgba(34, 211, 238, 0.2)', borderBottom: '1px solid rgba(34, 211, 238, 0.2)' }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                          <span style={{ fontSize: '0.72rem', background: 'rgba(34, 211, 238, 0.2)', color: '#22d3ee', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
+                            SUB-MODUL
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Modul: {s.module_title}</span>
+                        </div>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.3rem' }}>{s.title}</h4>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: '1.4', margin: 0 }}>
+                          {s.description || 'Penerangan sub-modul'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 3. Bahagian Alur Kerja / Flow */}
+              {(activeFilter === 'all' || activeFilter === 'flows') && flowsList.length > 0 && (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 700, color: '#a78bfa', marginBottom: '0.65rem' }}>
+                    <GitCommitHorizontal size={16} /> ALUR KERJA / FLOW ({flowsList.length})
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
+                    {flowsList.map(f => (
+                      <div
+                        key={f.id}
+                        className="glass-card"
+                        onClick={() => onSelectModule(f.module_id, 'flows')}
+                        style={{ padding: '1rem', borderRadius: '12px', cursor: 'pointer', borderLeft: '3px solid #8b5cf6', borderTop: '1px solid rgba(139, 92, 246, 0.2)', borderRight: '1px solid rgba(139, 92, 246, 0.2)', borderBottom: '1px solid rgba(139, 92, 246, 0.2)' }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                          <span style={{ fontSize: '0.72rem', background: 'rgba(139, 92, 246, 0.2)', color: '#c4b5fd', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
+                            {f.category ? f.category.toUpperCase() : 'FLOW'}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            {f.submodule_title ? `Submodul: ${f.submodule_title}` : `Modul: ${f.module_title}`}
+                          </span>
+                        </div>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.3rem' }}>{f.title}</h4>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: '1.4', margin: 0 }}>
+                          {f.description || 'Alur kerja operasi'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 4. Bahagian Isu & Langkah Solusi */}
+              {(activeFilter === 'all' || activeFilter === 'issues') && (issuesList.length > 0 || solutionsList.length > 0) && (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 700, color: '#f87171', marginBottom: '0.65rem' }}>
+                    <AlertTriangle size={16} /> ISU & LANGKAH SOLUSI ({issuesList.length + solutionsList.length})
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
+                    {issuesList.map(iss => (
+                      <div
+                        key={`iss-${iss.id}`}
+                        className="glass-card"
+                        onClick={() => iss.module_id && onSelectModule(iss.module_id, 'issues')}
+                        style={{ padding: '1rem', borderRadius: '12px', cursor: iss.module_id ? 'pointer' : 'default', borderLeft: '3px solid #ef4444', borderTop: '1px solid rgba(239, 68, 68, 0.2)', borderRight: '1px solid rgba(239, 68, 68, 0.2)', borderBottom: '1px solid rgba(239, 68, 68, 0.2)' }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                          <span style={{ fontSize: '0.72rem', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
+                            {iss.error_code || 'RALAT'}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            {iss.submodule_title ? `Submodul: ${iss.submodule_title}` : `Modul: ${iss.module_title}`}
+                          </span>
+                        </div>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.3rem' }}>{iss.title}</h4>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: '1.4', margin: 0 }}>
+                          {iss.symptoms || iss.description || 'Tiada simptom'}
+                        </p>
+                      </div>
+                    ))}
+                    {solutionsList.map(s => (
+                      <div
+                        key={`sol-${s.id}`}
+                        className="glass-card"
+                        onClick={() => s.module_id && onSelectModule(s.module_id, 'issues')}
+                        style={{ padding: '1rem', borderRadius: '12px', cursor: s.module_id ? 'pointer' : 'default', borderLeft: '3px solid #10b981', borderTop: '1px solid rgba(16, 185, 129, 0.2)', borderRight: '1px solid rgba(16, 185, 129, 0.2)', borderBottom: '1px solid rgba(16, 185, 129, 0.2)' }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                          <span style={{ fontSize: '0.72rem', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <CheckCircle2 size={13} />
+                            Langkah Solusi #{s.step_number}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            Modul: {s.module_title}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--accent-amber)', marginBottom: '0.25rem' }}>
+                          Isu: {s.issue_title}{s.issue_code ? ` (${s.issue_code})` : ''}
+                        </div>
+                        <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#f8fafc', lineHeight: '1.4' }}>
+                          {s.instruction}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 5. Bahagian Pegawai Bertanggungjawab / PIC */}
+              {(activeFilter === 'all' || activeFilter === 'contacts') && contactsList.length > 0 && (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 700, color: '#fbbf24', marginBottom: '0.65rem' }}>
+                    <Phone size={16} /> PEGAWAI BERTANGGUNGJAWAB / PIC ({contactsList.length})
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
+                    {contactsList.map(c => (
+                      <div
+                        key={c.id}
+                        className="glass-card"
+                        onClick={() => c.module_id && onSelectModule(c.module_id, 'contacts')}
+                        style={{ padding: '1rem', borderRadius: '12px', cursor: c.module_id ? 'pointer' : 'default', borderLeft: '3px solid #f59e0b', borderTop: '1px solid rgba(245, 158, 11, 0.2)', borderRight: '1px solid rgba(245, 158, 11, 0.2)', borderBottom: '1px solid rgba(245, 158, 11, 0.2)' }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                          <span style={{ fontSize: '0.72rem', background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
+                            {c.role || 'PIC'}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            {c.submodule_title ? `Submodul: ${c.submodule_title}` : `Modul: ${c.module_title}`}
+                          </span>
+                        </div>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem' }}>{c.name}</h4>
+                        {c.department && (
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
+                            {c.department}
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: '0.8rem', color: 'var(--primary)' }}>
+                          {c.email && <div>✉ {c.email}</div>}
+                          {c.phone_no && <div>📞 {c.phone_no}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 6. Bahagian Papan Nota & Skrip */}
               {(activeFilter === 'all' || activeFilter === 'notes') && notesList.length > 0 && (
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-amber)', marginBottom: '0.65rem' }}>
@@ -559,7 +726,7 @@ export default function Home({ onNavigate, onSelectModule, backupInfo, backingUp
                 </div>
               )}
 
-              {/* 3. Bahagian Kewangan & Perolehan */}
+              {/* 7. Bahagian Kewangan & Perolehan */}
               {(activeFilter === 'all' || activeFilter === 'procurement') && procList.length > 0 && (
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 700, color: '#c084fc', marginBottom: '0.65rem' }}>

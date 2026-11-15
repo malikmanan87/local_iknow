@@ -394,9 +394,13 @@ function HomePage({onNavigate:nav,onSelectModule:selMod}){
   let isSearching=Boolean(q&&q.trim().length>=2),
       tot=res?.total_results||0,
       mods=res?.modules||[],
+      submods=res?.submodules||[],
+      flows=res?.flows||[],
+      issues=res?.issues||[],
+      sols=res?.solutions||[],
+      contacts=res?.contacts||[],
       notes=res?.notes||[],
-      procs=res?.procurement||[],
-      issues=res?.issues||[];
+      procs=res?.procurement||[];
 
   return (0,L.jsxs)("div",{style:{padding:"1.25rem 0"},children:[
     /* Single Central Glass Panel */
@@ -587,9 +591,12 @@ function HomePage({onNavigate:nav,onSelectModule:selMod}){
           (0,L.jsxs)("div",{style:{display:"flex",gap:"0.4rem",flexWrap:"wrap"},children:[
             (0,L.jsx)("button",{className:`btn ${tab==="all"?"btn-primary":"btn-secondary"}`,onClick:()=>setTab("all"),style:{padding:"0.3rem 0.75rem",fontSize:"0.8rem"},children:`Semua (${tot})`}),
             mods.length>0&&(0,L.jsx)("button",{className:`btn ${tab==="mods"?"btn-primary":"btn-secondary"}`,onClick:()=>setTab("mods"),style:{padding:"0.3rem 0.75rem",fontSize:"0.8rem"},children:`Modul (${mods.length})`}),
+            submods.length>0&&(0,L.jsx)("button",{className:`btn ${tab==="submods"?"btn-primary":"btn-secondary"}`,onClick:()=>setTab("submods"),style:{padding:"0.3rem 0.75rem",fontSize:"0.8rem"},children:`Submodul (${submods.length})`}),
+            flows.length>0&&(0,L.jsx)("button",{className:`btn ${tab==="flows"?"btn-primary":"btn-secondary"}`,onClick:()=>setTab("flows"),style:{padding:"0.3rem 0.75rem",fontSize:"0.8rem"},children:`Flow (${flows.length})`}),
+            (issues.length>0||sols.length>0)&&(0,L.jsx)("button",{className:`btn ${tab==="issues"?"btn-primary":"btn-secondary"}`,onClick:()=>setTab("issues"),style:{padding:"0.3rem 0.75rem",fontSize:"0.8rem"},children:`Isu & Solusi (${issues.length+sols.length})`}),
+            contacts.length>0&&(0,L.jsx)("button",{className:`btn ${tab==="contacts"?"btn-primary":"btn-secondary"}`,onClick:()=>setTab("contacts"),style:{padding:"0.3rem 0.75rem",fontSize:"0.8rem"},children:`PIC (${contacts.length})`}),
             notes.length>0&&(0,L.jsx)("button",{className:`btn ${tab==="notes"?"btn-primary":"btn-secondary"}`,onClick:()=>setTab("notes"),style:{padding:"0.3rem 0.75rem",fontSize:"0.8rem"},children:`Nota (${notes.length})`}),
-            procs.length>0&&(0,L.jsx)("button",{className:`btn ${tab==="procs"?"btn-primary":"btn-secondary"}`,onClick:()=>setTab("procs"),style:{padding:"0.3rem 0.75rem",fontSize:"0.8rem"},children:`Perolehan (${procs.length})`}),
-            issues.length>0&&(0,L.jsx)("button",{className:`btn ${tab==="issues"?"btn-primary":"btn-secondary"}`,onClick:()=>setTab("issues"),style:{padding:"0.3rem 0.75rem",fontSize:"0.8rem"},children:`Isu/Ralat (${issues.length})`})
+            procs.length>0&&(0,L.jsx)("button",{className:`btn ${tab==="procs"?"btn-primary":"btn-secondary"}`,onClick:()=>setTab("procs"),style:{padding:"0.3rem 0.75rem",fontSize:"0.8rem"},children:`Perolehan (${procs.length})`})
           ]})
         ]
       }),
@@ -670,22 +677,108 @@ function HomePage({onNavigate:nav,onSelectModule:selMod}){
           })
         ]}),
 
-        /* 4. Isu & Solution Results */
-        (tab==="all"||tab==="issues")&&issues.length>0&&(0,L.jsxs)("div",{children:[
-          (0,L.jsxs)("h3",{style:{fontSize:"1.05rem",fontWeight:700,marginBottom:"0.75rem",color:"#ef4444",display:"flex",alignItems:"center",gap:"0.4rem"},children:[(0,L.jsx)(k,{size:18}),`Isu & Penyelesaian Masalah (${issues.length})`]}),
+        /* 2. Sub-Modul Sistem Results */
+        (tab==="all"||tab==="submods")&&submods.length>0&&(0,L.jsxs)("div",{children:[
+          (0,L.jsxs)("h3",{style:{fontSize:"1.05rem",fontWeight:700,marginBottom:"0.75rem",color:"#22d3ee",display:"flex",alignItems:"center",gap:"0.4rem"},children:[(0,L.jsx)(he,{size:18}),`Sub-Modul (${submods.length})`]}),
           (0,L.jsx)("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))",gap:"1rem"},children:
+            submods.map(s=>(0,L.jsxs)("div",{
+              key:s.id,
+              className:"glass-panel",
+              onClick:()=>selMod(s.module_id,"flows"),
+              style:{padding:"1.1rem",cursor:"pointer",transition:"all 0.2s ease",borderLeft:"3px solid #22d3ee"},
+              children:[
+                (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.35rem"},children:[
+                  (0,L.jsx)("span",{style:{fontSize:"0.75rem",fontWeight:700,color:"#22d3ee",padding:"0.15rem 0.5rem",background:"rgba(34,211,238,0.15)",borderRadius:"6px"},children:"SUBMODUL"}),
+                  (0,L.jsx)("span",{style:{fontSize:"0.78rem",color:"var(--text-muted)"},children:`Modul: ${s.module_title||s.module_code}`})
+                ]}),
+                (0,L.jsx)("div",{style:{fontWeight:700,fontSize:"1rem",marginBottom:"0.3rem"},children:s.title}),
+                (0,L.jsx)("div",{style:{fontSize:"0.82rem",color:"var(--text-muted)",lineHeight:"1.4"},children:s.description?s.description.slice(0,100)+"...":"Tiada keterangan"})
+              ]
+            }))
+          })
+        ]}),
+
+        /* 3. Alur Kerja / Flow Results */
+        (tab==="all"||tab==="flows")&&flows.length>0&&(0,L.jsxs)("div",{children:[
+          (0,L.jsxs)("h3",{style:{fontSize:"1.05rem",fontWeight:700,marginBottom:"0.75rem",color:"#34d399",display:"flex",alignItems:"center",gap:"0.4rem"},children:[(0,L.jsx)(ve,{size:18}),`Alur Kerja / Flow (${flows.length})`]}),
+          (0,L.jsx)("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))",gap:"1rem"},children:
+            flows.map(f=>(0,L.jsxs)("div",{
+              key:f.id,
+              className:"glass-panel",
+              onClick:()=>selMod(f.module_id,"flows"),
+              style:{padding:"1.1rem",cursor:"pointer",transition:"all 0.2s ease",borderLeft:"3px solid #10b981"},
+              children:[
+                (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.35rem"},children:[
+                  (0,L.jsx)("span",{style:{fontSize:"0.75rem",fontWeight:700,color:"#34d399"},children:`Langkah #${f.step_number}`}),
+                  (0,L.jsx)("span",{style:{fontSize:"0.78rem",color:"var(--text-muted)"},children:f.submodule_title?`Submodul: ${f.submodule_title}`:`Modul: ${f.module_title}`})
+                ]}),
+                (0,L.jsx)("div",{style:{fontWeight:700,fontSize:"0.98rem",marginBottom:"0.3rem"},children:f.step_title}),
+                (0,L.jsx)("div",{style:{fontSize:"0.82rem",color:"var(--text-muted)",lineHeight:"1.4"},children:f.description?f.description.slice(0,100)+"...":""})
+              ]
+            }))
+          })
+        ]}),
+
+        /* 4. Isu & Solution Results */
+        (tab==="all"||tab==="issues")&&(issues.length>0||sols.length>0)&&(0,L.jsxs)("div",{children:[
+          (0,L.jsxs)("h3",{style:{fontSize:"1.05rem",fontWeight:700,marginBottom:"0.75rem",color:"#ef4444",display:"flex",alignItems:"center",gap:"0.4rem"},children:[(0,L.jsx)(k,{size:18}),`Isu & Penyelesaian Masalah (${issues.length+sols.length})`]}),
+          (0,L.jsxs)("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))",gap:"1rem"},children:[
             issues.map(iss=>(0,L.jsxs)("div",{
-              key:iss.id,
+              key:"iss-"+iss.id,
               className:"glass-panel",
               onClick:()=>iss.module_id&&selMod(iss.module_id,"issues"),
               style:{padding:"1.1rem",cursor:iss.module_id?"pointer":"default",borderLeft:"3px solid #ef4444"},
               children:[
                 (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.3rem"},children:[
                   (0,L.jsx)("span",{style:{fontSize:"0.75rem",fontWeight:700,color:"#f87171"},children:iss.error_code||"RALAT"}),
-                  iss.module_id&&(0,L.jsx)("span",{style:{fontSize:"0.75rem",color:"var(--primary)"},children:"Lihat Isu Modul →"})
+                  (0,L.jsx)("span",{style:{fontSize:"0.75rem",color:"var(--text-muted)"},children:iss.submodule_title?`Submodul: ${iss.submodule_title}`:`Modul: ${iss.module_title}`})
                 ]}),
                 (0,L.jsx)("div",{style:{fontWeight:700,fontSize:"0.95rem",marginBottom:"0.3rem"},children:iss.title}),
-                (0,L.jsx)("div",{style:{fontSize:"0.82rem",color:"var(--text-muted)",lineHeight:"1.4"},children:iss.description?iss.description.slice(0,90)+"...":""})
+                (0,L.jsx)("div",{style:{fontSize:"0.82rem",color:"var(--text-muted)",lineHeight:"1.4"},children:iss.symptoms||(iss.description?iss.description.slice(0,90)+"...":"")})
+              ]
+            })),
+            sols.map(s=>(0,L.jsxs)("div",{
+              key:"sol-"+s.id,
+              className:"glass-panel",
+              onClick:()=>s.module_id&&selMod(s.module_id,"issues"),
+              style:{padding:"1.1rem",cursor:s.module_id?"pointer":"default",borderLeft:"3px solid #10b981"},
+              children:[
+                (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.3rem"},children:[
+                  (0,L.jsxs)("span",{style:{fontSize:"0.75rem",fontWeight:700,color:"#34d399",display:"flex",alignItems:"center",gap:"0.25rem"},children:[
+                    (0,L.jsx)(M,{size:13}),
+                    `Langkah Solusi #${s.step_number}`
+                  ]}),
+                  (0,L.jsx)("span",{style:{fontSize:"0.75rem",color:"var(--text-muted)"},children:`Modul: ${s.module_title}`})
+                ]}),
+                (0,L.jsxs)("div",{style:{fontSize:"0.78rem",fontWeight:600,color:"var(--accent-amber)",marginBottom:"0.25rem"},children:[
+                  "Isu: ",s.issue_title,s.issue_code?` (${s.issue_code})`:""
+                ]}),
+                (0,L.jsx)("div",{style:{fontSize:"0.88rem",fontWeight:600,color:"#f8fafc",lineHeight:"1.4"},children:s.instruction})
+              ]
+            }))
+          ]})
+        ]}),
+
+        /* 5. Pegawai Bertanggungjawab / PIC Results */
+        (tab==="all"||tab==="contacts")&&contacts.length>0&&(0,L.jsxs)("div",{children:[
+          (0,L.jsxs)("h3",{style:{fontSize:"1.05rem",fontWeight:700,marginBottom:"0.75rem",color:"#fbbf24",display:"flex",alignItems:"center",gap:"0.4rem"},children:[(0,L.jsx)(Me,{size:18}),`Pegawai Bertanggungjawab / PIC (${contacts.length})`]}),
+          (0,L.jsx)("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))",gap:"1rem"},children:
+            contacts.map(c=>(0,L.jsxs)("div",{
+              key:c.id,
+              className:"glass-panel",
+              onClick:()=>c.module_id&&selMod(c.module_id,"contacts"),
+              style:{padding:"1.1rem",cursor:c.module_id?"pointer":"default",borderLeft:"3px solid #f59e0b"},
+              children:[
+                (0,L.jsxs)("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.35rem"},children:[
+                  (0,L.jsx)("span",{style:{fontSize:"0.75rem",fontWeight:700,color:"#fbbf24",background:"rgba(245, 158, 11, 0.15)",padding:"0.15rem 0.5rem",borderRadius:"6px"},children:c.role||"PIC"}),
+                  (0,L.jsx)("span",{style:{fontSize:"0.75rem",color:"var(--text-muted)"},children:c.submodule_title?`Submodul: ${c.submodule_title}`:`Modul: ${c.module_title}`})
+                ]}),
+                (0,L.jsx)("div",{style:{fontWeight:700,fontSize:"1rem",marginBottom:"0.25rem"},children:c.name}),
+                c.department&&(0,L.jsx)("div",{style:{fontSize:"0.78rem",color:"var(--text-muted)",marginBottom:"0.4rem"},children:c.department}),
+                (0,L.jsxs)("div",{style:{display:"flex",flexDirection:"column",gap:"0.2rem",fontSize:"0.8rem",color:"var(--primary)"},children:[
+                  c.email&&(0,L.jsxs)("div",{children:["✉ ",c.email]}),
+                  c.phone_no&&(0,L.jsxs)("div",{children:["📞 ",c.phone_no]})
+                ]})
               ]
             }))
           })
